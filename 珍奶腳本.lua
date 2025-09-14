@@ -1,4 +1,3 @@
-
 getgenv().ZhenNaiScript = getgenv().ZhenNaiScript or {}
 local ZNS = getgenv().ZhenNaiScript
 if ZNS.__LOADED then
@@ -386,4 +385,5 @@ return function(settings)
     createGUI()
     initEvents()
     print("珍奶腳本 (遠程版) 已載入! 可在任何注入器中使用。")
+end
 end
