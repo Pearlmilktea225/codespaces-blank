@@ -1,5 +1,4 @@
 
--- 防重複載入與唯一命名空間
 getgenv().ZhenNaiScript = getgenv().ZhenNaiScript or {}
 local ZNS = getgenv().ZhenNaiScript
 if ZNS.__LOADED then
@@ -21,16 +20,16 @@ local Camera = workspace.CurrentCamera
 
 -- 初始化設置
 
-local function 初始化設置(settings)
+local function initSettings(settings)
     local default = {
-        防甩飛 = false,
-        甩飛 = false,
-        防虛空 = false,
-        ESP = false,
-        隱形 = false,
-        目標玩家 = nil,
-        虛空閾值 = -50,
-        安全高度 = 100
+        antiFling = false,
+        fling = false,
+        antiVoid = false,
+        esp = false,
+        invisible = false,
+        targetPlayer = nil,
+        voidY = -50,
+        safeY = 100
     }
     ZNS.settings = ZNS.settings or {}
     settings = settings or {}
@@ -44,7 +43,7 @@ local function 初始化設置(settings)
 end
 
 -- 創建GUI
-local function 創建GUI()
+local function createGUI()
     -- 清理舊GUI
     pcall(function()
         local pg = LocalPlayer:FindFirstChild("PlayerGui")
@@ -135,35 +134,35 @@ local function 創建GUI()
         return Button
     end
 
-    local 防甩飛Button = CreateButton("防甩飛: 關閉", UDim2.new(0, 5, 0, 40), function()
-        ZNS.settings.防甩飛 = not ZNS.settings.防甩飛
-        防甩飛Button.Text = "防甩飛: " .. (ZNS.settings.防甩飛 and "開啟" or "關閉")
+    local antiFlingButton = CreateButton("防甩飛: 關閉", UDim2.new(0, 5, 0, 40), function()
+        ZNS.settings.antiFling = not ZNS.settings.antiFling
+        antiFlingButton.Text = "防甩飛: " .. (ZNS.settings.antiFling and "開啟" or "關閉")
     end)
 
-    local 目標Label = Instance.new("TextLabel")
-    目標Label.Parent = MainFrame
-    目標Label.BackgroundTransparency = 1
-    目標Label.Position = UDim2.new(0, 5, 0, 75)
-    目標Label.Size = UDim2.new(1, -10, 0, 20)
-    目標Label.Font = Enum.Font.Gotham
-    目標Label.Text = "目標: 無"
-    目標Label.TextColor3 = Color3.fromRGB(200, 200, 200)
-    目標Label.TextSize = 12
+    local targetLabel = Instance.new("TextLabel")
+    targetLabel.Parent = MainFrame
+    targetLabel.BackgroundTransparency = 1
+    targetLabel.Position = UDim2.new(0, 5, 0, 75)
+    targetLabel.Size = UDim2.new(1, -10, 0, 20)
+    targetLabel.Font = Enum.Font.Gotham
+    targetLabel.Text = "目標: 無"
+    targetLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
+    targetLabel.TextSize = 12
 
-    local 目標下拉 = Instance.new("ScrollingFrame")
-    目標下拉.Parent = MainFrame
-    目標下拉.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    目標下拉.BorderSizePixel = 0
-    目標下拉.Position = UDim2.new(0, 5, 0, 100)
-    目標下拉.Size = UDim2.new(1, -10, 0, 100)
-    目標下拉.CanvasSize = UDim2.new(0, 0, 0, 0)
-    目標下拉.ScrollBarThickness = 6
-    目標下拉.Visible = false
+    local targetDropdown = Instance.new("ScrollingFrame")
+    targetDropdown.Parent = MainFrame
+    targetDropdown.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
+    targetDropdown.BorderSizePixel = 0
+    targetDropdown.Position = UDim2.new(0, 5, 0, 100)
+    targetDropdown.Size = UDim2.new(1, -10, 0, 100)
+    targetDropdown.CanvasSize = UDim2.new(0, 0, 0, 0)
+    targetDropdown.ScrollBarThickness = 6
+    targetDropdown.Visible = false
 
-    local function 更新目標清單()
-        目標下拉:ClearAllChildren()
+    local function updateTargetList()
+        targetDropdown:ClearAllChildren()
         local layout = Instance.new("UIListLayout")
-        layout.Parent = 目標下拉
+        layout.Parent = targetDropdown
         layout.SortOrder = Enum.SortOrder.LayoutOrder
         local playerList = {}
         for _, player in pairs(Players:GetPlayers()) do
@@ -176,53 +175,53 @@ local function 創建GUI()
             btn.Text = player.Name
             btn.TextColor3 = Color3.fromRGB(255, 255, 255)
             btn.Font = Enum.Font.Gotham
-            btn.Parent = 目標下拉
+            btn.Parent = targetDropdown
             btn.MouseButton1Click:Connect(function()
-                ZNS.settings.目標玩家 = player
-                目標Label.Text = "目標: " .. player.Name
-                目標下拉.Visible = false
+                ZNS.settings.targetPlayer = player
+                targetLabel.Text = "目標: " .. player.Name
+                targetDropdown.Visible = false
             end)
         end
-        目標下拉.CanvasSize = UDim2.new(0, 0, 0, #playerList * 30)
+        targetDropdown.CanvasSize = UDim2.new(0, 0, 0, #playerList * 30)
     end
 
-    local 選擇目標Button = CreateButton("選擇目標", UDim2.new(0, 5, 0, 130), function()
-        更新目標清單()
-        目標下拉.Visible = not 目標下拉.Visible
+    local selectTargetButton = CreateButton("選擇目標", UDim2.new(0, 5, 0, 130), function()
+        updateTargetList()
+        targetDropdown.Visible = not targetDropdown.Visible
     end)
 
-    local 甩飛Button = CreateButton("甩飛: 關閉", UDim2.new(0, 5, 0, 170), function()
-        if not ZNS.settings.目標玩家 then warn("請先選擇目標!") return end
-        ZNS.settings.甩飛 = not ZNS.settings.甩飛
-        甩飛Button.Text = "甩飛: " .. (ZNS.settings.甩飛 and "開啟" or "關閉")
+    local flingButton = CreateButton("甩飛: 關閉", UDim2.new(0, 5, 0, 170), function()
+        if not ZNS.settings.targetPlayer then warn("請先選擇目標!") return end
+        ZNS.settings.fling = not ZNS.settings.fling
+        flingButton.Text = "甩飛: " .. (ZNS.settings.fling and "開啟" or "關閉")
     end)
 
-    local 防虛空Button = CreateButton("防虛空: 關閉", UDim2.new(0, 5, 0, 210), function()
-        ZNS.settings.防虛空 = not ZNS.settings.防虛空
-        防虛空Button.Text = "防虛空: " .. (ZNS.settings.防虛空 and "開啟" or "關閉")
+    local antiVoidButton = CreateButton("防虛空: 關閉", UDim2.new(0, 5, 0, 210), function()
+        ZNS.settings.antiVoid = not ZNS.settings.antiVoid
+        antiVoidButton.Text = "防虛空: " .. (ZNS.settings.antiVoid and "開啟" or "關閉")
     end)
 
-    local ESPButton = CreateButton("ESP: 關閉", UDim2.new(0, 5, 0, 250), function()
-        ZNS.settings.ESP = not ZNS.settings.ESP
-        ESPButton.Text = "ESP: " .. (ZNS.settings.ESP and "開啟" or "關閉")
+    local espButton = CreateButton("ESP: 關閉", UDim2.new(0, 5, 0, 250), function()
+        ZNS.settings.esp = not ZNS.settings.esp
+        espButton.Text = "ESP: " .. (ZNS.settings.esp and "開啟" or "關閉")
     end)
 
-    local 隱形Button = CreateButton("隱形: 關閉", UDim2.new(0, 5, 0, 290), function()
-        ZNS.settings.隱形 = not ZNS.settings.隱形
-        隱形Button.Text = "隱形: " .. (ZNS.settings.隱形 and "開啟" or "關閉")
-        if ZNS.settings.隱形 then 應用隱形() end
+    local invisibleButton = CreateButton("隱形: 關閉", UDim2.new(0, 5, 0, 290), function()
+        ZNS.settings.invisible = not ZNS.settings.invisible
+        invisibleButton.Text = "隱形: " .. (ZNS.settings.invisible and "開啟" or "關閉")
+        if ZNS.settings.invisible then applyInvisible() end
     end)
 end
 
 -- 單一Heartbeat迴圈 (優化核心)
 local espConnections = {}
-local function 主迴圈()
+local function mainLoop()
     pcall(function()
         local character = LocalPlayer.Character
         if not character then return end
         local s = ZNS.settings
-        -- 防甩飛
-        if s.防甩飛 then
+        -- Anti Fling
+        if s.antiFling then
             for _, obj in pairs(character:GetDescendants()) do
                 if obj:IsA("BodyVelocity") or obj:IsA("BodyPosition") or obj:IsA("BodyAngularVelocity") then
                     if obj.Name:find("Flung") or (obj.MaxForce and obj.MaxForce.Magnitude > 0) then
@@ -231,9 +230,9 @@ local function 主迴圈()
                 end
             end
         end
-        -- 甩飛
-        if s.甩飛 and s.目標玩家 and s.目標玩家.Character then
-            local targetChar = s.目標玩家.Character
+        -- Fling
+        if s.fling and s.targetPlayer and s.targetPlayer.Character then
+            local targetChar = s.targetPlayer.Character
             local humanoidRootPart = targetChar:FindFirstChild("HumanoidRootPart")
             if humanoidRootPart then
                 local bv = Instance.new("BodyVelocity")
@@ -243,34 +242,34 @@ local function 主迴圈()
                 game:GetService("Debris"):AddItem(bv, 0.05)
             end
         end
-        -- 防虛空
-        if s.防虛空 and character:FindFirstChild("HumanoidRootPart") then
+        -- Anti Void
+        if s.antiVoid and character:FindFirstChild("HumanoidRootPart") then
             local rootPart = character.HumanoidRootPart
-            if rootPart.Position.Y < s.虛空閾值 then
-                rootPart.CFrame = CFrame.new(rootPart.Position.X, s.安全高度, rootPart.Position.Z)
+            if rootPart.Position.Y < s.voidY then
+                rootPart.CFrame = CFrame.new(rootPart.Position.X, s.safeY, rootPart.Position.Z)
             end
         end
-        -- 隱形
-        if s.隱形 then
-            應用隱形()
+        -- Invisible
+        if s.invisible then
+            applyInvisible()
         else
-            取消隱形()
+            cancelInvisible()
         end
         -- ESP
-        if s.ESP then
+        if s.esp then
             for _, player in pairs(Players:GetPlayers()) do
                 if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-                    更新ESP(player)
+                    updateESP(player)
                 end
             end
         else
-            清理ESP()
+            clearESP()
         end
     end)
 end
 
 -- 隱形應用函數
-local function 應用隱形()
+local function applyInvisible()
     if LocalPlayer.Character then
         for _, part in pairs(LocalPlayer.Character:GetChildren()) do
             if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
@@ -283,7 +282,7 @@ local function 應用隱形()
     end
 end
 
-local function 取消隱形()
+local function cancelInvisible()
     if LocalPlayer.Character then
         for _, part in pairs(LocalPlayer.Character:GetChildren()) do
             if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
@@ -297,7 +296,7 @@ local function 取消隱形()
 end
 
 -- ESP 更新函數
-local function 更新ESP(player)
+local function updateESP(player)
     local head = player.Character and player.Character:FindFirstChild("Head")
     if not head then return end
     local billboard = head:FindFirstChild("ESPBillboard")
@@ -336,7 +335,7 @@ local function 更新ESP(player)
     end
 end
 
-local function 清理ESP()
+local function clearESP()
     for _, player in pairs(Players:GetPlayers()) do
         if player.Character and player.Character:FindFirstChild("Head") then
             local esp = player.Character.Head:FindFirstChild("ESPBillboard")
@@ -346,30 +345,30 @@ local function 清理ESP()
 end
 
 -- 玩家加入/角色重生處理
-local function 初始化事件()
+local function initEvents()
     if ZNS._connections then
         for _, c in ipairs(ZNS._connections) do pcall(function() c:Disconnect() end) end
     end
     ZNS._connections = {}
     table.insert(ZNS._connections, Players.PlayerAdded:Connect(function(player)
-        if ZNS.settings.ESP then
+        if ZNS.settings.esp then
             task.wait(1)
-            更新ESP(player)
+            updateESP(player)
         end
     end))
     table.insert(ZNS._connections, LocalPlayer.CharacterAdded:Connect(function()
         task.wait(1)
-        if ZNS.settings.隱形 then
-            應用隱形()
+        if ZNS.settings.invisible then
+            applyInvisible()
         end
     end))
-    table.insert(ZNS._connections, RunService.Heartbeat:Connect(主迴圈))
+    table.insert(ZNS._connections, RunService.Heartbeat:Connect(mainLoop))
     -- 註冊清理
     ZNS._CLEANUP = function()
         if ZNS._connections then
             for _, c in ipairs(ZNS._connections) do pcall(function() c:Disconnect() end) end
         end
-        清理ESP()
+        clearESP()
         pcall(function()
             local pg = LocalPlayer:FindFirstChild("PlayerGui")
             if pg then
@@ -383,8 +382,8 @@ end
 
 -- 主函數
 return function(settings)
-    初始化設置(settings)
-    創建GUI()
-    初始化事件()
+    initSettings(settings)
+    createGUI()
+    initEvents()
     print("珍奶腳本 (遠程版) 已載入! 可在任何注入器中使用。")
 end
