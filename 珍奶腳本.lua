@@ -1,389 +1,415 @@
-getgenv().ZhenNaiScript = getgenv().ZhenNaiScript or {}
-local ZNS = getgenv().ZhenNaiScript
-if ZNS.__LOADED then
-    if ZNS._CLEANUP then pcall(ZNS._CLEANUP) end
-end
-ZNS.__LOADED = true
+local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
--- Roblox服務
+--------------------------------------------------------------------------------
+-- 1. 系統初始化
+--------------------------------------------------------------------------------
+local Window = Rayfield:CreateWindow({
+    Name = "珍奶腳本 ",
+    LoadingTitle = "正在載入介面控制...",
+    LoadingSubtitle = "By 珍奶",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "ZhenNai_Ultimate",
+        FileName = "Config"
+    },
+    Discord = { Enabled = false },
+    KeySystem = false, 
+})
+
+--------------------------------------------------------------------------------
+-- 2. 服務與變數
+--------------------------------------------------------------------------------
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
-local TweenService = game:GetService("TweenService")
-local Stats = game:GetService("Stats")
-local Lighting = game:GetService("Lighting")
-local ReplicatedStorage = game:GetService("ReplicatedStorage")
-
+local Camera = game.Workspace.CurrentCamera
 local LocalPlayer = Players.LocalPlayer
-local Camera = workspace.CurrentCamera
+local UserInputService = game:GetService("UserInputService")
+local Lighting = game:GetService("Lighting")
 
--- 初始化設置
+-- 功能狀態
+local Config = {
+    Aimbot = false,
+    Aiming = false,
+    FOV = 150,
+    Smoothness = 0.5,
+    ESP = false,
+    ESPColor = Color3.fromRGB(255, 0, 0),
+    HitboxSize = 2, 
+    HitboxEnabled = false,
+    WalkSpeed = 16,
+    JumpPower = 50,
+    SpeedEnabled = false,
+    JumpEnabled = false,
+    InfJump = false,
+    Fullbright = false
+}
 
-local function initSettings(settings)
-    local default = {
-        antiFling = false,
-        fling = false,
-        antiVoid = false,
-        esp = false,
-        invisible = false,
-        targetPlayer = nil,
-        voidY = -50,
-        safeY = 100
-    }
-    ZNS.settings = ZNS.settings or {}
-    settings = settings or {}
-    for k, v in pairs(default) do
-        if settings[k] == nil then
-            ZNS.settings[k] = v
-        else
-            ZNS.settings[k] = settings[k]
-        end
-    end
+--------------------------------------------------------------------------------
+-- 3. 手機操控介面 (Overlay)
+--------------------------------------------------------------------------------
+local ScreenGui = Instance.new("ScreenGui")
+ScreenGui.Name = "ZhenNai_Overlay"
+ScreenGui.Parent = game.CoreGui 
+
+-- 自瞄按鈕
+local AimButton = Instance.new("TextButton")
+AimButton.Name = "AimButton"
+AimButton.Parent = ScreenGui
+AimButton.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+AimButton.BackgroundTransparency = 0.4
+AimButton.Position = UDim2.new(0.85, 0, 0.55, 0) 
+AimButton.Size = UDim2.new(0, 65, 0, 65) -- 預設大小
+AimButton.Font = Enum.Font.GothamBold
+AimButton.Text = "瞄準"
+AimButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+AimButton.TextSize = 18
+AimButton.Visible = false 
+
+-- 圓角與描邊
+local UICorner = Instance.new("UICorner")
+UICorner.CornerRadius = UDim.new(1, 0) 
+UICorner.Parent = AimButton
+
+local UIStroke = Instance.new("UIStroke")
+UIStroke.Parent = AimButton
+UIStroke.Color = Color3.fromRGB(255, 255, 255)
+UIStroke.Thickness = 2
+UIStroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
+
+-- 準心 (Crosshair)
+local CrosshairV = Instance.new("Frame")
+CrosshairV.Name = "CrosshairV"
+CrosshairV.Parent = ScreenGui
+CrosshairV.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+CrosshairV.BorderSizePixel = 0
+CrosshairV.Position = UDim2.new(0.5, -1, 0.5, -6)
+CrosshairV.Size = UDim2.new(0, 2, 0, 12)
+CrosshairV.Visible = false
+
+local CrosshairH = Instance.new("Frame")
+CrosshairH.Name = "CrosshairH"
+CrosshairH.Parent = ScreenGui
+CrosshairH.BackgroundColor3 = Color3.fromRGB(0, 255, 0)
+CrosshairH.BorderSizePixel = 0
+CrosshairH.Position = UDim2.new(0.5, -6, 0.5, -1)
+CrosshairH.Size = UDim2.new(0, 12, 0, 2)
+CrosshairH.Visible = false
+
+-- 按鈕互動邏輯
+AimButton.MouseButton1Down:Connect(function()
+    Config.Aiming = true
+    UIStroke.Color = Color3.fromRGB(255, 0, 0) 
+    AimButton.Text = "鎖定"
+end)
+AimButton.MouseButton1Up:Connect(function()
+    Config.Aiming = false
+    UIStroke.Color = Color3.fromRGB(255, 255, 255) 
+    AimButton.Text = "瞄準"
+end)
+AimButton.MouseLeave:Connect(function() 
+    Config.Aiming = false
+    UIStroke.Color = Color3.fromRGB(255, 255, 255)
+    AimButton.Text = "瞄準"
+end)
+
+-- 拖曳功能
+local dragging, dragInput, dragStart, startPos
+local function update(input)
+    local delta = input.Position - dragStart
+    AimButton.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
 end
+AimButton.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        dragStart = input.Position
+        startPos = AimButton.Position
+        input.Changed:Connect(function()
+            if input.UserInputState == Enum.UserInputState.End then dragging = false end
+        end)
+    end
+end)
+AimButton.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement then
+        dragInput = input
+    end
+end)
+UserInputService.InputChanged:Connect(function(input)
+    if input == dragInput and dragging then update(input) end
+end)
 
--- 創建GUI
-local function createGUI()
-    -- 清理舊GUI
-    pcall(function()
-        local pg = LocalPlayer:FindFirstChild("PlayerGui")
-        if pg then
-            for _, v in pairs(pg:GetChildren()) do
-                if v:IsA("ScreenGui") and v.Name:find("珍奶腳本_") then v:Destroy() end
+--------------------------------------------------------------------------------
+-- 4. 功能選單 (Tabs)
+--------------------------------------------------------------------------------
+local CombatTab = Window:CreateTab("戰鬥 (Combat)", 4483362458)
+local VisualsTab = Window:CreateTab("視覺 (Visuals)", 4483362458)
+local CharTab = Window:CreateTab("角色 (Player)", 4483362458)
+local SettingsTab = Window:CreateTab("設定 (Settings)", 4483362458) -- 新增設定分頁
+
+-- [戰鬥功能]
+CombatTab:CreateSection("自瞄輔助")
+CombatTab:CreateToggle({
+    Name = "啟用自瞄 (Aimbot)",
+    CurrentValue = false,
+    Flag = "Aimbot",
+    Callback = function(Value)
+        Config.Aimbot = Value
+        AimButton.Visible = Value
+    end,
+})
+CombatTab:CreateSlider({
+    Name = "自瞄範圍 (FOV)",
+    Range = {50, 500},
+    Increment = 10,
+    CurrentValue = 150,
+    Callback = function(Value) Config.FOV = Value end,
+})
+CombatTab:CreateSlider({
+    Name = "平滑度 (Smoothness)",
+    Range = {1, 10},
+    Increment = 1,
+    CurrentValue = 5,
+    Callback = function(Value) Config.Smoothness = Value / 10 end,
+})
+
+CombatTab:CreateSection("暴力功能")
+CombatTab:CreateToggle({
+    Name = "大頭模式 (Hitbox Expander)",
+    CurrentValue = false,
+    Callback = function(Value)
+        Config.HitboxEnabled = Value
+        if not Value then 
+            for _, player in pairs(Players:GetPlayers()) do
+                if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
+                    player.Character.Head.Size = Vector3.new(1.2, 1.2, 1.2)
+                    player.Character.Head.Transparency = 0
+                end
             end
         end
-    end)
-    local ScreenGui = Instance.new("ScreenGui")
-    ScreenGui.Name = "珍奶腳本_" .. math.random(1000, 9999)
-    ScreenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
-    ScreenGui.ResetOnSpawn = false
+    end,
+})
+CombatTab:CreateSlider({
+    Name = "頭部大小 (Head Size)",
+    Range = {2, 10},
+    Increment = 1,
+    CurrentValue = 2,
+    Callback = function(Value) Config.HitboxSize = Value end,
+})
 
-    -- 半透明+發光主框
-    local MainFrame = Instance.new("Frame")
-    MainFrame.Name = "MainFrame"
-    MainFrame.Parent = ScreenGui
-    MainFrame.BackgroundColor3 = Color3.fromRGB(20, 25, 40)
-    MainFrame.BackgroundTransparency = 0.15
-    MainFrame.BorderSizePixel = 0
-    MainFrame.Position = UDim2.new(0.05, 0, 0.05, 0)
-    MainFrame.Size = UDim2.new(0, 270, 0, 370)
-    MainFrame.Active = true
-    MainFrame.Draggable = true
-    local frameCorner = Instance.new("UICorner")
-    frameCorner.CornerRadius = UDim.new(0, 18)
-    frameCorner.Parent = MainFrame
-    local frameStroke = Instance.new("UIStroke")
-    frameStroke.Thickness = 2
-    frameStroke.Color = Color3.fromRGB(0, 255, 255)
-    frameStroke.Transparency = 0.2
-    frameStroke.Parent = MainFrame
+-- [視覺功能]
+VisualsTab:CreateSection("顯示")
+VisualsTab:CreateToggle({
+    Name = "透視 (ESP)",
+    CurrentValue = false,
+    Callback = function(Value) Config.ESP = Value end,
+})
+VisualsTab:CreateColorPicker({
+    Name = "透視顏色",
+    Color = Color3.fromRGB(255, 0, 0),
+    Callback = function(Value) Config.ESPColor = Value end,
+})
+VisualsTab:CreateToggle({
+    Name = "顯示準心 (Crosshair)",
+    CurrentValue = false,
+    Callback = function(Value)
+        CrosshairV.Visible = Value
+        CrosshairH.Visible = Value
+    end,
+})
+VisualsTab:CreateToggle({
+    Name = "夜視模式 (Fullbright)",
+    CurrentValue = false,
+    Callback = function(Value)
+        Config.Fullbright = Value
+        if Value then
+            Lighting.Ambient = Color3.fromRGB(255, 255, 255)
+            Lighting.Brightness = 2
+            Lighting.ClockTime = 14
+        else
+            Lighting.Ambient = Color3.fromRGB(127, 127, 127)
+            Lighting.Brightness = 1
+        end
+    end,
+})
 
-    -- 標題加底光
-    local TitleLabel = Instance.new("TextLabel")
-    TitleLabel.Parent = MainFrame
-    TitleLabel.BackgroundTransparency = 1
-    TitleLabel.Position = UDim2.new(0, 0, 0, 0)
-    TitleLabel.Size = UDim2.new(1, 0, 0, 38)
-    TitleLabel.Font = Enum.Font.GothamBlack
-    TitleLabel.Text = "珍奶腳本 (遠程版)"
-    TitleLabel.TextColor3 = Color3.fromRGB(0, 255, 255)
-    TitleLabel.TextStrokeTransparency = 0.5
-    TitleLabel.TextStrokeColor3 = Color3.fromRGB(0, 255, 255)
-    TitleLabel.TextSize = 22
-    local titleGlow = Instance.new("UIStroke")
-    titleGlow.Thickness = 1.5
-    titleGlow.Color = Color3.fromRGB(0, 255, 255)
-    titleGlow.Transparency = 0.3
-    titleGlow.Parent = TitleLabel
+-- [角色功能]
+CharTab:CreateSection("移動修改")
+CharTab:CreateToggle({
+    Name = "啟用速度修改",
+    CurrentValue = false,
+    Callback = function(Value) Config.SpeedEnabled = Value end,
+})
+CharTab:CreateSlider({
+    Name = "移動速度 (Speed)",
+    Range = {16, 100},
+    Increment = 1,
+    CurrentValue = 16,
+    Callback = function(Value) Config.WalkSpeed = Value end,
+})
+CharTab:CreateToggle({
+    Name = "啟用跳躍修改",
+    CurrentValue = false,
+    Callback = function(Value) Config.JumpEnabled = Value end,
+})
+CharTab:CreateSlider({
+    Name = "跳躍高度 (Jump Power)",
+    Range = {50, 200},
+    Increment = 1,
+    CurrentValue = 50,
+    Callback = function(Value) Config.JumpPower = Value end,
+})
+CharTab:CreateToggle({
+    Name = "無限跳 (Infinite Jump)",
+    CurrentValue = false,
+    Callback = function(Value) Config.InfJump = Value end,
+})
 
-    -- 科技感按鈕生成器
-    local function CreateButton(name, position, callback)
-        local Button = Instance.new("TextButton")
-        Button.Name = name
-        Button.Parent = MainFrame
-        Button.BackgroundColor3 = Color3.fromRGB(30, 60, 90)
-        Button.BackgroundTransparency = 0.08
-        Button.BorderSizePixel = 0
-        Button.Position = position
-        Button.Size = UDim2.new(1, -20, 0, 36)
-        Button.Font = Enum.Font.GothamSemibold
-        Button.Text = name
-        Button.TextColor3 = Color3.fromRGB(0, 255, 255)
-        Button.TextStrokeTransparency = 0.7
-        Button.TextSize = 16
-        local UICorner = Instance.new("UICorner")
-        UICorner.CornerRadius = UDim.new(0, 10)
-        UICorner.Parent = Button
-        local UIStroke = Instance.new("UIStroke")
-        UIStroke.Thickness = 1.5
-        UIStroke.Color = Color3.fromRGB(0, 255, 255)
-        UIStroke.Transparency = 0.3
-        UIStroke.Parent = Button
-        -- hover效果
-        Button.MouseEnter:Connect(function()
-            Button.BackgroundColor3 = Color3.fromRGB(0, 80, 120)
-            Button.TextColor3 = Color3.fromRGB(255, 255, 255)
-            UIStroke.Transparency = 0
-        end)
-        Button.MouseLeave:Connect(function()
-            Button.BackgroundColor3 = Color3.fromRGB(30, 60, 90)
-            Button.TextColor3 = Color3.fromRGB(0, 255, 255)
-            UIStroke.Transparency = 0.3
-        end)
-        Button.MouseButton1Click:Connect(callback)
-        return Button
+-- [設定功能 - 縮小/隱藏介面]
+SettingsTab:CreateSection("介面管理")
+
+SettingsTab:CreateButton({
+    Name = "縮小選單 (Hide Menu)",
+    Callback = function()
+        -- 嘗試隱藏 Rayfield 主介面
+        -- 注意：Rayfield 有自己的 Toggle 邏輯，這裡我們模擬關閉
+        local library = game.CoreGui:FindFirstChild("Rayfield")
+        if library and library:FindFirstChild("Main") then
+             library.Main.Visible = false
+        end
+        Rayfield:Notify({
+            Title = "提示",
+            Content = "選單已隱藏。點擊螢幕側邊的小綠鈕可再次開啟。",
+            Duration = 3,
+            Image = 4483362458,
+        })
+    end,
+})
+
+SettingsTab:CreateSection("按鈕自訂 (Overlay)")
+
+SettingsTab:CreateSlider({
+    Name = "按鈕大小 (Button Size)",
+    Range = {40, 150},
+    Increment = 5,
+    CurrentValue = 65,
+    Callback = function(Value)
+        AimButton.Size = UDim2.new(0, Value, 0, Value)
+    end,
+})
+
+SettingsTab:CreateSlider({
+    Name = "按鈕透明度 (Transparency)",
+    Range = {0, 100},
+    Increment = 10,
+    CurrentValue = 40,
+    Callback = function(Value)
+        AimButton.BackgroundTransparency = Value / 100
+    end,
+})
+
+SettingsTab:CreateButton({
+    Name = "卸載腳本 (Destroy UI)",
+    Callback = function()
+        ScreenGui:Destroy()
+        Rayfield:Destroy()
+    end,
+})
+
+--------------------------------------------------------------------------------
+-- 5. 核心循環邏輯
+--------------------------------------------------------------------------------
+
+-- 無限跳邏輯
+UserInputService.JumpRequest:Connect(function()
+    if Config.InfJump and LocalPlayer.Character then
+        LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
     end
+end)
 
-    local antiFlingButton = CreateButton("防甩飛: 關閉", UDim2.new(0, 5, 0, 40), function()
-        ZNS.settings.antiFling = not ZNS.settings.antiFling
-        antiFlingButton.Text = "防甩飛: " .. (ZNS.settings.antiFling and "開啟" or "關閉")
-    end)
-
-    local targetLabel = Instance.new("TextLabel")
-    targetLabel.Parent = MainFrame
-    targetLabel.BackgroundTransparency = 1
-    targetLabel.Position = UDim2.new(0, 5, 0, 75)
-    targetLabel.Size = UDim2.new(1, -10, 0, 20)
-    targetLabel.Font = Enum.Font.Gotham
-    targetLabel.Text = "目標: 無"
-    targetLabel.TextColor3 = Color3.fromRGB(200, 200, 200)
-    targetLabel.TextSize = 12
-
-    local targetDropdown = Instance.new("ScrollingFrame")
-    targetDropdown.Parent = MainFrame
-    targetDropdown.BackgroundColor3 = Color3.fromRGB(40, 40, 40)
-    targetDropdown.BorderSizePixel = 0
-    targetDropdown.Position = UDim2.new(0, 5, 0, 100)
-    targetDropdown.Size = UDim2.new(1, -10, 0, 100)
-    targetDropdown.CanvasSize = UDim2.new(0, 0, 0, 0)
-    targetDropdown.ScrollBarThickness = 6
-    targetDropdown.Visible = false
-
-    local function updateTargetList()
-        targetDropdown:ClearAllChildren()
-        local layout = Instance.new("UIListLayout")
-        layout.Parent = targetDropdown
-        layout.SortOrder = Enum.SortOrder.LayoutOrder
-        local playerList = {}
+-- 渲染循環
+RunService.RenderStepped:Connect(function()
+    -- ESP
+    if not Config.ESP then
+        for _, v in pairs(game.Workspace:GetDescendants()) do
+            if v.Name == "ZN_Highlight" then v:Destroy() end
+        end
+    else
         for _, player in pairs(Players:GetPlayers()) do
-            if player ~= LocalPlayer then table.insert(playerList, player) end
+            if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("HumanoidRootPart") then
+                local char = player.Character
+                if player.TeamColor ~= LocalPlayer.TeamColor or player.Team == nil then
+                    if not char:FindFirstChild("ZN_Highlight") then
+                        local hl = Instance.new("Highlight")
+                        hl.Name = "ZN_Highlight"
+                        hl.Parent = char
+                        hl.FillColor = Config.ESPColor
+                        hl.OutlineColor = Color3.fromRGB(255, 255, 255)
+                        hl.FillTransparency = 0.5
+                    else
+                        char.ZN_Highlight.FillColor = Config.ESPColor
+                    end
+                else
+                    if char:FindFirstChild("ZN_Highlight") then char.ZN_Highlight:Destroy() end
+                end
+            end
         end
-        for _, player in pairs(playerList) do
-            local btn = Instance.new("TextButton")
-            btn.Size = UDim2.new(1, 0, 0, 30)
-            btn.BackgroundColor3 = Color3.fromRGB(60, 60, 60)
-            btn.Text = player.Name
-            btn.TextColor3 = Color3.fromRGB(255, 255, 255)
-            btn.Font = Enum.Font.Gotham
-            btn.Parent = targetDropdown
-            btn.MouseButton1Click:Connect(function()
-                ZNS.settings.targetPlayer = player
-                targetLabel.Text = "目標: " .. player.Name
-                targetDropdown.Visible = false
-            end)
-        end
-        targetDropdown.CanvasSize = UDim2.new(0, 0, 0, #playerList * 30)
     end
 
-    local selectTargetButton = CreateButton("選擇目標", UDim2.new(0, 5, 0, 130), function()
-        updateTargetList()
-        targetDropdown.Visible = not targetDropdown.Visible
-    end)
+    -- Aimbot
+    if Config.Aimbot and Config.Aiming then
+        local target = nil
+        local shortestDist = Config.FOV
+        local centerScreen = Vector2.new(Camera.ViewportSize.X / 2, Camera.ViewportSize.Y / 2)
 
-    local flingButton = CreateButton("甩飛: 關閉", UDim2.new(0, 5, 0, 170), function()
-        if not ZNS.settings.targetPlayer then warn("請先選擇目標!") return end
-        ZNS.settings.fling = not ZNS.settings.fling
-        flingButton.Text = "甩飛: " .. (ZNS.settings.fling and "開啟" or "關閉")
-    end)
-
-    local antiVoidButton = CreateButton("防虛空: 關閉", UDim2.new(0, 5, 0, 210), function()
-        ZNS.settings.antiVoid = not ZNS.settings.antiVoid
-        antiVoidButton.Text = "防虛空: " .. (ZNS.settings.antiVoid and "開啟" or "關閉")
-    end)
-
-    local espButton = CreateButton("ESP: 關閉", UDim2.new(0, 5, 0, 250), function()
-        ZNS.settings.esp = not ZNS.settings.esp
-        espButton.Text = "ESP: " .. (ZNS.settings.esp and "開啟" or "關閉")
-    end)
-
-    local invisibleButton = CreateButton("隱形: 關閉", UDim2.new(0, 5, 0, 290), function()
-        ZNS.settings.invisible = not ZNS.settings.invisible
-        invisibleButton.Text = "隱形: " .. (ZNS.settings.invisible and "開啟" or "關閉")
-        if ZNS.settings.invisible then applyInvisible() end
-    end)
-end
-
--- 單一Heartbeat迴圈 (優化核心)
-local espConnections = {}
-local function mainLoop()
-    pcall(function()
-        local character = LocalPlayer.Character
-        if not character then return end
-        local s = ZNS.settings
-        -- Anti Fling
-        if s.antiFling then
-            for _, obj in pairs(character:GetDescendants()) do
-                if obj:IsA("BodyVelocity") or obj:IsA("BodyPosition") or obj:IsA("BodyAngularVelocity") then
-                    if obj.Name:find("Flung") or (obj.MaxForce and obj.MaxForce.Magnitude > 0) then
-                        obj:Destroy()
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
+                if player.TeamColor ~= LocalPlayer.TeamColor or player.Team == nil then
+                    local char = player.Character
+                    local pos, onScreen = Camera:WorldToViewportPoint(char.Head.Position)
+                    if onScreen then
+                        local dist = (Vector2.new(pos.X, pos.Y) - centerScreen).Magnitude
+                        if dist < shortestDist then
+                            target = char
+                            shortestDist = dist
+                        end
                     end
                 end
             end
         end
-        -- Fling
-        if s.fling and s.targetPlayer and s.targetPlayer.Character then
-            local targetChar = s.targetPlayer.Character
-            local humanoidRootPart = targetChar:FindFirstChild("HumanoidRootPart")
-            if humanoidRootPart then
-                local bv = Instance.new("BodyVelocity")
-                bv.MaxForce = Vector3.new(1e9, 1e9, 1e9)
-                bv.Velocity = Vector3.new(0, -1000, 0)
-                bv.Parent = humanoidRootPart
-                game:GetService("Debris"):AddItem(bv, 0.05)
-            end
-        end
-        -- Anti Void
-        if s.antiVoid and character:FindFirstChild("HumanoidRootPart") then
-            local rootPart = character.HumanoidRootPart
-            if rootPart.Position.Y < s.voidY then
-                rootPart.CFrame = CFrame.new(rootPart.Position.X, s.safeY, rootPart.Position.Z)
-            end
-        end
-        -- Invisible
-        if s.invisible then
-            applyInvisible()
-        else
-            cancelInvisible()
-        end
-        -- ESP
-        if s.esp then
-            for _, player in pairs(Players:GetPlayers()) do
-                if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-                    updateESP(player)
-                end
-            end
-        else
-            clearESP()
-        end
-    end)
-end
 
--- 隱形應用函數
-local function applyInvisible()
-    if LocalPlayer.Character then
-        for _, part in pairs(LocalPlayer.Character:GetChildren()) do
-            if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-                pcall(function() part.LocalTransparencyModifier = 1 end)
-            elseif part:IsA("Accessory") then
-                local handle = part:FindFirstChild("Handle")
-                if handle then pcall(function() handle.LocalTransparencyModifier = 1 end) end
+        if target then
+            local headPos = target.Head.Position
+            local currentCF = Camera.CFrame
+            local targetCF = CFrame.new(currentCF.Position, headPos)
+            Camera.CFrame = currentCF:Lerp(targetCF, 1 - Config.Smoothness)
+        end
+    end
+
+    -- Hitbox
+    if Config.HitboxEnabled then
+        for _, player in pairs(Players:GetPlayers()) do
+            if player ~= LocalPlayer and player.TeamColor ~= LocalPlayer.TeamColor and player.Character and player.Character:FindFirstChild("Head") then
+                player.Character.Head.Size = Vector3.new(Config.HitboxSize, Config.HitboxSize, Config.HitboxSize)
+                player.Character.Head.Transparency = 0.5 
+                player.Character.Head.CanCollide = false
             end
         end
     end
-end
-
-local function cancelInvisible()
-    if LocalPlayer.Character then
-        for _, part in pairs(LocalPlayer.Character:GetChildren()) do
-            if part:IsA("BasePart") and part.Name ~= "HumanoidRootPart" then
-                pcall(function() part.LocalTransparencyModifier = 0 end)
-            elseif part:IsA("Accessory") then
-                local handle = part:FindFirstChild("Handle")
-                if handle then pcall(function() handle.LocalTransparencyModifier = 0 end) end
-            end
+    
+    -- Speed/Jump Keep
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        if Config.SpeedEnabled then
+            LocalPlayer.Character.Humanoid.WalkSpeed = Config.WalkSpeed
+        end
+        if Config.JumpEnabled then
+            LocalPlayer.Character.Humanoid.UseJumpPower = true
+            LocalPlayer.Character.Humanoid.JumpPower = Config.JumpPower
         end
     end
-end
+end)
 
--- ESP 更新函數
-local function updateESP(player)
-    local head = player.Character and player.Character:FindFirstChild("Head")
-    if not head then return end
-    local billboard = head:FindFirstChild("ESPBillboard")
-    if not billboard then
-        billboard = Instance.new("BillboardGui")
-        billboard.Name = "ESPBillboard"
-        billboard.Size = UDim2.new(0, 100, 0, 50)
-        billboard.StudsOffset = Vector3.new(0, 2, 0)
-        billboard.Parent = head
-        local nameLabel = Instance.new("TextLabel")
-        nameLabel.Size = UDim2.new(1, 0, 0.5, 0)
-        nameLabel.BackgroundTransparency = 1
-        nameLabel.Text = player.Name
-        nameLabel.TextColor3 = Color3.new(1, 1, 1)
-        nameLabel.TextStrokeTransparency = 0
-        nameLabel.Font = Enum.Font.GothamBold
-        nameLabel.Parent = billboard
-        local infoLabel = Instance.new("TextLabel")
-        infoLabel.Size = UDim2.new(1, 0, 0.5, 0)
-        infoLabel.Position = UDim2.new(0, 0, 0.5, 0)
-        infoLabel.BackgroundTransparency = 1
-        infoLabel.TextColor3 = Color3.new(1, 1, 1)
-        infoLabel.TextStrokeTransparency = 0
-        infoLabel.Font = Enum.Font.Gotham
-        infoLabel.Parent = billboard
-    end
-    local ping = "未知"
-    local device = "未知"
-    pcall(function()
-        ping = tostring(Stats.Network.ServerStatsItem["Data Ping"]:GetValue())
-        device = "PC"
-    end)
-    local label = billboard:FindFirstChildOfClass("TextLabel")
-    if label then
-        label.Text = "Ping: " .. ping .. " | 裝置: " .. device
-    end
-end
-
-local function clearESP()
-    for _, player in pairs(Players:GetPlayers()) do
-        if player.Character and player.Character:FindFirstChild("Head") then
-            local esp = player.Character.Head:FindFirstChild("ESPBillboard")
-            if esp then pcall(function() esp:Destroy() end) end
-        end
-    end
-end
-
--- 玩家加入/角色重生處理
-local function initEvents()
-    if ZNS._connections then
-        for _, c in ipairs(ZNS._connections) do pcall(function() c:Disconnect() end) end
-    end
-    ZNS._connections = {}
-    table.insert(ZNS._connections, Players.PlayerAdded:Connect(function(player)
-        if ZNS.settings.esp then
-            task.wait(1)
-            updateESP(player)
-        end
-    end))
-    table.insert(ZNS._connections, LocalPlayer.CharacterAdded:Connect(function()
-        task.wait(1)
-        if ZNS.settings.invisible then
-            applyInvisible()
-        end
-    end))
-    table.insert(ZNS._connections, RunService.Heartbeat:Connect(mainLoop))
-    -- 註冊清理
-    ZNS._CLEANUP = function()
-        if ZNS._connections then
-            for _, c in ipairs(ZNS._connections) do pcall(function() c:Disconnect() end) end
-        end
-        clearESP()
-        pcall(function()
-            local pg = LocalPlayer:FindFirstChild("PlayerGui")
-            if pg then
-                for _, v in pairs(pg:GetChildren()) do
-                    if v:IsA("ScreenGui") and v.Name:find("珍奶腳本_") then v:Destroy() end
-                end
-            end
-        end)
-    end
-end
-
--- 主函數
-return function(settings)
-    initSettings(settings)
-    createGUI()
-    initEvents()
-    print("珍奶腳本 (遠程版) 已載入! 可在任何注入器中使用。")
-end
-end
+Rayfield:Notify({
+    Title = "珍奶腳本 ",
+    Content = "腳本載入完成！請至「設定」調整介面。",
+    Duration = 5,
+    Image = 4483362458,
+})
