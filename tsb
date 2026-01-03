@@ -1,29 +1,27 @@
 --[[
-    珍奶腳本 (ZhenNai Hub) - 旗艦完全體
-    版本：SYSTEM: MONARCH v5.0
+    珍奶腳本 (ZhenNai Hub) - 旗艦完全體 v5.2 (Fling Enhanced)
     風格：獨自升級 (Solo Leveling)
-    適配：手機觸控與電腦
+    功能：自動傳送貼身 + 暴力甩飛
 ]]
 
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 --------------------------------------------------------------------------------
--- 1. 系統視窗與主題設計
+-- 1. 系統視窗與服務
 --------------------------------------------------------------------------------
 local Window = Rayfield:CreateWindow({
     Name = "珍奶腳本 | SYSTEM: MONARCH",
-    LoadingTitle = "正在啟動玩家權限：成振宇...",
-    LoadingSubtitle = "等級：真神 - 製作者：珍奶",
+    LoadingTitle = "正在啟動獵殺模式...",
+    LoadingSubtitle = "目標鎖定 - 傳送甩飛",
     ConfigurationSaving = {
         Enabled = true,
-        FolderName = "ZhenNai_Eternal_X",
+        FolderName = "ZhenNai_Monarch",
         FileName = "Config"
     },
     Discord = { Enabled = false },
     KeySystem = false, 
 })
 
--- 引用服務
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
@@ -32,40 +30,43 @@ local UserInputService = game:GetService("UserInputService")
 local TweenService = game:GetService("TweenService")
 local Lighting = game:GetService("Lighting")
 
--- 腳本配置
+-- 腳本變數配置
 local Config = {
-    -- 戰鬥系統
-    Aimbot = false, Aiming = false, FOV = 180, Smooth = 0.5,
-    Hitbox = false, HitboxSize = 7, Reach = 15, ReachEnabled = false,
-    AutoBlock = false, AntiGrip = true,
-    -- 物理獵殺 (甩飛)
-    FlingEnabled = false, FlingPower = 3500, FlingTarget = nil,
-    -- 獨自升級特效
-    ShadowTrail = false, ESP = false, Fullbright = false,
-    -- 角色強化
-    Speed = 40, SpeedEnabled = false, InfJump = false, GodMode = false,
-    FlyEnabled = false, Flying = false
+    -- 戰鬥
+    Aimbot = false, Aiming = false, FOV = 180,
+    Hitbox = false, HitboxSize = 7,
+    -- 獵殺 (甩飛) 核心
+    FlingEnabled = false, 
+    FlingPower = 10000, -- 增強預設力度
+    FlingTarget = nil,  -- 當前鎖定的目標 RootPart
+    -- 視覺
+    ESP = false, ShadowTrail = false, Fullbright = false,
+    -- 角色
+    Speed = 40, SpeedEnabled = false, InfJump = false, GodMode = false
 }
 
 --------------------------------------------------------------------------------
--- 2. 手機版專用：影之控制台 (Mobile UI)
+-- 2. 手機版 UI (影之控制台)
 --------------------------------------------------------------------------------
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "ZhenNai_System_Overlay"
+ScreenGui.Name = "ZhenNai_Mobile_Controls"
+if game.CoreGui:FindFirstChild("ZhenNai_Mobile_Controls") then
+    game.CoreGui.ZhenNai_Mobile_Controls:Destroy()
+end
 ScreenGui.Parent = game.CoreGui
 
 local function CreateShadowButton(name, pos, text, color)
     local btn = Instance.new("TextButton")
     btn.Name = name
     btn.Parent = ScreenGui
-    btn.Size = UDim2.new(0, 75, 0, 75)
+    btn.Size = UDim2.new(0, 80, 0, 80)
     btn.Position = pos
-    btn.BackgroundColor3 = Color3.fromRGB(5, 5, 20)
-    btn.BackgroundTransparency = 0.3
+    btn.BackgroundColor3 = Color3.fromRGB(10, 10, 30)
+    btn.BackgroundTransparency = 0.2
     btn.Text = text
     btn.TextColor3 = color
-    btn.Font = Enum.Font.GothamBold
-    btn.TextSize = 16
+    btn.Font = Enum.Font.GothamBlack
+    btn.TextSize = 18
     btn.Visible = false
     
     local corner = Instance.new("UICorner", btn)
@@ -73,163 +74,205 @@ local function CreateShadowButton(name, pos, text, color)
     
     local stroke = Instance.new("UIStroke", btn)
     stroke.Color = color
-    stroke.Thickness = 2
+    stroke.Thickness = 2.5
+    stroke.ApplyStrokeMode = Enum.ApplyStrokeMode.Border
     
     return btn, stroke
 end
 
--- 建立自瞄與甩飛按鈕
-local AimBtn, AimStroke = CreateShadowButton("AimBtn", UDim2.new(0.82, 0, 0.45, 0), "鎖定", Color3.fromRGB(0, 180, 255))
-local HuntBtn, HuntStroke = CreateShadowButton("HuntBtn", UDim2.new(0.82, 0, 0.6, 0), "獵殺", Color3.fromRGB(150, 0, 255))
+local AimBtn, AimStroke = CreateShadowButton("AimBtn", UDim2.new(0.80, 0, 0.40, 0), "鎖定", Color3.fromRGB(0, 200, 255))
+local HuntBtn, HuntStroke = CreateShadowButton("HuntBtn", UDim2.new(0.80, 0, 0.55, 0), "獵殺", Color3.fromRGB(180, 0, 255))
 
--- 按鈕互動
-AimBtn.MouseButton1Down:Connect(function() Config.Aiming = true AimBtn.Text = "獵殺中" AimStroke.Color = Color3.fromRGB(255, 0, 0) end)
-AimBtn.MouseButton1Up:Connect(function() Config.Aiming = false AimBtn.Text = "鎖定" AimStroke.Color = Color3.fromRGB(0, 180, 255) end)
+-- [自瞄按鈕邏輯]
+AimBtn.MouseButton1Down:Connect(function() 
+    Config.Aiming = true 
+    AimBtn.Text = "瞄準中" 
+    AimStroke.Color = Color3.fromRGB(255, 50, 50) 
+end)
+AimBtn.MouseButton1Up:Connect(function() 
+    Config.Aiming = false 
+    AimBtn.Text = "鎖定" 
+    AimStroke.Color = Color3.fromRGB(0, 200, 255) 
+end)
 
-HuntBtn.MouseButton1Down:Connect(function() 
-    Config.FlingEnabled = true 
-    HuntBtn.Text = "摧毀" 
-    HuntStroke.Color = Color3.fromRGB(255, 255, 255)
-    -- 自動鎖定最近敵人
-    local minDist = 500
-    Config.FlingTarget = nil
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-            local d = (p.Character.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-            if d < minDist then
-                minDist = d
-                Config.FlingTarget = p.Character.HumanoidRootPart
+-- [獵殺(甩飛)按鈕邏輯] - 按下即鎖定最近人傳送+甩飛
+HuntBtn.MouseButton1Click:Connect(function() 
+    Config.FlingEnabled = not Config.FlingEnabled -- 切換開關
+    
+    if Config.FlingEnabled then
+        -- 開啟時：尋找最近目標
+        local minDist = 99999
+        Config.FlingTarget = nil
+        
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") and p.Character:FindFirstChild("Humanoid") and p.Character.Humanoid.Health > 0 then
+                local d = (p.Character.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
+                if d < minDist then
+                    minDist = d
+                    Config.FlingTarget = p.Character.HumanoidRootPart
+                end
             end
+        end
+        
+        if Config.FlingTarget then
+            HuntBtn.Text = "處決中"
+            HuntStroke.Color = Color3.fromRGB(255, 0, 0)
+            Rayfield:Notify({Title = "獵殺開始", Content = "已鎖定目標，開始傳送甩飛！", Duration = 2})
+        else
+            Config.FlingEnabled = false
+            Rayfield:Notify({Title = "錯誤", Content = "附近沒有可獵殺的目標", Duration = 2})
+        end
+    else
+        -- 關閉時
+        Config.FlingTarget = nil
+        HuntBtn.Text = "獵殺"
+        HuntStroke.Color = Color3.fromRGB(180, 0, 255)
+        
+        -- 重置角色狀態防止卡住
+        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            LocalPlayer.Character.HumanoidRootPart.Velocity = Vector3.new(0,0,0)
+            LocalPlayer.Character.HumanoidRootPart.RotVelocity = Vector3.new(0,0,0)
         end
     end
 end)
-HuntBtn.MouseButton1Up:Connect(function() Config.FlingEnabled = false Config.FlingTarget = nil HuntBtn.Text = "獵殺" HuntStroke.Color = Color3.fromRGB(150, 0, 255) end)
 
 --------------------------------------------------------------------------------
--- 3. 選單分頁設計
+-- 3. 選單功能 (PC/Mobile通用)
 --------------------------------------------------------------------------------
 local CombatTab = Window:CreateTab("🗡️ 君王權能", 4483362458)
 local VisualTab = Window:CreateTab("👁️ 影子視覺", 4483362458)
 local PlayerTab = Window:CreateTab("🏃 玩家屬性", 4483362458)
 
--- [君王權能]
-CombatTab:CreateSection("獵殺模式 (Lock-on Fling)")
+CombatTab:CreateSection("獵殺模式 (Teleport Fling)")
 CombatTab:CreateToggle({
-    Name = "開啟獵殺按鈕 (甩飛)",
+    Name = "顯示獵殺按鈕 (手機UI)",
     CurrentValue = false,
     Callback = function(v) HuntBtn.Visible = v end,
 })
-CombatTab:CreateSlider({
-    Name = "甩飛旋轉強度",
-    Range = {1000, 8000}, Increment = 500, CurrentValue = 3500,
-    Callback = function(v) Config.FlingPower = v end,
+CombatTab:CreateLabel("電腦版直接在下方開關：")
+CombatTab:CreateToggle({
+    Name = "啟用甩飛 (自動鎖定最近)",
+    CurrentValue = false,
+    Callback = function(v) 
+        -- 觸發按鈕的邏輯
+        if v ~= Config.FlingEnabled then
+            for _, conn in pairs(getconnections(HuntBtn.MouseButton1Click)) do
+                conn:Fire()
+            end
+        end
+    end,
 })
 
 CombatTab:CreateSection("戰鬥輔助")
 CombatTab:CreateToggle({
-    Name = "開啟鎖定按鈕 (自瞄)",
+    Name = "顯示自瞄按鈕 (手機UI)",
     CurrentValue = false,
-    Callback = function(v) Config.Aimbot = v AimBtn.Visible = v end,
+    Callback = function(v) AimBtn.Visible = v end,
 })
 CombatTab:CreateToggle({
-    Name = "影之提取 (大頭判定)",
+    Name = "影之提取 (大頭判定 Hitbox)",
     CurrentValue = false,
     Callback = function(v) Config.Hitbox = v end,
 })
 
--- [影子視覺]
-VisualTab:CreateSection("系統標記")
+VisualTab:CreateSection("視覺")
 VisualTab:CreateToggle({
-    Name = "標記影子 (ESP)",
+    Name = "ESP (透視)",
     CurrentValue = false,
     Callback = function(v) Config.ESP = v end,
 })
 VisualTab:CreateToggle({
-    Name = "君王殘影 (Shadow Trail)",
+    Name = "君王殘影 (Trail)",
     CurrentValue = false,
     Callback = function(v) Config.ShadowTrail = v end,
 })
-VisualTab:CreateToggle({
-    Name = "全亮模式 (Fullbright)",
-    CurrentValue = false,
-    Callback = function(v)
-        Config.Fullbright = v
-        if v then Lighting.Brightness = 2 Lighting.Ambient = Color3.fromRGB(255,255,255) else Lighting.Brightness = 1 Lighting.Ambient = Color3.fromRGB(127,127,127) end
-    end,
-})
 
--- [玩家屬性]
-PlayerTab:CreateSection("素質修改")
-PlayerTab:CreateToggle({
-    Name = "上帝模式 (God Mode)",
-    CurrentValue = false,
-    Callback = function(v) Config.GodMode = v end,
-})
+PlayerTab:CreateSection("移動")
 PlayerTab:CreateSlider({
     Name = "移動速度",
-    Range = {16, 200}, Increment = 5, CurrentValue = 40,
+    Range = {16, 300}, Increment = 5, CurrentValue = 40,
     Callback = function(v) Config.Speed = v end,
 })
 PlayerTab:CreateToggle({
-    Name = "啟用速度",
+    Name = "啟用速度修改",
     CurrentValue = false,
     Callback = function(v) Config.SpeedEnabled = v end,
 })
 PlayerTab:CreateToggle({
-    Name = "無限連跳",
+    Name = "偽無敵 (God Mode)",
     CurrentValue = false,
-    Callback = function(v) Config.InfJump = v end,
+    Callback = function(v) Config.GodMode = v end,
 })
 
 --------------------------------------------------------------------------------
--- 4. 核心邏輯處理 (物理與視覺)
+-- 4. 核心循環邏輯 (Core Loop)
 --------------------------------------------------------------------------------
 
--- 殘影生成器
-task.spawn(function()
-    while task.wait(0.1) do
-        if Config.ShadowTrail and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            for _, v in pairs(LocalPlayer.Character:GetChildren()) do
-                if v:IsA("BasePart") and v.Name ~= "HumanoidRootPart" then
-                    local clone = Instance.new("Part", workspace)
-                    clone.Size, clone.CFrame, clone.Anchored, clone.CanCollide = v.Size, v.CFrame, true, false
-                    clone.Material, clone.Color, clone.Transparency = Enum.Material.Neon, Color3.fromRGB(40, 0, 110), 0.5
-                    TweenService:Create(clone, TweenInfo.new(0.5), {Transparency = 1}):Play()
-                    game.Debris:AddItem(clone, 0.5)
+RunService.Heartbeat:Connect(function()
+    if not LocalPlayer.Character or not LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then return end
+    
+    local Root = LocalPlayer.Character.HumanoidRootPart
+    local Humanoid = LocalPlayer.Character:FindFirstChild("Humanoid")
+
+    -- [速度控制]
+    if Config.SpeedEnabled and Humanoid then 
+        Humanoid.WalkSpeed = Config.Speed 
+    end
+    
+    -- [無敵控制]
+    if Config.GodMode and Humanoid then
+        Humanoid.Health = Humanoid.MaxHealth
+    end
+
+    -- [暴力甩飛邏輯 - 重點優化]
+    if Config.FlingEnabled then
+        -- 檢查目標是否存活
+        if Config.FlingTarget and Config.FlingTarget.Parent and Config.FlingTarget.Parent:FindFirstChild("Humanoid") and Config.FlingTarget.Parent.Humanoid.Health > 0 then
+            
+            -- 1. 解除自身碰撞 (Noclip) 以便穿過牆壁和進入目標體內
+            for _, part in pairs(LocalPlayer.Character:GetChildren()) do
+                if part:IsA("BasePart") then 
+                    part.CanCollide = false 
+                    part.Velocity = Vector3.new(0, 0, 0) -- 重置線性速度防止亂飛
                 end
             end
+            
+            -- 2. 傳送邏輯 (Teleport)
+            -- 將自己持續傳送到目標的位置 (稍微加一點偏移確保重疊)
+            local targetPos = Config.FlingTarget.Position
+            local targetVel = Config.FlingTarget.Velocity
+            
+            -- CFrame 鎖定：緊貼目標
+            Root.CFrame = CFrame.new(targetPos) * CFrame.new(0, 0, 0) 
+            
+            -- 3. 旋轉物理 (Fling Physics)
+            -- 設定極高的旋轉速度，這是造成對方被物理引擎彈飛的主因
+            Root.RotVelocity = Vector3.new(9000, 9000, 9000)
+            
+            -- 保持 Y 軸速度為 0 或向上，避免掉落虛空
+            Root.Velocity = Vector3.new(0, 0, 0) 
+            
+        else
+            -- 如果目標死亡或消失，自動關閉
+            Config.FlingEnabled = false
+            Config.FlingTarget = nil
+            HuntBtn.Text = "獵殺"
+            HuntStroke.Color = Color3.fromRGB(180, 0, 255)
+            Rayfield:Notify({Title = "結束", Content = "目標已清除或丟失", Duration = 2})
+            
+            -- 煞車
+            Root.Velocity = Vector3.new(0,0,0)
+            Root.RotVelocity = Vector3.new(0,0,0)
         end
     end
 end)
 
--- 物理主循環 (甩飛與自瞄)
-RunService.Heartbeat:Connect(function()
-    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-        local Root = LocalPlayer.Character.HumanoidRootPart
-        
-        -- 速度與生命
-        if Config.SpeedEnabled then LocalPlayer.Character.Humanoid.WalkSpeed = Config.Speed end
-        if Config.GodMode then LocalPlayer.Character.Humanoid.Health = 100 end
-
-        -- 追蹤甩飛邏輯
-        if Config.FlingEnabled then
-            for _, part in pairs(LocalPlayer.Character:GetChildren()) do
-                if part:IsA("BasePart") then part.CanCollide = false end
-            end
-            if Config.FlingTarget and Config.FlingTarget.Parent then
-                Root.CFrame = Config.FlingTarget.CFrame * CFrame.new(0, 0, 1)
-            end
-            Root.Velocity = Vector3.new(0, Config.FlingPower, 0)
-            Root.RotVelocity = Vector3.new(Config.FlingPower, Config.FlingPower, Config.FlingPower)
-        end
-    end
-end)
-
+-- [視覺特效與自瞄 RenderStepped]
 RunService.RenderStepped:Connect(function()
-    -- 自瞄鎖定
-    if Config.Aimbot and Config.Aiming then
+    -- 自瞄
+    if Config.Aiming and Config.Aimbot == false then -- 簡單處理，當按住按鈕時強制開啟邏輯
         local target = nil
-        local dist = Config.FOV
+        local dist = 300
         for _, p in pairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
                 local pos, vis = Camera:WorldToViewportPoint(p.Character.Head.Position)
@@ -240,31 +283,43 @@ RunService.RenderStepped:Connect(function()
             end
         end
         if target then
-            Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Position)
+            TweenService:Create(Camera, TweenInfo.new(0.05, Enum.EasingStyle.Sine), {CFrame = CFrame.new(Camera.CFrame.Position, target.Position)}):Play()
         end
     end
-
-    -- ESP & Hitbox
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character then
-            if Config.ESP and not p.Character:FindFirstChild("ShadowHighlight") then
-                local hl = Instance.new("Highlight", p.Character)
-                hl.Name = "ShadowHighlight"
-                hl.FillColor = Color3.fromRGB(0, 10, 50)
-                hl.OutlineColor = Color3.fromRGB(0, 200, 255)
-            elseif not Config.ESP and p.Character:FindFirstChild("ShadowHighlight") then
-                p.Character.ShadowHighlight:Destroy()
+    
+    -- ESP
+    if Config.ESP then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                if not p.Character:FindFirstChild("HighlightESP") then
+                    local h = Instance.new("Highlight", p.Character)
+                    h.Name = "HighlightESP"
+                    h.FillColor = Color3.fromRGB(100, 0, 255)
+                    h.OutlineColor = Color3.fromRGB(255, 255, 255)
+                end
             end
-            
-            if Config.Hitbox and p.Character:FindFirstChild("Head") then
+        end
+    else
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HighlightESP") then
+                p.Character.HighlightESP:Destroy()
+            end
+        end
+    end
+    
+    -- Hitbox
+    if Config.Hitbox then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
                 p.Character.Head.Size = Vector3.new(Config.HitboxSize, Config.HitboxSize, Config.HitboxSize)
-                p.Character.Head.Transparency = 0.6
+                p.Character.Head.Transparency = 0.7
+                p.Character.Head.CanCollide = false
             end
         end
     end
 end)
 
--- 無限跳躍
+-- [無限跳躍]
 UserInputService.JumpRequest:Connect(function()
     if Config.InfJump and LocalPlayer.Character then
         LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
@@ -272,7 +327,7 @@ UserInputService.JumpRequest:Connect(function()
 end)
 
 Rayfield:Notify({
-    Title = "系統：最終覺醒完成",
-    Content = "歡迎，闇影君王。影子軍團已就緒。",
+    Title = "系統：君王降臨",
+    Content = "腳本載入完成。使用 [獵殺] 按鈕開始傳送甩飛。",
     Duration = 5,
 })
