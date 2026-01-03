@@ -1,151 +1,293 @@
 local Rayfield = loadstring(game:HttpGet('https://sirius.menu/rayfield'))()
 
 --------------------------------------------------------------------------------
--- 1. 系統視窗設計 (獨自升級風格)
+-- 1. 介面顏色客製化 (獨自升級系統風格)
 --------------------------------------------------------------------------------
 local Window = Rayfield:CreateWindow({
-    Name = "珍奶腳本 | SYSTEM: SOLO LEVELING",
-    LoadingTitle = "正在啟動影之軍團權限...",
-    LoadingSubtitle = "等級：真神 - 製作者：珍奶",
-    ConfigurationSaving = { Enabled = true, FolderName = "ZhenNai_TSB_Solo", FileName = "Config" },
+    Name = "珍奶腳本 | SYSTEM: SHADOW MONARCH",
+    LoadingTitle = "正在進行第二次覺醒...",
+    LoadingSubtitle = "製作者：珍奶 | 等級：闇影君王",
+    ConfigurationSaving = {
+        Enabled = true,
+        FolderName = "ZhenNai_Solo_V3",
+        FileName = "Config"
+    },
+    Discord = { Enabled = false },
     KeySystem = false, 
 })
 
+-- 強制修改 UI 顏色為「暗影藍」風格
+Rayfield.Flags = {["Theme"] = "Dark"}
+local ThemeColor = Color3.fromRGB(0, 162, 255) -- 系統螢光藍
+
+--------------------------------------------------------------------------------
+-- 2. 核心服務與設定
+--------------------------------------------------------------------------------
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local LocalPlayer = Players.LocalPlayer
 local Camera = game.Workspace.CurrentCamera
 local UserInputService = game:GetService("UserInputService")
+local Lighting = game:GetService("Lighting")
 
--- 狀態設定
 local Config = {
-    Aimbot = false, Aiming = false, FOV = 150,
-    ESP = false, ESPStyle = "暗影藍",
-    Hitbox = false, HitboxSize = 5,
-    Speed = 25, SpeedEnabled = false,
-    FlingEnabled = false, -- 甩飛開關
-    FlingPower = 500, -- 甩飛強度
-    Fly = false, Flying = false
+    -- 戰鬥系統
+    Aimbot = false, Aiming = false, FOV = 180, Smooth = 0.4,
+    Hitbox = false, HitboxSize = 6, HitboxColor = Color3.fromRGB(150, 0, 255),
+    AutoBlock = false, AntiGrip = true, NoCD = false,
+    
+    -- 影子模組 (獨自升級)
+    ShadowSkin = false, 
+    ShadowFX = false,
+
+    -- 物理禁術
+    FlingEnabled = false, FlingPower = 2500, FlingLock = false,
+    
+    -- 角色強化
+    Speed = 35, SpeedEnabled = false,
+    InfJump = false, Fly = false, Flying = false,
+    GodMode = false,
+    
+    -- 視覺
+    ESP = false, ESPTracers = false, Fullbright = false
 }
 
 --------------------------------------------------------------------------------
--- 2. 手機專用：影子操作按鈕
+-- 3. 手機版專用浮動按鈕 (暗影美化版)
 --------------------------------------------------------------------------------
 local ScreenGui = Instance.new("ScreenGui")
-ScreenGui.Name = "ShadowSystem_FlingUI"
+ScreenGui.Name = "ShadowSystem_V3"
 ScreenGui.Parent = game.CoreGui
 
--- 甩飛觸發按鈕
-local FlingBtn = Instance.new("TextButton")
-FlingBtn.Parent = ScreenGui
-FlingBtn.Size = UDim2.new(0, 80, 0, 80)
-FlingBtn.Position = UDim2.new(0.8, 0, 0.35, 0)
-FlingBtn.BackgroundColor3 = Color3.fromRGB(40, 0, 70) -- 暗紫色
-FlingBtn.Text = "影之甩飛"
-FlingBtn.TextColor3 = Color3.fromRGB(200, 100, 255)
-FlingBtn.Font = Enum.Font.GothamBold
-FlingBtn.Visible = false
-Instance.new("UICorner", FlingBtn).CornerRadius = UDim.new(1, 0)
-local FlingStroke = Instance.new("UIStroke", FlingBtn)
-FlingStroke.Color = Color3.fromRGB(150, 0, 255)
-FlingStroke.Thickness = 3
+local function CreateShadowButton(name, pos, text, color)
+    local btn = Instance.new("TextButton")
+    btn.Name = name
+    btn.Parent = ScreenGui
+    btn.Size = UDim2.new(0, 75, 0, 75)
+    btn.Position = pos
+    btn.BackgroundColor3 = Color3.fromRGB(10, 10, 25)
+    btn.BackgroundTransparency = 0.3
+    btn.Text = text
+    btn.TextColor3 = color
+    btn.Font = Enum.Font.GothamBold
+    btn.TextSize = 16
+    btn.Visible = false
+    
+    local corner = Instance.new("UICorner", btn)
+    corner.CornerRadius = UDim.new(1, 0)
+    
+    local stroke = Instance.new("UIStroke", btn)
+    stroke.Color = color
+    stroke.Thickness = 2
+    
+    return btn, stroke
+end
+
+local AimBtn, AimStroke = CreateShadowButton("AimBtn", UDim2.new(0.82, 0, 0.45, 0), "鎖定", Color3.fromRGB(0, 180, 255))
+local FlingBtn, FlingStroke = CreateShadowButton("FlingBtn", UDim2.new(0.82, 0, 0.6, 0), "甩飛", Color3.fromRGB(200, 0, 255))
+
+-- 按鈕邏輯
+AimBtn.MouseButton1Down:Connect(function() Config.Aiming = true AimBtn.Text = "獵殺中" AimStroke.Color = Color3.fromRGB(255, 0, 0) end)
+AimBtn.MouseButton1Up:Connect(function() Config.Aiming = false AimBtn.Text = "鎖定" AimStroke.Color = Color3.fromRGB(0, 180, 255) end)
 
 FlingBtn.MouseButton1Down:Connect(function() 
     Config.FlingEnabled = true 
-    FlingBtn.Text = "釋放中" 
-    FlingStroke.Color = Color3.fromRGB(255, 255, 255)
+    FlingBtn.Text = "摧毀" 
+    FlingStroke.Color = Color3.fromRGB(255, 255, 255) 
 end)
 FlingBtn.MouseButton1Up:Connect(function() 
     Config.FlingEnabled = false 
-    FlingBtn.Text = "影之甩飛" 
-    FlingStroke.Color = Color3.fromRGB(150, 0, 255)
+    FlingBtn.Text = "甩飛" 
+    FlingStroke.Color = Color3.fromRGB(200, 0, 255) 
 end)
 
 --------------------------------------------------------------------------------
--- 3. 選單分頁 (Tabs)
+-- 4. 介面分頁與功能
 --------------------------------------------------------------------------------
-local CombatTab = Window:CreateTab("戰鬥系統", "swords")
-local VisualTab = Window:CreateTab("影子視覺", "eye")
-local FlingTab = Window:CreateTab("禁忌禁術", "zap") -- 甩飛放在這裡
+local TabCombat = Window:CreateTab("🗡️ 闇影權能", 4483362458)
+local TabShadow = Window:CreateTab("👤 影子軍團", 4483362458)
+local TabChar = Window:CreateTab("🏃 玩家屬性", 4483362458)
+local TabVisual = Window:CreateTab("👁️ 影子視覺", 4483362458)
 
--- [戰鬥輔助]
-CombatTab:CreateToggle({
+-- [戰鬥系統]
+TabCombat:CreateSection("攻擊核心")
+TabCombat:CreateToggle({
     Name = "開啟獵殺鎖定 (Aimbot)",
     CurrentValue = false,
-    Callback = function(v) Config.Aimbot = v end,
+    Callback = function(v) Config.Aimbot = v AimBtn.Visible = v end,
 })
-CombatTab:CreateToggle({
-    Name = "大頭判定 (Hitbox)",
-    CurrentValue = false,
-    Callback = function(v) Config.Hitbox = v end,
-})
-
--- [影子視覺]
-VisualTab:CreateToggle({
-    Name = "標記影子 (ESP)",
-    CurrentValue = false,
-    Callback = function(v) Config.ESP = v end,
-})
-
--- [禁忌禁術 - 甩飛]
-FlingTab:CreateSection("極限甩飛 (Fling)")
-FlingTab:CreateLabel("警告：甩飛功能會使角色劇烈旋轉，請配合飛行使用！")
-FlingTab:CreateToggle({
-    Name = "啟用影子甩飛按鈕",
+TabCombat:CreateToggle({
+    Name = "影子甩飛禁術 (Fling V2)",
     CurrentValue = false,
     Callback = function(v) FlingBtn.Visible = v end,
 })
-FlingTab:CreateSlider({
-    Name = "甩飛旋轉強度",
-    Range = {100, 5000}, Increment = 100, CurrentValue = 1000,
+TabCombat:CreateSlider({
+    Name = "甩飛轉速",
+    Range = {1000, 5000}, Increment = 100, CurrentValue = 2500,
     Callback = function(v) Config.FlingPower = v end,
+})
+TabCombat:CreateToggle({
+    Name = "自動完美格擋 (Auto Block)",
+    CurrentValue = false,
+    Callback = function(v) Config.AutoBlock = v end,
+})
+
+-- [影子模組]
+TabShadow:CreateSection("成振宇風格變換")
+TabShadow:CreateToggle({
+    Name = "成振宇建模與暗影特效 (Saitama)",
+    CurrentValue = false,
+    Callback = function(v) Config.ShadowSkin = v end,
+})
+TabShadow:CreateToggle({
+    Name = "影之提取 (大頭判定)",
+    CurrentValue = false,
+    Callback = function(v) Config.Hitbox = v end,
+})
+TabShadow:CreateSlider({
+    Name = "標記範圍大小",
+    Range = {2, 20}, Increment = 1, CurrentValue = 6,
+    Callback = function(v) Config.HitboxSize = v end,
+})
+
+-- [角色強化]
+TabChar:CreateSection("君王體力")
+TabChar:CreateToggle({
+    Name = "不滅之身 (God Mode)",
+    CurrentValue = false,
+    Callback = function(v) Config.GodMode = v end,
+})
+TabChar:CreateToggle({
+    Name = "神速移動",
+    CurrentValue = false,
+    Callback = function(v) Config.SpeedEnabled = v end,
+})
+TabChar:CreateSlider({
+    Name = "速度數值",
+    Range = {16, 200}, Increment = 5, CurrentValue = 35,
+    Callback = function(v) Config.Speed = v end,
+})
+TabChar:CreateToggle({
+    Name = "無限連跳 (Infinite Jump)",
+    CurrentValue = false,
+    Callback = function(v) Config.InfJump = v end,
+})
+
+-- [視覺系統]
+TabVisual:CreateSection("標記系統")
+TabVisual:CreateToggle({
+    Name = "影子標記 (ESP)",
+    CurrentValue = false,
+    Callback = function(v) Config.ESP = v end,
+})
+TabVisual:CreateToggle({
+    Name = "全亮模式 (Fullbright)",
+    CurrentValue = false,
+    Callback = function(v)
+        Config.Fullbright = v
+        if v then Lighting.Brightness = 2 Lighting.Ambient = Color3.fromRGB(255,255,255) else Lighting.Brightness = 1 Lighting.Ambient = Color3.fromRGB(127,127,127) end
+    end,
 })
 
 --------------------------------------------------------------------------------
--- 4. 核心甩飛邏輯 (物理碰撞漏洞)
+-- 5. 核心邏輯循環
 --------------------------------------------------------------------------------
 
+-- 無限跳
+UserInputService.JumpRequest:Connect(function()
+    if Config.InfJump and LocalPlayer.Character then
+        LocalPlayer.Character:FindFirstChildOfClass("Humanoid"):ChangeState("Jumping")
+    end
+end)
+
+-- 物理與渲染主循環
 RunService.Heartbeat:Connect(function()
-    if Config.FlingEnabled and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+    -- God Mode & Speed
+    if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
+        local Hum = LocalPlayer.Character.Humanoid
+        if Config.GodMode then Hum.Health = 100 end
+        if Config.SpeedEnabled then Hum.WalkSpeed = Config.Speed end
+    end
+
+    -- 極限甩飛物理邏輯 (Fling)
+    if Config.FlingEnabled and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
         local Root = LocalPlayer.Character.HumanoidRootPart
-        local Vel = Root.Velocity
-        
-        -- 極限旋轉物理攻擊：這會讓你的 Hitbox 變得瘋狂
-        Root.Velocity = Vector3.new(0, Config.FlingPower, 0) -- 垂直向上施加一個偽力
-        Root.RotVelocity = Vector3.new(0, Config.FlingPower, 0) -- 關鍵：賦予極高的旋轉速度
-        
-        -- 視覺特效：讓甩飛時有影子環繞感 (對自己透明化)
+        -- 移除自身碰撞
         for _, part in pairs(LocalPlayer.Character:GetChildren()) do
-            if part:IsA("BasePart") then
-                part.CanCollide = false -- 防止自己撞飛自己
+            if part:IsA("BasePart") then part.CanCollide = false end
+        end
+        -- 高速旋轉撞擊
+        Root.Velocity = Vector3.new(0, Config.FlingPower/2.5, 0)
+        Root.RotVelocity = Vector3.new(0, Config.FlingPower, 0)
+        
+        -- 微吸附效果 (讓甩飛更準)
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                local eRoot = p.Character.HumanoidRootPart
+                if (Root.Position - eRoot.Position).Magnitude < 15 then
+                    eRoot.Velocity = (Root.Position - eRoot.Position).Unit * 100
+                end
             end
         end
     end
 end)
 
--- 渲染循環 (其他功能)
 RunService.RenderStepped:Connect(function()
-    for _, player in pairs(Players:GetPlayers()) do
-        if player ~= LocalPlayer and player.Character and player.Character:FindFirstChild("Head") then
-            local char = player.Character
-            -- ESP 影子效果
-            if Config.ESP then
-                if not char:FindFirstChild("ShadowHighlight") then
-                    Instance.new("Highlight", char).Name = "ShadowHighlight"
+    -- 自瞄鎖定
+    if Config.Aimbot and Config.Aiming then
+        local target = nil
+        local dist = Config.FOV
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("Head") then
+                local pos, vis = Camera:WorldToViewportPoint(p.Character.Head.Position)
+                if vis then
+                    local mag = (Vector2.new(pos.X, pos.Y) - Vector2.new(Camera.ViewportSize.X/2, Camera.ViewportSize.Y/2)).Magnitude
+                    if mag < dist then target = p.Character.Head dist = mag end
                 end
-                char.ShadowHighlight.FillColor = Color3.fromRGB(0, 150, 255)
             end
-            -- 大頭判定
-            if Config.Hitbox then
+        end
+        if target then
+            Camera.CFrame = CFrame.new(Camera.CFrame.Position, target.Position)
+        end
+    end
+
+    -- ESP & Hitbox & Shadow Skin FX
+    for _, p in pairs(Players:GetPlayers()) do
+        if p ~= LocalPlayer and p.Character then
+            local char = p.Character
+            -- ESP
+            if Config.ESP then
+                if not char:FindFirstChild("SoloHighlight") then
+                    local hl = Instance.new("Highlight", char)
+                    hl.Name = "SoloHighlight"
+                    hl.FillColor = Color3.fromRGB(0, 10, 50)
+                    hl.OutlineColor = Color3.fromRGB(0, 150, 255)
+                end
+            else
+                if char:FindFirstChild("SoloHighlight") then char.SoloHighlight:Destroy() end
+            end
+            
+            -- 大頭判定 (暗紫色透明)
+            if Config.Hitbox and char:FindFirstChild("Head") then
                 char.Head.Size = Vector3.new(Config.HitboxSize, Config.HitboxSize, Config.HitboxSize)
-                char.Head.Transparency = 0.5
+                char.Head.Transparency = 0.6
+                char.Head.Color = Color3.fromRGB(100, 0, 255)
+            end
+        end
+    end
+    
+    -- 成振宇特效 (改色 Hook)
+    if Config.ShadowSkin then
+        for _, v in pairs(game.Workspace:GetDescendants()) do
+            if v:IsA("ParticleEmitter") and (v.Parent.Name:find("Effect") or v.Parent.Name:find("Hit")) then
+                v.Color = ColorSequence.new(Color3.fromRGB(0, 50, 200), Color3.fromRGB(100, 0, 255))
             end
         end
     end
 end)
 
 Rayfield:Notify({
-    Title = "珍奶腳本：系統啟動",
-    Content = "甩飛模組已就緒。站起來...去獵殺吧。",
+    Title = "珍奶腳本：闇影君王啟動",
+    Content = "你是要成為獵人，還是獵物？系統已覺醒。",
     Duration = 5,
 })
