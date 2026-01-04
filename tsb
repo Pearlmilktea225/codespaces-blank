@@ -1,227 +1,208 @@
 --[[
-    珍奶腳本 (ZhenNai Hub) - v46.0 冷卻同步智慧版 (SYSTEM: COOLDOWN SYNC)
-    核心：偵測遊戲 UI 的冷卻狀態
-    功能：若技能在 CD，禁止播放特效與動作
-    修復：解決「看起來有打出去但沒傷害」的空包彈問題
+    珍奶腳本 (ZhenNai Hub) - v10 終焉·神之終結 (SYSTEM: ENDGAME)
+    級別：Developer / Admin
+    核心：全職業動作 + 真傷系統 + 開發者工具 (Dex/Spy) + 雲端萬能庫
+    功能數：∞ (無限，因為你可以載入任何東西)
 ]]
 
--- [1. 服務初始化]
-local VirtualInputManager = game:GetService("VirtualInputManager")
+-- [1. 核心服務]
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
+local VirtualInputManager = game:GetService("VirtualInputManager")
 local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
+local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
 
 -- 清理舊介面
-local CoreGui = game:GetService("CoreGui")
 for _, gui in pairs(CoreGui:GetChildren()) do
     if gui.Name == "Fluent" then gui:Destroy() end
 end
 
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
--- [2. 配置]
-local Config = {
-    Mode = "None",
-    AntiFling = true,
-    AntiVoid = true,
-    CheckCooldown = true -- 是否開啟冷卻檢查
+-- [2. 介面視窗]
+local Window = Fluent:CreateWindow({
+    Title = "SYSTEM: ENDGAME v999",
+    SubTitle = "Developer Mode",
+    TabWidth = 160, Size = UDim2.fromOffset(650, 500), Acrylic = true, Theme = "Dark",
+    MinimizeKey = Enum.KeyCode.RightControl
+})
+
+local Tabs = {
+    Moveset = Window:AddTab({ Title = "神級動作 (God Moves)", Icon = "swords" }),
+    Rage = Window:AddTab({ Title = "暴力殺戮 (Rage)", Icon = "skull" }),
+    Dev = Window:AddTab({ Title = "開發者工具 (Dev)", Icon = "code" }),
+    Hub = Window:AddTab({ Title = "萬能腳本庫 (Hubs)", Icon = "cloud" }),
+    World = Window:AddTab({ Title = "世界修改 (World)", Icon = "globe" }),
+    Settings = Window:AddTab({ Title = "系統設置", Icon = "settings" })
 }
 
+--------------------------------------------------------------------------------
+-- 模組 A: 終極動作系統 (整合 v48 真傷技術)
+--------------------------------------------------------------------------------
+local Config = { Moveset = "None", Hitbox = false, Aura = false }
 local Anims = {
-    Gojo = {"rbxassetid://10479335397", "rbxassetid://10470104242", "rbxassetid://33796059", "rbxassetid://10714347256"},
+    KJ = {"rbxassetid://10479335397", "rbxassetid://12510123724", "rbxassetid://12984249052", "rbxassetid://12461042730"},
+    JinWoo = {"rbxassetid://5633641724", "rbxassetid://260433746", "rbxassetid://3450654944", "rbxassetid://1496738980"},
     Saitama = {"rbxassetid://10471336737", "rbxassetid://10479335397", "rbxassetid://10470104242", "rbxassetid://33796059"},
-    JinWoo = {"rbxassetid://5633641724", "rbxassetid://260433746", "rbxassetid://3450654944", "rbxassetid://1496738980"}
+    Gojo = {"rbxassetid://10479335397", "rbxassetid://10470104242", "rbxassetid://33796059", "rbxassetid://10714347256"}
 }
 
---------------------------------------------------------------------------------
--- 3. 核心技術：冷卻偵測 (UI Scanner)
---------------------------------------------------------------------------------
-
--- [智能掃描] 尋找對應技能的冷卻遮罩
-local function IsSkillOnCooldown(index)
-    if not Config.CheckCooldown then return false end -- 如果關閉檢查，直接通過
-    
-    local PlayerGui = LocalPlayer:FindFirstChild("PlayerGui")
-    if not PlayerGui then return false end
-    
-    -- TSB 的技能 UI 通常叫做 "Hotbar", "Skills"
-    -- 我們搜尋包含 index (1,2,3,4) 的按鈕
-    local targetNames = {tostring(index), "Skill"..tostring(index), "Slot"..tostring(index)}
-    
-    for _, v in pairs(PlayerGui:GetDescendants()) do
-        -- 找到可能是技能按鈕的 Frame 或 Button
-        if v:IsA("Frame") or v:IsA("ImageButton") or v:IsA("TextButton") then
-            for _, name in ipairs(targetNames) do
-                if v.Name == name then
-                    -- 檢查是否有 "Cooldown" 子物件且為可見
-                    local cd = v:FindFirstChild("Cooldown") or v:FindFirstChild("Timer") or v:FindFirstChild("Mask")
-                    if cd and cd.Visible then
-                        return true -- 發現冷卻遮罩，技能正在 CD
-                    end
-                    
-                    -- 或者檢查 TextLabel 是否顯示數字 (倒數)
-                    local txt = v:FindFirstChildOfClass("TextLabel")
-                    if txt and tonumber(txt.Text) ~= nil then
-                         return true -- 發現倒數數字，技能正在 CD
-                    end
-                end
-            end
-        end
-    end
-    
-    return false -- 未發現冷卻跡象，技能可用
-end
-
---------------------------------------------------------------------------------
--- 4. 真傷輸入與特效
---------------------------------------------------------------------------------
-local function ClickMobileButton(index)
-    local PlayerGui = LocalPlayer:FindFirstChild("PlayerGui")
-    if not PlayerGui then return end
-    local targetNames = {tostring(index), "Skill"..tostring(index), "Ability"..tostring(index)}
-    for _, v in pairs(PlayerGui:GetDescendants()) do
-        if v:IsA("TextButton") or v:IsA("ImageButton") then
-            for _, name in ipairs(targetNames) do
-                if v.Name == name and v.Visible then
-                    for _, c in pairs(getconnections(v.MouseButton1Click)) do c:Fire() end
-                    for _, c in pairs(getconnections(v.Activated)) do c:Fire() end
-                    return true
-                end
-            end
-        end
-    end
-end
-
-local function SendInput(index)
-    task.spawn(function() ClickMobileButton(index) end)
-    task.spawn(function()
+local function ActivateSkill(mode, index)
+    -- 1. 萬能輸入 (GUI + Key)
+    pcall(function()
         local k = (index==1 and Enum.KeyCode.One) or (index==2 and Enum.KeyCode.Two) or (index==3 and Enum.KeyCode.Three) or (index==4 and Enum.KeyCode.Four)
         VirtualInputManager:SendKeyEvent(true, k, false, game)
-        task.wait(0.15)
+        task.wait(0.2)
         VirtualInputManager:SendKeyEvent(false, k, false, game)
     end)
-end
-
-local function PlayCustomAnim(id)
-    local Hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
-    if Hum then
-        local a = Instance.new("Animation"); a.AnimationId = id
-        local t = Hum.Animator:LoadAnimation(a)
-        t.Priority = Enum.AnimationPriority.Action4
-        t:Play(0.1)
-    end
-end
-
-local function CreateFX(root, color)
-    local p = Instance.new("Part", workspace); p.Size=Vector3.new(1,1,1); p.Shape="Ball"; p.Material="Neon"; p.Color=color; p.Anchored=true; p.CanCollide=false; p.CFrame=root.CFrame
-    TweenService:Create(p, TweenInfo.new(0.4), {Size=Vector3.new(20,20,20), Transparency=1}):Play(); Debris:AddItem(p, 0.4)
-end
-
--- [技能觸發總控]
-local function ActivateSkill(mode, index)
-    -- 1. 檢查冷卻
-    if IsSkillOnCooldown(index) then
-        -- 如果在 CD 中，播放失敗音效並提示，不執行動作
-        local s = Instance.new("Sound", workspace); s.SoundId="rbxassetid://4612375235"; s.Volume=1; s:Play(); Debris:AddItem(s, 1)
-        Fluent:Notify({Title="冷卻中", Content="技能 ["..index.."] 尚未準備好", Duration=1})
-        return
-    end
-
-    local Char = LocalPlayer.Character
-    if not Char then return end
     
-    -- 2. 發送輸入 (有傷害)
-    SendInput(index)
-    
-    -- 3. 覆蓋特效
+    -- 2. 播放特效
     task.delay(0.05, function()
-        local list = Anims[mode]
-        if list and list[index] then
-            PlayCustomAnim(list[index])
-            local color = (mode=="Gojo" and Color3.fromRGB(0,50,255)) or (mode=="Saitama" and Color3.fromRGB(255,0,0)) or Color3.fromRGB(150,0,255)
-            CreateFX(Char.HumanoidRootPart, color)
+        local Hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
+        if Hum and Anims[mode] and Anims[mode][index] then
+            local a = Instance.new("Animation"); a.AnimationId = Anims[mode][index]
+            local t = Hum.Animator:LoadAnimation(a); t.Priority=Enum.AnimationPriority.Action4; t:Play(0)
+            
+            -- 視覺炸裂
+            local p = Instance.new("Part", workspace); p.CFrame = LocalPlayer.Character.HumanoidRootPart.CFrame
+            p.Size = Vector3.new(1,1,1); p.Shape = "Ball"; p.Material = "Neon"; p.Color = (mode=="KJ" and Color3.new(1,0,0) or Color3.new(0,0,1))
+            p.Anchored = true; p.CanCollide = false
+            TweenService:Create(p, TweenInfo.new(0.5), {Size=Vector3.new(40,40,40), Transparency=1}):Play(); Debris:AddItem(p, 0.5)
         end
     end)
 end
 
---------------------------------------------------------------------------------
--- 5. 道具系統
---------------------------------------------------------------------------------
-RunService.Heartbeat:Connect(function()
-    if Config.Mode == "None" then return end
-    if LocalPlayer.Backpack then
-        for _, t in pairs(LocalPlayer.Backpack:GetChildren()) do
-            if not t:GetAttribute("ZN_Custom") then t:Destroy() end
-        end
-    end
-end)
-
 local function GiveTools(mode)
-    for _, t in pairs(LocalPlayer.Backpack:GetChildren()) do t:Destroy() end
+    if LocalPlayer.Backpack then for _,t in pairs(LocalPlayer.Backpack:GetChildren()) do t:Destroy() end end
     local Skills = {}
-    if mode == "Gojo" then Skills = {"[1] 蒼", "[2] 赫", "[3] 茈", "[4] 領域"}
-    elseif mode == "Saitama" then Skills = {"[1] 普通拳", "[2] 連續拳", "[3] 掀桌", "[4] 認真拳"}
-    elseif mode == "JinWoo" then Skills = {"[1] 斬擊", "[2] 重擊", "[3] 提取", "[4] 覺醒"} end
+    if mode == "KJ" then Skills = {"[1] 毀滅", "[2] 飛踢", "[3] 爆破", "[4] 覺醒"}
+    else Skills = {"[1] 技一", "[2] 技二", "[3] 技三", "[4] 奧義"} end
     
     for i, name in ipairs(Skills) do
-        local tool = Instance.new("Tool")
-        tool.Name = name; tool.RequiresHandle = false; tool:SetAttribute("ZN_Custom", true); tool.TextureId = "rbxassetid://0"
-        
-        tool.Equipped:Connect(function()
-            ActivateSkill(mode, i)
-            task.delay(0.01, function() tool.Parent = LocalPlayer.Backpack end)
-        end)
-        tool.Parent = LocalPlayer.Backpack
+        local t = Instance.new("Tool"); t.Name=name; t.RequiresHandle=false; t.TextureId="rbxassetid://0"
+        t.Equipped:Connect(function() ActivateSkill(mode, i); task.delay(0.01, function() t.Parent=LocalPlayer.Backpack end) end)
+        t.Parent = LocalPlayer.Backpack
     end
 end
 
+Tabs.Moveset:AddDropdown("Mode", {
+    Title = "選擇職業", Values = {"KJ", "JinWoo", "Saitama", "Gojo"}, Default = "None",
+    Callback = function(v) GiveTools(v); Fluent:Notify({Title="裝載完成", Content=v.." 模式啟動", Duration=2}) end
+})
+
 --------------------------------------------------------------------------------
--- 6. 防禦系統
+-- 模組 B: 暴力殺戮 (Rage)
 --------------------------------------------------------------------------------
+local RageSection = Tabs.Rage:AddSection("毀滅開關")
+
+RageSection:AddToggle("Aura", {Title = "殺戮光環 (Kill Aura)", Default = false}):OnChanged(function(v) Config.Aura = v end)
+RageSection:AddToggle("Hitbox", {Title = "Hitbox 擴大", Default = false}):OnChanged(function(v) Config.Hitbox = v end)
+RageSection:AddSlider("Reach", {Title = "攻擊距離 (Reach)", Default = 5, Min = 5, Max = 50, Rounding = 1, Callback = function(v) 
+    if LocalPlayer.Character then
+        local Tool = LocalPlayer.Character:FindFirstChildOfClass("Tool")
+        if Tool and Tool:FindFirstChild("Handle") then Tool.Handle.Size = Vector3.new(v,v,v); Tool.Handle.Transparency=1 end
+    end
+end})
+
+-- Kill Aura Loop
 RunService.Heartbeat:Connect(function()
-    local Char = LocalPlayer.Character
-    if not Char or not Char:FindFirstChild("HumanoidRootPart") then return end
-    local Root = Char.HumanoidRootPart
-    
-    if Config.AntiFling then
+    if Config.Aura then
         for _, p in pairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                local TRoot = p.Character.HumanoidRootPart
-                if (TRoot.Position - Root.Position).Magnitude < 10 and TRoot.Velocity.Magnitude > 150 then
-                    Root.Anchored = true; Root.Velocity = Vector3.zero
-                    for _, v in pairs(Char:GetChildren()) do if v:IsA("BasePart") then v.CanCollide=false end end
-                    task.delay(0.5, function() if Root then Root.Anchored = false end end)
+                if (p.Character.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude < 20 then
+                    VirtualInputManager:SendMouseButtonEvent(0,0,0,true,game,1)
+                    VirtualInputManager:SendMouseButtonEvent(0,0,0,false,game,1)
                 end
             end
         end
     end
-    if Config.AntiVoid and Root.Position.Y < -50 then
-        Root.CFrame = CFrame.new(Root.Position.X, 100, Root.Position.Z); Root.Velocity = Vector3.zero
+    if Config.Hitbox then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                p.Character.HumanoidRootPart.Size = Vector3.new(20,20,20); p.Character.HumanoidRootPart.Transparency = 0.8
+                p.Character.HumanoidRootPart.CanCollide = false
+            end
+        end
     end
 end)
 
 --------------------------------------------------------------------------------
--- 7. UI
+-- 模組 C: 開發者神器 (Dev Tools)
 --------------------------------------------------------------------------------
-local Window = Fluent:CreateWindow({
-    Title = "SYSTEM: COOLDOWN SYNC v46", SubTitle = "Anti-Ghost Hit",
-    TabWidth = 160, Size = UDim2.fromOffset(500, 380), Acrylic = true, Theme = "Dark", MinimizeKey = Enum.KeyCode.RightControl
+Tabs.Dev:AddParagraph({Title="神之權限", Content="以下工具允許你直接修改遊戲底層代碼與物件。"})
+
+Tabs.Dev:AddButton({
+    Title = "開啟 Dex Explorer (物件修改器)",
+    Description = "查看並刪除遊戲內的牆壁、特效、腳本",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/infyiff/backup/main/dex.lua"))()
+    end
 })
 
-local Main = Window:AddTab({ Title = "戰鬥", Icon = "swords" })
-local Def = Window:AddTab({ Title = "防禦", Icon = "shield" })
-
-Main:AddDropdown("Mode", {
-    Title = "選擇技能組", Values = {"JinWoo", "Gojo", "Saitama"}, Default = "None",
-    Callback = function(v) Config.Mode = v; GiveTools(v); Fluent:Notify({Title="準備完成", Content=v.." 技能組\n已啟用冷卻偵測", Duration=3}) end
+Tabs.Dev:AddButton({
+    Title = "開啟 Remote Spy (訊號監聽)",
+    Description = "查看遊戲發送的遠端事件，複製技能",
+    Callback = function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/exxtremestuffs/SimpleSpySource/master/SimpleSpy.lua"))()
+    end
 })
-Main:AddToggle("CD", {Title = "冷卻偵測 (Cooldown Check)", Default = true, Description = "技能冷卻時不播放特效"}):OnChanged(function(v) Config.CheckCooldown = v end)
 
-Def:AddToggle("AF", {Title = "反甩飛", Default = true}):OnChanged(function(v) Config.AntiFling = v end)
-Def:AddToggle("AV", {Title = "反虛空", Default = true}):OnChanged(function(v) Config.AntiVoid = v end)
+Tabs.Dev:AddButton({
+    Title = "開啟 Console (控制台)",
+    Description = "查看遊戲報錯資訊",
+    Callback = function() game:GetService("StarterGui"):SetCore("DevConsoleVisible", true) end
+})
 
-LocalPlayer.CharacterAdded:Connect(function() task.wait(1); if Config.Mode ~= "None" then GiveTools(Config.Mode) end end)
+--------------------------------------------------------------------------------
+-- 模組 D: 萬能腳本庫 (Script Hub)
+--------------------------------------------------------------------------------
+Tabs.Hub:AddParagraph({Title="最強整合", Content="一鍵載入網路上最強的外部腳本。"})
 
-Fluent:Notify({Title = "SYSTEM: v46", Content = "冷卻同步系統已啟動。", Duration = 5})
+Tabs.Hub:AddButton({
+    Title = "載入 Infinite Yield (指令大全)",
+    Callback = function() loadstring(game:HttpGet('https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source'))() end
+})
+
+Tabs.Hub:AddButton({
+    Title = "載入 Nameless Admin (手機管理員)",
+    Callback = function() loadstring(game:HttpGet("https://raw.githubusercontent.com/FilteringEnabled/NamelessAdmin/main/Source"))() end
+})
+
+Tabs.Hub:AddButton({
+    Title = "載入 TSB Kade Hub (自動格擋/連招)",
+    Callback = function() loadstring(game:HttpGet("https://raw.githubusercontent.com/3345-c-a-t-s-u-s/Kade-Hub/main/main.lua"))() end
+})
+
+--------------------------------------------------------------------------------
+-- 模組 E: 世界修改
+--------------------------------------------------------------------------------
+Tabs.World:AddButton({Title = "刪除地圖 (FPS Boost)", Callback = function()
+    for _, v in pairs(workspace:GetChildren()) do if v:IsA("Model") and not v:FindFirstChild("Humanoid") then v:Destroy() end end
+end})
+
+Tabs.World:AddToggle("Fullbright", {Title = "全亮模式", Default = false}):OnChanged(function(v)
+    if v then Lighting.Brightness=2; Lighting.ClockTime=14 else Lighting.Brightness=1 end
+end)
+
+Tabs.World:AddToggle("AntiVoid", {Title = "反虛空 (Anti-Void)", Default = true}):OnChanged(function(v)
+    _G.AntiVoid = v
+    RunService.Heartbeat:Connect(function()
+        if _G.AntiVoid and LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
+            if LocalPlayer.Character.HumanoidRootPart.Position.Y < -50 then
+                LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(0, 100, 0)
+                LocalPlayer.Character.HumanoidRootPart.Velocity = Vector3.zero
+            end
+        end
+    end)
+end)
+
+-- 手機 HUD
+if game:GetService("UserInputService").TouchEnabled then
+    local HUD = Instance.new("ScreenGui", CoreGui); HUD.Name="Endgame_HUD"
+    local M = Instance.new("TextButton", HUD); M.Size=UDim2.new(0,50,0,50); M.Position=UDim2.new(0,10,0,50); M.BackgroundColor3=Color3.new(0,0,0); M.BackgroundTransparency=0.3; M.Text="Ω"; M.TextColor3=Color3.new(1,0,0); Instance.new("UICorner",M).CornerRadius=UDim.new(0.5,0); Instance.new("UIStroke",M).Color=Color3.new(1,0,0)
+    M.MouseButton1Click:Connect(function() pcall(function() Fluent:ToggleWindow() end) end)
+end
+
+Fluent:Notify({Title = "SYSTEM: ENDGAME", Content = "所有限制已解除。歡迎來到終局。", Duration = 5})
