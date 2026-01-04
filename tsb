@@ -1,20 +1,19 @@
 --[[
-    珍奶腳本 (ZhenNai Hub) - v44.0 萬能輸入適配版 (UNIVERSAL INPUT)
-    修復：手機版按鍵無效問題
-    技術：三重觸發 (KeyPress + GUI Click + VIM)
-    功能：保留 VexonHub 風格 + 神盾防禦 + 背包淨化
+    珍奶腳本 (ZhenNai Hub) - v46.0 冷卻同步智慧版 (SYSTEM: COOLDOWN SYNC)
+    核心：偵測遊戲 UI 的冷卻狀態
+    功能：若技能在 CD，禁止播放特效與動作
+    修復：解決「看起來有打出去但沒傷害」的空包彈問題
 ]]
 
--- [1. 服務與變數]
+-- [1. 服務初始化]
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
-local GuiService = game:GetService("GuiService")
 local LocalPlayer = Players.LocalPlayer
 
--- 清理介面
+-- 清理舊介面
 local CoreGui = game:GetService("CoreGui")
 for _, gui in pairs(CoreGui:GetChildren()) do
     if gui.Name == "Fluent" then gui:Destroy() end
@@ -27,6 +26,7 @@ local Config = {
     Mode = "None",
     AntiFling = true,
     AntiVoid = true,
+    CheckCooldown = true -- 是否開啟冷卻檢查
 }
 
 local Anims = {
@@ -36,105 +36,119 @@ local Anims = {
 }
 
 --------------------------------------------------------------------------------
--- 3. 核心：萬能輸入引擎 (Universal Input Engine)
+-- 3. 核心技術：冷卻偵測 (UI Scanner)
 --------------------------------------------------------------------------------
 
--- [方法 B: GUI 搜尋與點擊]
--- 這是針對手機版最強大的修復，直接找遊戲按鈕點下去
-local function ClickMobileButton(name)
-    local PlayerGui = LocalPlayer:FindFirstChild("PlayerGui")
-    if not PlayerGui then return end
+-- [智能掃描] 尋找對應技能的冷卻遮罩
+local function IsSkillOnCooldown(index)
+    if not Config.CheckCooldown then return false end -- 如果關閉檢查，直接通過
     
-    -- 遞迴搜尋所有 UI 尋找對應按鈕
+    local PlayerGui = LocalPlayer:FindFirstChild("PlayerGui")
+    if not PlayerGui then return false end
+    
+    -- TSB 的技能 UI 通常叫做 "Hotbar", "Skills"
+    -- 我們搜尋包含 index (1,2,3,4) 的按鈕
+    local targetNames = {tostring(index), "Skill"..tostring(index), "Slot"..tostring(index)}
+    
     for _, v in pairs(PlayerGui:GetDescendants()) do
-        if v:IsA("TextButton") or v:IsA("ImageButton") then
-            -- TSB 的按鈕通常名字就是 "1", "2" 或包含 Skill
-            if v.Name == tostring(name) or v.Name == "Skill"..tostring(name) then
-                if v.Visible and v.Parent.Visible then
-                    -- 強制觸發點擊事件
-                    for _, connection in pairs(getconnections(v.MouseButton1Click)) do
-                        connection:Fire()
+        -- 找到可能是技能按鈕的 Frame 或 Button
+        if v:IsA("Frame") or v:IsA("ImageButton") or v:IsA("TextButton") then
+            for _, name in ipairs(targetNames) do
+                if v.Name == name then
+                    -- 檢查是否有 "Cooldown" 子物件且為可見
+                    local cd = v:FindFirstChild("Cooldown") or v:FindFirstChild("Timer") or v:FindFirstChild("Mask")
+                    if cd and cd.Visible then
+                        return true -- 發現冷卻遮罩，技能正在 CD
                     end
-                    for _, connection in pairs(getconnections(v.Activated)) do
-                        connection:Fire()
+                    
+                    -- 或者檢查 TextLabel 是否顯示數字 (倒數)
+                    local txt = v:FindFirstChildOfClass("TextLabel")
+                    if txt and tonumber(txt.Text) ~= nil then
+                         return true -- 發現倒數數字，技能正在 CD
                     end
-                    -- 備用：觸控事件
-                    for _, connection in pairs(getconnections(v.TouchTap)) do
-                        connection:Fire()
-                    end
-                    return true -- 找到並點擊了
                 end
             end
         end
     end
-    return false
+    
+    return false -- 未發現冷卻跡象，技能可用
 end
 
--- [綜合觸發函數]
-local function ForceTriggerSkill(index)
-    -- 1. 嘗試 Executor 專屬函數 (Delta/Fluxus)
-    pcall(function()
-        if keypress and keyrelease then
-            local k = (index==1 and 0x31) or (index==2 and 0x32) or (index==3 and 0x33) or (index==4 and 0x34)
-            keypress(k)
-            task.wait(0.1)
-            keyrelease(k)
+--------------------------------------------------------------------------------
+-- 4. 真傷輸入與特效
+--------------------------------------------------------------------------------
+local function ClickMobileButton(index)
+    local PlayerGui = LocalPlayer:FindFirstChild("PlayerGui")
+    if not PlayerGui then return end
+    local targetNames = {tostring(index), "Skill"..tostring(index), "Ability"..tostring(index)}
+    for _, v in pairs(PlayerGui:GetDescendants()) do
+        if v:IsA("TextButton") or v:IsA("ImageButton") then
+            for _, name in ipairs(targetNames) do
+                if v.Name == name and v.Visible then
+                    for _, c in pairs(getconnections(v.MouseButton1Click)) do c:Fire() end
+                    for _, c in pairs(getconnections(v.Activated)) do c:Fire() end
+                    return true
+                end
+            end
         end
-    end)
-    
-    -- 2. 嘗試 GUI 點擊 (最適合手機)
-    task.spawn(function()
-        ClickMobileButton(index)
-    end)
+    end
+end
 
-    -- 3. 嘗試 Roblox VIM (標準鍵盤模擬)
+local function SendInput(index)
+    task.spawn(function() ClickMobileButton(index) end)
     task.spawn(function()
         local k = (index==1 and Enum.KeyCode.One) or (index==2 and Enum.KeyCode.Two) or (index==3 and Enum.KeyCode.Three) or (index==4 and Enum.KeyCode.Four)
         VirtualInputManager:SendKeyEvent(true, k, false, game)
-        task.wait(0.1)
+        task.wait(0.15)
         VirtualInputManager:SendKeyEvent(false, k, false, game)
     end)
 end
 
---------------------------------------------------------------------------------
--- 4. 動作與特效
---------------------------------------------------------------------------------
 local function PlayCustomAnim(id)
     local Hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
     if Hum then
-        for _, t in pairs(Hum.Animator:GetPlayingAnimationTracks()) do t:Stop(0) end
         local a = Instance.new("Animation"); a.AnimationId = id
         local t = Hum.Animator:LoadAnimation(a)
         t.Priority = Enum.AnimationPriority.Action4
-        t:Play(0)
+        t:Play(0.1)
     end
 end
 
 local function CreateFX(root, color)
     local p = Instance.new("Part", workspace); p.Size=Vector3.new(1,1,1); p.Shape="Ball"; p.Material="Neon"; p.Color=color; p.Anchored=true; p.CanCollide=false; p.CFrame=root.CFrame
-    TweenService:Create(p, TweenInfo.new(0.5), {Size=Vector3.new(25,25,25), Transparency=1}):Play(); Debris:AddItem(p, 0.5)
+    TweenService:Create(p, TweenInfo.new(0.4), {Size=Vector3.new(20,20,20), Transparency=1}):Play(); Debris:AddItem(p, 0.4)
 end
 
+-- [技能觸發總控]
 local function ActivateSkill(mode, index)
+    -- 1. 檢查冷卻
+    if IsSkillOnCooldown(index) then
+        -- 如果在 CD 中，播放失敗音效並提示，不執行動作
+        local s = Instance.new("Sound", workspace); s.SoundId="rbxassetid://4612375235"; s.Volume=1; s:Play(); Debris:AddItem(s, 1)
+        Fluent:Notify({Title="冷卻中", Content="技能 ["..index.."] 尚未準備好", Duration=1})
+        return
+    end
+
     local Char = LocalPlayer.Character
     if not Char then return end
     
-    -- 執行萬能輸入
-    ForceTriggerSkill(index)
+    -- 2. 發送輸入 (有傷害)
+    SendInput(index)
     
-    -- 播放特效
-    local list = Anims[mode]
-    if list and list[index] then
-        PlayCustomAnim(list[index])
-        local color = (mode=="Gojo" and Color3.fromRGB(0,50,255)) or (mode=="Saitama" and Color3.fromRGB(255,0,0)) or Color3.fromRGB(150,0,255)
-        CreateFX(Char.HumanoidRootPart, color)
-    end
+    -- 3. 覆蓋特效
+    task.delay(0.05, function()
+        local list = Anims[mode]
+        if list and list[index] then
+            PlayCustomAnim(list[index])
+            local color = (mode=="Gojo" and Color3.fromRGB(0,50,255)) or (mode=="Saitama" and Color3.fromRGB(255,0,0)) or Color3.fromRGB(150,0,255)
+            CreateFX(Char.HumanoidRootPart, color)
+        end
+    end)
 end
 
 --------------------------------------------------------------------------------
--- 5. 道具與清理
+-- 5. 道具系統
 --------------------------------------------------------------------------------
--- 暴力背包清理
 RunService.Heartbeat:Connect(function()
     if Config.Mode == "None" then return end
     if LocalPlayer.Backpack then
@@ -146,7 +160,6 @@ end)
 
 local function GiveTools(mode)
     for _, t in pairs(LocalPlayer.Backpack:GetChildren()) do t:Destroy() end
-    
     local Skills = {}
     if mode == "Gojo" then Skills = {"[1] 蒼", "[2] 赫", "[3] 茈", "[4] 領域"}
     elseif mode == "Saitama" then Skills = {"[1] 普通拳", "[2] 連續拳", "[3] 掀桌", "[4] 認真拳"}
@@ -156,10 +169,10 @@ local function GiveTools(mode)
         local tool = Instance.new("Tool")
         tool.Name = name; tool.RequiresHandle = false; tool:SetAttribute("ZN_Custom", true); tool.TextureId = "rbxassetid://0"
         
-        tool.Activated:Connect(function()
+        tool.Equipped:Connect(function()
             ActivateSkill(mode, i)
+            task.delay(0.01, function() tool.Parent = LocalPlayer.Backpack end)
         end)
-        
         tool.Parent = LocalPlayer.Backpack
     end
 end
@@ -190,10 +203,10 @@ RunService.Heartbeat:Connect(function()
 end)
 
 --------------------------------------------------------------------------------
--- 7. UI 介面
+-- 7. UI
 --------------------------------------------------------------------------------
 local Window = Fluent:CreateWindow({
-    Title = "SYSTEM: UNIVERSAL v44", SubTitle = "Mobile Fix",
+    Title = "SYSTEM: COOLDOWN SYNC v46", SubTitle = "Anti-Ghost Hit",
     TabWidth = 160, Size = UDim2.fromOffset(500, 380), Acrylic = true, Theme = "Dark", MinimizeKey = Enum.KeyCode.RightControl
 })
 
@@ -201,17 +214,14 @@ local Main = Window:AddTab({ Title = "戰鬥", Icon = "swords" })
 local Def = Window:AddTab({ Title = "防禦", Icon = "shield" })
 
 Main:AddDropdown("Mode", {
-    Title = "選擇技能組", Values = {"Gojo", "Saitama", "JinWoo"}, Default = "None",
-    Callback = function(v) 
-        Config.Mode = v
-        GiveTools(v)
-        Fluent:Notify({Title="模式載入", Content="嘗試使用三重觸發機制...", Duration=3})
-    end
+    Title = "選擇技能組", Values = {"JinWoo", "Gojo", "Saitama"}, Default = "None",
+    Callback = function(v) Config.Mode = v; GiveTools(v); Fluent:Notify({Title="準備完成", Content=v.." 技能組\n已啟用冷卻偵測", Duration=3}) end
 })
+Main:AddToggle("CD", {Title = "冷卻偵測 (Cooldown Check)", Default = true, Description = "技能冷卻時不播放特效"}):OnChanged(function(v) Config.CheckCooldown = v end)
 
 Def:AddToggle("AF", {Title = "反甩飛", Default = true}):OnChanged(function(v) Config.AntiFling = v end)
 Def:AddToggle("AV", {Title = "反虛空", Default = true}):OnChanged(function(v) Config.AntiVoid = v end)
 
 LocalPlayer.CharacterAdded:Connect(function() task.wait(1); if Config.Mode ~= "None" then GiveTools(Config.Mode) end end)
 
-Fluent:Notify({Title = "SYSTEM: v44", Content = "GUI 點擊模擬已啟用。", Duration = 5})
+Fluent:Notify({Title = "SYSTEM: v46", Content = "冷卻同步系統已啟動。", Duration = 5})
