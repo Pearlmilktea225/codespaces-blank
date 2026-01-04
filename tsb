@@ -1,20 +1,19 @@
 --[[
-    珍奶腳本 (ZhenNai Hub) - v42.0 絕對防禦·神盾版 (SYSTEM: AEGIS)
-    修復：道具觸發失效 (增加按鍵延遲)
-    新增：背包淨化 (清除原遊戲道具)
-    防禦：Anti-Fling (反甩飛), Anti-Void (反虛空)
+    珍奶腳本 (ZhenNai Hub) - v43.0 絕對執行版 (ABSOLUTE EXECUTION)
+    修復：背包清理不乾淨 (改用 Heartbeat 暴力刪除)
+    修復：技能無反應 (延長按鍵訊號時間)
+    防禦：全方位神盾 (Anti-Fling/Void)
 ]]
 
--- [1. 系統服務]
+-- [1. 服務初始化]
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
-local StarterGui = game:GetService("StarterGui")
 local LocalPlayer = Players.LocalPlayer
 
--- 清理舊介面
+-- 清理殘留介面
 local CoreGui = game:GetService("CoreGui")
 for _, gui in pairs(CoreGui:GetChildren()) do
     if gui.Name == "Fluent" then gui:Destroy() end
@@ -24,156 +23,123 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 
 -- [2. 配置]
 local Config = {
-    Mode = "None",
-    SoundFX = true,
-    -- 防禦系統
+    Mode = "None", -- Gojo, Saitama, JinWoo
     AntiFling = true,
     AntiVoid = true,
-    AntiLag = false,
 }
 
--- [3. 動畫 ID]
+-- [3. 動畫 ID (最高優先級)]
 local Anims = {
-    Gojo = {"rbxassetid://10479335397", "rbxassetid://10470104242", "rbxassetid://33796059", "rbxassetid://10714347256"},
-    Saitama = {"rbxassetid://10471336737", "rbxassetid://10479335397", "rbxassetid://10470104242", "rbxassetid://33796059"},
-    JinWoo = {"rbxassetid://5633641724", "rbxassetid://260433746", "rbxassetid://3450654944", "rbxassetid://1496738980"}
+    Gojo = {
+        "rbxassetid://10479335397", -- 1: 蒼
+        "rbxassetid://10470104242", -- 2: 赫
+        "rbxassetid://33796059",    -- 3: 茈
+        "rbxassetid://10714347256"  -- 4: 領域
+    },
+    Saitama = {
+        "rbxassetid://10471336737", -- 1
+        "rbxassetid://10479335397", -- 2
+        "rbxassetid://10470104242", -- 3
+        "rbxassetid://33796059"     -- 4
+    },
+    JinWoo = {
+        "rbxassetid://5633641724", -- 1
+        "rbxassetid://260433746",  -- 2
+        "rbxassetid://3450654944", -- 3
+        "rbxassetid://1496738980"  -- 4
+    }
 }
 
 --------------------------------------------------------------------------------
--- 4. 核心修復：按鍵模擬與背包清理
+-- 4. 核心修復：暴力清理與輸入
 --------------------------------------------------------------------------------
 
--- [背包淨化器] (只保留腳本道具)
-local function PurgeInventory()
+-- [暴力背包淨化] (Heartbeat Loop)
+-- 這會比遊戲發道具的速度更快，確保你只看得到腳本道具
+RunService.Heartbeat:Connect(function()
+    if Config.Mode == "None" then return end
+    
     if LocalPlayer.Backpack then
         for _, t in pairs(LocalPlayer.Backpack:GetChildren()) do
-            if not t:GetAttribute("ZN_Custom") then t:Destroy() end
+            if not t:GetAttribute("ZN_Custom") then 
+                t:Destroy() -- 發現異物，立即銷毀
+            end
         end
     end
-    -- 如果遊戲強制給道具，持續刪除
-    LocalPlayer.Backpack.ChildAdded:Connect(function(child)
-        task.wait()
-        if not child:GetAttribute("ZN_Custom") then child:Destroy() end
-    end)
-end
+end)
 
--- [傷害同步修復] (增加按壓時間)
+-- [輸入模擬修復]
 local function TriggerGameSkill(keyIndex)
     local keyMap = { [1]=Enum.KeyCode.One, [2]=Enum.KeyCode.Two, [3]=Enum.KeyCode.Three, [4]=Enum.KeyCode.Four }
     local k = keyMap[keyIndex]
     
     if k then
-        -- 模擬按下
-        VirtualInputManager:SendKeyEvent(true, k, false, game)
-        -- 等待 0.15 秒 (修復沒反應的問題)
-        task.wait(0.15)
-        -- 模擬放開
-        VirtualInputManager:SendKeyEvent(false, k, false, game)
+        pcall(function()
+            -- 模擬按下
+            VirtualInputManager:SendKeyEvent(true, k, false, game)
+            -- 延長至 0.25 秒，確保爛線也能觸發
+            task.wait(0.25)
+            -- 模擬放開
+            VirtualInputManager:SendKeyEvent(false, k, false, game)
+        end)
     end
 end
 
--- [動作播放]
+-- [動作覆蓋]
 local function PlayCustomAnim(id)
     local Hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
-    if Hum then
-        -- 停止原動作
-        for _, t in pairs(Hum.Animator:GetPlayingAnimationTracks()) do t:Stop(0.1) end
+    if Hum and Hum:FindFirstChild("Animator") then
+        -- 暴力停止所有舊動作
+        for _, t in pairs(Hum.Animator:GetPlayingAnimationTracks()) do t:Stop(0) end
         
         local a = Instance.new("Animation"); a.AnimationId = id
         local t = Hum.Animator:LoadAnimation(a)
-        t.Priority = Enum.AnimationPriority.Action4 -- 最高優先級
-        t:Play(0.1)
+        t.Priority = Enum.AnimationPriority.Action4 -- Action4 是最高級別
+        t:Play(0) -- 0淡入時間，瞬間切換
     end
 end
 
 -- [特效]
 local function CreateFX(root, color)
     local p = Instance.new("Part", workspace); p.Size=Vector3.new(1,1,1); p.Shape="Ball"; p.Material="Neon"; p.Color=color; p.Anchored=true; p.CanCollide=false; p.CFrame=root.CFrame
-    TweenService:Create(p, TweenInfo.new(0.5), {Size=Vector3.new(20,20,20), Transparency=1}):Play(); Debris:AddItem(p, 0.5)
+    TweenService:Create(p, TweenInfo.new(0.5), {Size=Vector3.new(25,25,25), Transparency=1}):Play(); Debris:AddItem(p, 0.5)
 end
 
--- [技能觸發總控]
+-- [技能觸發主控]
 local function ActivateSkill(mode, index)
     local Char = LocalPlayer.Character
     if not Char then return end
     
-    -- 1. 觸發遊戲傷害
-    TriggerGameSkill(index)
+    -- 1. 觸發傷害 (後台模擬按鍵)
+    task.spawn(function() TriggerGameSkill(index) end)
     
-    -- 2. 播放特效
+    -- 2. 播放特效 (前台覆蓋)
     local list = Anims[mode]
     if list and list[index] then
         PlayCustomAnim(list[index])
-        CreateFX(Char.HumanoidRootPart, (mode=="Gojo" and Color3.fromRGB(0,0,255)) or (mode=="Saitama" and Color3.fromRGB(255,0,0)) or Color3.fromRGB(100,0,255))
+        local color = (mode=="Gojo" and Color3.fromRGB(0,50,255)) or (mode=="Saitama" and Color3.fromRGB(255,0,0)) or Color3.fromRGB(150,0,255)
+        CreateFX(Char.HumanoidRootPart, color)
     end
 end
 
 --------------------------------------------------------------------------------
--- 5. 防禦系統 (Anti-Exploit System)
---------------------------------------------------------------------------------
-
--- [反甩飛 Anti-Fling]
-local function StartAntiFling()
-    RunService.Heartbeat:Connect(function()
-        if not Config.AntiFling then return end
-        local MyRoot = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if not MyRoot then return end
-        
-        -- 偵測周圍玩家
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                local TRoot = p.Character.HumanoidRootPart
-                local Dist = (TRoot.Position - MyRoot.Position).Magnitude
-                
-                -- 如果有人靠很近 (10 studs) 且速度極快 (>100) -> 判定為惡意甩飛
-                if Dist < 10 and TRoot.Velocity.Magnitude > 100 then
-                    -- 防禦措施：短暫錨定並取消碰撞
-                    MyRoot.Anchored = true
-                    for _, v in pairs(LocalPlayer.Character:GetChildren()) do
-                        if v:IsA("BasePart") then v.CanCollide = false end
-                    end
-                    
-                    -- 0.5秒後恢復，避免自己卡住
-                    task.delay(0.5, function() 
-                        if MyRoot then MyRoot.Anchored = false end 
-                    end)
-                end
-            end
-        end
-    end)
-end
-
--- [反虛空 Anti-Void]
-local function StartAntiVoid()
-    RunService.Heartbeat:Connect(function()
-        if not Config.AntiVoid then return end
-        local Char = LocalPlayer.Character
-        if Char and Char:FindFirstChild("HumanoidRootPart") then
-            if Char.HumanoidRootPart.Position.Y < -50 then
-                Char.HumanoidRootPart.CFrame = CFrame.new(Char.HumanoidRootPart.Position.X, 50, Char.HumanoidRootPart.Position.Z)
-                Char.HumanoidRootPart.Velocity = Vector3.new(0,0,0)
-            end
-        end
-    end)
-end
-
---------------------------------------------------------------------------------
--- 6. 道具分發
+-- 5. 道具發放系統
 --------------------------------------------------------------------------------
 local function GiveTools(mode)
-    PurgeInventory() -- 先清理背包
+    -- 先清空一次
+    for _, t in pairs(LocalPlayer.Backpack:GetChildren()) do t:Destroy() end
     
     local Skills = {}
-    if mode == "Gojo" then Skills = {"蒼", "赫", "茈", "領域"}
-    elseif mode == "Saitama" then Skills = {"普通拳", "連續拳", "掀桌", "認真拳"}
-    elseif mode == "JinWoo" then Skills = {"斬擊", "重擊", "提取", "覺醒"} end
+    if mode == "Gojo" then Skills = {"[1] 蒼", "[2] 赫", "[3] 茈", "[4] 領域"}
+    elseif mode == "Saitama" then Skills = {"[1] 普通拳", "[2] 連續拳", "[3] 掀桌", "[4] 認真拳"}
+    elseif mode == "JinWoo" then Skills = {"[1] 斬擊", "[2] 重擊", "[3] 提取", "[4] 覺醒"} end
     
     for i, name in ipairs(Skills) do
         local tool = Instance.new("Tool")
-        tool.Name = "["..i.."] "..name
+        tool.Name = name
         tool.RequiresHandle = false
-        tool:SetAttribute("ZN_Custom", true) -- 標記
-        tool.TextureId = "rbxassetid://10952866299" -- 隱形圖示或自訂
+        tool:SetAttribute("ZN_Custom", true) -- 標記為自己人，免死金牌
+        tool.TextureId = "rbxassetid://0" -- 隱藏圖示，或是設為透明
         
         tool.Activated:Connect(function()
             ActivateSkill(mode, i)
@@ -184,35 +150,67 @@ local function GiveTools(mode)
 end
 
 --------------------------------------------------------------------------------
+-- 6. 神盾防禦系統 (Anti-Exploit)
+--------------------------------------------------------------------------------
+RunService.Heartbeat:Connect(function()
+    local Char = LocalPlayer.Character
+    if not Char or not Char:FindFirstChild("HumanoidRootPart") then return end
+    local Root = Char.HumanoidRootPart
+    
+    -- [反甩飛 Anti-Fling]
+    if Config.AntiFling then
+        for _, p in pairs(Players:GetPlayers()) do
+            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
+                local TRoot = p.Character.HumanoidRootPart
+                local Dist = (TRoot.Position - Root.Position).Magnitude
+                -- 檢測：距離極近 且 速度極快
+                if Dist < 10 and TRoot.Velocity.Magnitude > 150 then
+                    -- 對策：錨定自身 + 虛體化
+                    Root.Anchored = true
+                    Root.Velocity = Vector3.zero
+                    for _, v in pairs(Char:GetChildren()) do if v:IsA("BasePart") then v.CanCollide=false end end
+                    
+                    -- 0.5秒後恢復
+                    task.delay(0.5, function() if Root then Root.Anchored = false end end)
+                end
+            end
+        end
+    end
+    
+    -- [反虛空 Anti-Void]
+    if Config.AntiVoid and Root.Position.Y < -50 then
+        Root.CFrame = CFrame.new(Root.Position.X, 100, Root.Position.Z)
+        Root.Velocity = Vector3.zero
+    end
+end)
+
+--------------------------------------------------------------------------------
 -- 7. UI 介面
 --------------------------------------------------------------------------------
 local Window = Fluent:CreateWindow({
-    Title = "SYSTEM: AEGIS v42", SubTitle = "Defense & Offense",
-    TabWidth = 160, Size = UDim2.fromOffset(550, 380), Acrylic = true, Theme = "Dark", MinimizeKey = Enum.KeyCode.RightControl
+    Title = "SYSTEM: AEGIS v43", SubTitle = "Fix & Protect",
+    TabWidth = 160, Size = UDim2.fromOffset(500, 380), Acrylic = true, Theme = "Dark", MinimizeKey = Enum.KeyCode.RightControl
 })
 
-local Main = Window:AddTab({ Title = "戰鬥核心", Icon = "swords" })
-local Def = Window:AddTab({ Title = "神盾防禦", Icon = "shield" })
+local Main = Window:AddTab({ Title = "核心 (Core)", Icon = "swords" })
+local Def = Window:AddTab({ Title = "防禦 (Shield)", Icon = "shield" })
 
 Main:AddDropdown("Mode", {
-    Title = "選擇 Moveset", Values = {"Gojo", "Saitama", "JinWoo"}, Default = "None",
-    Callback = function(v) Config.Mode = v; GiveTools(v); Fluent:Notify({Title="裝備完成", Content=v.." 技能組已發放", Duration=3}) end
+    Title = "選擇技能組 (Moveset)", Values = {"Gojo", "Saitama", "JinWoo"}, Default = "None",
+    Callback = function(v) 
+        Config.Mode = v
+        GiveTools(v)
+        Fluent:Notify({Title="系統就緒", Content=v.." 技能組已裝備\n原遊戲道具將被自動清除", Duration=3})
+    end
 })
 
-Main:AddParagraph({Title="修復說明", Content="1. 舊道具會被自動移除。\n2. 點擊新道具時，增加了訊號延遲，確保傷害能打出來。"})
-
-Def:AddToggle("AF", {Title = "反甩飛 (Anti-Fling)", Default = true, Description = "防止被旋轉腳本撞飛"}):OnChanged(function(v) Config.AntiFling = v end)
+Def:AddToggle("AF", {Title = "反甩飛 (Anti-Fling)", Default = true}):OnChanged(function(v) Config.AntiFling = v end)
 Def:AddToggle("AV", {Title = "反虛空 (Anti-Void)", Default = true}):OnChanged(function(v) Config.AntiVoid = v end)
-Def:AddButton({Title = "重置角色 (Fix)", Callback = function() LocalPlayer.Character.Humanoid.Health = 0 end})
 
--- 啟動防禦系統
-StartAntiFling()
-StartAntiVoid()
-
--- 重生時補發
+-- 重生補發
 LocalPlayer.CharacterAdded:Connect(function()
     task.wait(1)
     if Config.Mode ~= "None" then GiveTools(Config.Mode) end
 end)
 
-Fluent:Notify({Title = "SYSTEM: AEGIS", Content = "防禦系統已啟動。背包已淨化。", Duration = 5})
+Fluent:Notify({Title = "SYSTEM: AEGIS", Content = "背包淨化與輸入修正已啟動。", Duration = 5})
