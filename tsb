@@ -1,71 +1,50 @@
 --[[
-    SYSTEM: SHADOW MONARCH - THE FINALITY (v.FINAL)
-    風格：Solo Leveling (獨自升級) 自訂 UI
-    核心：真傷輸入 + 暗影特效 + 暴力外掛集合 + 雲端腳本庫
-    狀態：[PLAYER: 系統管理者]
+    SYSTEM: APEX (THE ULTIMATE FUSION)
+    視覺：3D Viewport + Cinema Intro + RGB Flow
+    內核：True Damage Input + Cloud Library + Rage Logic
+    狀態：[GOD MODE]
 ]]
 
 local Players = game:GetService("Players")
 local TweenService = game:GetService("TweenService")
 local RunService = game:GetService("RunService")
-local UserInputService = game:GetService("UserInputService")
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local Debris = game:GetService("Debris")
 local Lighting = game:GetService("Lighting")
 local CoreGui = game:GetService("CoreGui")
 local LocalPlayer = Players.LocalPlayer
+local Camera = workspace.CurrentCamera
 
--- [0. 系統清理]
+-- [0. 虛空重置]
 for _, g in pairs(CoreGui:GetChildren()) do
-    if g.Name == "SHADOW_SYSTEM_GUI" then g:Destroy() end
+    if g.Name == "APEX_SYSTEM" then g:Destroy() end
 end
 
--- [1. 全局配置 (Config)]
-local Config = {
-    KillAura = false,
-    AutoFling = false,
-    HitboxExpander = false,
-    Speed = false,
-    Noclip = false
-}
-
--- [2. 系統音效與提示引擎]
-local function PlaySystemSound(type)
+-- [1. APEX 視覺引擎]
+local function PlaySound(type)
     local s = Instance.new("Sound", workspace)
-    if type == "Ping" then s.SoundId = "rbxassetid://7349053834" -- 系統提示
-    elseif type == "Skill" then s.SoundId = "rbxassetid://2977754636" -- 技能音
-    elseif type == "Arise" then s.SoundId = "rbxassetid://3450654944" -- 提取
-    elseif type == "LevelUp" then s.SoundId = "rbxassetid://130768227" -- 升級感
+    if type == "Boot" then s.SoundId = "rbxassetid://130768227"
+    elseif type == "Hover" then s.SoundId = "rbxassetid://6895079853"
+    elseif type == "Click" then s.SoundId = "rbxassetid://6042053626"
+    elseif type == "Skill" then s.SoundId = "rbxassetid://2977754636"
     end
     s.Volume = 2; s:Play(); Debris:AddItem(s, 2)
 end
 
-local function SystemAlert(text)
-    PlaySystemSound("Ping")
-    local GUI = CoreGui:FindFirstChild("SHADOW_SYSTEM_GUI")
-    if not GUI then return end
-    
-    local Alert = Instance.new("Frame", GUI)
-    Alert.Size = UDim2.new(0, 350, 0, 70)
-    Alert.Position = UDim2.new(0.5, -175, 0.15, 0)
-    Alert.BackgroundColor3 = Color3.fromRGB(0, 8, 20)
-    Alert.BackgroundTransparency = 0.1
-    Alert.BorderSizePixel = 0
-    Instance.new("UICorner", Alert).CornerRadius = UDim.new(0, 8)
-    local Str = Instance.new("UIStroke", Alert); Str.Color = Color3.fromRGB(0, 150, 255); Str.Thickness = 2; Str.Transparency = 0.5
-    
-    local Title = Instance.new("TextLabel", Alert); Title.Text = "[SYSTEM NOTIFICATION]"; Title.Size = UDim2.new(1,0,0.3,0); Title.TextColor3 = Color3.fromRGB(0,255,255); Title.BackgroundTransparency=1; Title.Font=Enum.Font.GothamBlack
-    local Msg = Instance.new("TextLabel", Alert); Msg.Text = text; Msg.Size = UDim2.new(1,0,0.6,0); Msg.Position=UDim2.new(0,0,0.3,0); Msg.TextColor3=Color3.new(1,1,1); Msg.BackgroundTransparency=1; Msg.Font=Enum.Font.GothamBold; Msg.TextSize=16
-    
-    -- 動畫
-    Alert.Position = UDim2.new(0.5, -175, 0.1, 0); Alert.Transparency = 1
-    TweenService:Create(Alert, TweenInfo.new(0.3), {Position=UDim2.new(0.5, -175, 0.15, 0), Transparency=0.1}):Play()
-    task.delay(2.5, function() TweenService:Create(Alert, TweenInfo.new(0.3), {Position=UDim2.new(0.5, -175, 0.1, 0), Transparency=1}):Play(); Debris:AddItem(Alert, 0.3) end)
+local function TypeWriter(label, text)
+    label.Text = ""
+    for i = 1, #text do
+        label.Text = string.sub(text, 1, i)
+        if i % 2 == 0 then 
+            local s = Instance.new("Sound", workspace); s.SoundId="rbxassetid://9114221327"; s.Volume=0.2; s:Play(); Debris:AddItem(s,0.5)
+        end
+        task.wait(0.03)
+    end
 end
 
--- [3. 真傷輸入引擎 (True Damage Input)]
-local function TriggerInput(index)
-    -- GUI 暴力點擊 (手機)
+-- [2. 真傷輸入內核 (不修改 Hitbox，只模擬操作)]
+local function TriggerAction(index)
+    -- A. 手機端暴力點擊
     local PG = LocalPlayer:FindFirstChild("PlayerGui")
     if PG then
         local targets = {tostring(index), "Skill"..index, "Ability"..index}
@@ -81,224 +60,188 @@ local function TriggerInput(index)
             end
         end
     end
-    -- 鍵盤模擬 (電腦)
+    -- B. 電腦端鍵盤模擬
     local k = (index==1 and Enum.KeyCode.One) or (index==2 and Enum.KeyCode.Two) or (index==3 and Enum.KeyCode.Three) or (index==4 and Enum.KeyCode.Four)
     VirtualInputManager:SendKeyEvent(true, k, false, game)
-    task.wait(0.15)
+    task.wait(0.1)
     VirtualInputManager:SendKeyEvent(false, k, false, game)
 end
 
--- [4. 暗影特效引擎 (VFX)]
-local function VFX_Augment(index)
-    local Char = LocalPlayer.Character
-    if not Char or not Char:FindFirstChild("HumanoidRootPart") then return end
-    local Root = Char.HumanoidRootPart
-    
-    if index == 1 then -- 匕首亂舞
-        PlaySystemSound("Skill")
-        for i=1,5 do
-            local p = Instance.new("Part", workspace); p.Size=Vector3.new(3,0.5,0.5); p.Color=Color3.fromRGB(100,0,255); p.Material="Neon"; p.Anchored=true; p.CanCollide=false
-            p.CFrame = Root.CFrame * CFrame.new(math.random(-3,3), math.random(0,3), -2) * CFrame.Angles(math.random(),math.random(),math.random())
-            TweenService:Create(p, TweenInfo.new(0.3), {CFrame=p.CFrame*CFrame.new(0,0,-15), Transparency=1}):Play(); Debris:AddItem(p,0.3)
-        end
-    elseif index == 2 then -- 重力壓制
-        PlaySystemSound("Skill")
-        local ring = Instance.new("Part", workspace); ring.Shape="Cylinder"; ring.Size=Vector3.new(1,20,20); ring.Color=Color3.fromRGB(0,0,50); ring.Material="Neon"; ring.Anchored=true; ring.CanCollide=false; ring.CFrame=Root.CFrame*CFrame.new(0,-2.5,0)*CFrame.Angles(0,0,math.rad(90))
-        TweenService:Create(ring, TweenInfo.new(0.5), {Size=Vector3.new(1,40,40), Transparency=1}):Play(); Debris:AddItem(ring,0.5)
-    elseif index == 3 then -- 提取
-        PlaySystemSound("Arise")
-        local bg = Instance.new("BillboardGui", Root); bg.Size=UDim2.new(0,200,0,100); bg.AlwaysOnTop=true; bg.StudsOffset=Vector3.new(0,6,0)
-        local t = Instance.new("TextLabel", bg); t.Size=UDim2.new(1,0,1,0); t.BackgroundTransparency=1; t.Text="ARISE"; t.TextColor3=Color3.fromRGB(0,255,255); t.Font=Enum.Font.Sarpanch; t.TextSize=60; Debris:AddItem(bg,2)
-    elseif index == 4 then -- 領域
-        PlaySystemSound("Arise")
-        local cc = Instance.new("ColorCorrectionEffect", Lighting); cc.TintColor=Color3.fromRGB(50,50,150); cc.Contrast=0.5
-        TweenService:Create(cc, TweenInfo.new(1), {TintColor=Color3.new(1,1,1), Contrast=0}):Play(); Debris:AddItem(cc,1)
-    end
+-- [3. 視覺附魔 (VFX Augment)]
+local function VisualBurst(color)
+    local Root = LocalPlayer.Character.HumanoidRootPart
+    -- 震動
+    local tw = TweenService:Create(Camera, TweenInfo.new(0.05, Enum.EasingStyle.Sine, Enum.EasingDirection.Out, 0, true), {FieldOfView = 75})
+    tw:Play(); task.wait(0.05); TweenService:Create(Camera, TweenInfo.new(0.2), {FieldOfView = 70}):Play()
+    -- 爆氣
+    local p = Instance.new("Part", workspace); p.Size=Vector3.new(1,1,1); p.Shape="Ball"; p.Color=color; p.Material="Neon"; p.Anchored=true; p.CanCollide=false; p.CFrame=Root.CFrame
+    TweenService:Create(p, TweenInfo.new(0.4), {Size=Vector3.new(35,35,35), Transparency=1}):Play(); Debris:AddItem(p, 0.4)
 end
 
--- [5. 系統 UI 建構 (The System)]
+-- [4. UI 建構：APEX 框架]
 local ScreenGui = Instance.new("ScreenGui", CoreGui)
-ScreenGui.Name = "SHADOW_SYSTEM_GUI"
+ScreenGui.Name = "APEX_SYSTEM"
 ScreenGui.IgnoreGuiInset = true
+
+-- [電影級啟動動畫]
+local Intro = Instance.new("Frame", ScreenGui); Intro.Size=UDim2.new(1,0,1,0); Intro.BackgroundColor3=Color3.new(0,0,0); Intro.ZIndex=100
+local IntroTxt = Instance.new("TextLabel", Intro); IntroTxt.Size=UDim2.new(1,0,0.2,0); IntroTxt.Position=UDim2.new(0,0,0.4,0); IntroTxt.BackgroundTransparency=1; IntroTxt.TextColor3=Color3.fromRGB(0,255,255); IntroTxt.Font=Enum.Font.Sarpanch; IntroTxt.TextSize=35; IntroTxt.Text=""
+
+task.spawn(function()
+    PlaySound("Boot")
+    TypeWriter(IntroTxt, "SYSTEM: APEX INITIALIZING...")
+    task.wait(0.5)
+    TypeWriter(IntroTxt, "OVERRIDING SECURITY...")
+    task.wait(0.5)
+    TweenService:Create(Intro, TweenInfo.new(1), {BackgroundTransparency=1}):Play()
+    TweenService:Create(IntroTxt, TweenInfo.new(1), {TextTransparency=1}):Play()
+    task.delay(1, function() Intro:Destroy() end)
+end)
 
 -- [主視窗]
 local Main = Instance.new("Frame", ScreenGui)
-Main.Size = UDim2.new(0, 360, 0, 500)
-Main.Position = UDim2.new(0.05, 0, 0.2, 0)
-Main.BackgroundColor3 = Color3.fromRGB(0, 5, 12)
-Main.BackgroundTransparency = 0.1
+Main.Size = UDim2.new(0, 700, 0, 450)
+Main.Position = UDim2.new(0.5, -350, 0.5, -225)
+Main.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+Main.BackgroundTransparency = 0.05
+Main.Visible = false -- 等動畫
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 10)
-local MainStroke = Instance.new("UIStroke", Main); MainStroke.Color = Color3.fromRGB(0, 120, 255); MainStroke.Thickness = 2; MainStroke.Transparency = 0.5
-
--- [頂部資訊欄]
-local TopBar = Instance.new("Frame", Main)
-TopBar.Size = UDim2.new(1, 0, 0.15, 0)
-TopBar.BackgroundColor3 = Color3.fromRGB(0, 15, 30)
-Instance.new("UICorner", TopBar).CornerRadius = UDim.new(0, 10)
-local NameLbl = Instance.new("TextLabel", TopBar); NameLbl.Text = "PLAYER: " .. LocalPlayer.Name; NameLbl.TextColor3 = Color3.fromRGB(255,255,255); NameLbl.Position = UDim2.new(0.05,0,0.2,0); NameLbl.Size=UDim2.new(0.9,0,0.3,0); NameLbl.Font=Enum.Font.GothamBold; NameLbl.TextXAlignment=Enum.TextXAlignment.Left; NameLbl.BackgroundTransparency=1
-local TitleLbl = Instance.new("TextLabel", TopBar); TitleLbl.Text = "CLASS: SHADOW MONARCH"; TitleLbl.TextColor3 = Color3.fromRGB(0,255,255); TitleLbl.Position = UDim2.new(0.05,0,0.55,0); TitleLbl.Size=UDim2.new(0.9,0,0.3,0); TitleLbl.Font=Enum.Font.Gotham; TitleLbl.TextXAlignment=Enum.TextXAlignment.Left; TitleLbl.BackgroundTransparency=1
-
--- [分頁按鈕容器]
-local TabContainer = Instance.new("Frame", Main)
-TabContainer.Size = UDim2.new(0.9, 0, 0.1, 0)
-TabContainer.Position = UDim2.new(0.05, 0, 0.16, 0)
-TabContainer.BackgroundTransparency = 1
-local UIList = Instance.new("UIListLayout", TabContainer); UIList.FillDirection = Enum.FillDirection.Horizontal; UIList.Padding = UDim.new(0, 5)
-
--- [內容容器]
-local Content = Instance.new("Frame", Main)
-Content.Size = UDim2.new(0.9, 0, 0.7, 0)
-Content.Position = UDim2.new(0.05, 0, 0.28, 0)
-Content.BackgroundTransparency = 1
-
--- 分頁切換邏輯
-local CurrentTab = nil
-local function SwitchTab(tabName, contentFrame)
-    if CurrentTab then CurrentTab.Visible = false end
-    contentFrame.Visible = true
-    CurrentTab = contentFrame
-    PlaySystemSound("Ping")
-end
-
-local function CreateTabBtn(text, linkedFrame)
-    local Btn = Instance.new("TextButton", TabContainer)
-    Btn.Size = UDim2.new(0.3, 0, 1, 0)
-    Btn.BackgroundColor3 = Color3.fromRGB(0, 30, 60)
-    Btn.Text = text
-    Btn.TextColor3 = Color3.fromRGB(0, 200, 255)
-    Btn.Font = Enum.Font.GothamBold
-    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 5)
-    Btn.MouseButton1Click:Connect(function() SwitchTab(text, linkedFrame) end)
-end
-
--- [分頁 1: SKILLS (技能)]
-local SkillFrame = Instance.new("ScrollingFrame", Content); SkillFrame.Size=UDim2.new(1,0,1,0); SkillFrame.BackgroundTransparency=1; SkillFrame.ScrollBarThickness=2; SkillFrame.Visible=false
-local SkillList = Instance.new("UIListLayout", SkillFrame); SkillList.Padding = UDim.new(0, 10)
-
-local function CreateSkillBtn(id, name, desc)
-    local Btn = Instance.new("TextButton", SkillFrame)
-    Btn.Size = UDim2.new(1, 0, 0, 60)
-    Btn.BackgroundColor3 = Color3.fromRGB(0, 10, 25)
-    Btn.Text = ""
-    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 5)
-    local Str = Instance.new("UIStroke", Btn); Str.Color = Color3.fromRGB(0, 80, 200); Str.Transparency=0.5
-    
-    local Txt = Instance.new("TextLabel", Btn); Txt.Text = "["..id.."] "..name; Txt.Size=UDim2.new(0.9,0,0.5,0); Txt.Position=UDim2.new(0.05,0,0.1,0); Txt.TextColor3=Color3.new(1,1,1); Txt.Font=Enum.Font.GothamBold; Txt.BackgroundTransparency=1; Txt.TextXAlignment=Enum.TextXAlignment.Left
-    local Dsc = Instance.new("TextLabel", Btn); Dsc.Text = desc; Dsc.Size=UDim2.new(0.9,0,0.4,0); Dsc.Position=UDim2.new(0.05,0,0.5,0); Dsc.TextColor3=Color3.fromRGB(150,150,255); Dsc.Font=Enum.Font.Gotham; Dsc.BackgroundTransparency=1; Dsc.TextXAlignment=Enum.TextXAlignment.Left
-    
-    Btn.MouseButton1Click:Connect(function()
-        TriggerInput(id) -- 真傷
-        VFX_Augment(id)  -- 特效
-        SystemAlert("SKILL ["..name.."] ACTIVATED")
-    end)
-end
-
-CreateSkillBtn(1, "RUSH", "Rapid shadow strikes.")
-CreateSkillBtn(2, "CRUSH", "Abyssal gravity force.")
-CreateSkillBtn(3, "ARISE", "Summon the shadow army.")
-CreateSkillBtn(4, "MONARCH", "Awaken true power.")
-
--- [分頁 2: CHEATS (暴力功能)]
-local CheatFrame = Instance.new("ScrollingFrame", Content); CheatFrame.Size=UDim2.new(1,0,1,0); CheatFrame.BackgroundTransparency=1; CheatFrame.ScrollBarThickness=2; CheatFrame.Visible=false
-local CheatList = Instance.new("UIListLayout", CheatFrame); CheatList.Padding = UDim.new(0, 10)
-
-local function CreateToggle(text, callback)
-    local Btn = Instance.new("TextButton", CheatFrame)
-    Btn.Size = UDim2.new(1, 0, 0, 50)
-    Btn.BackgroundColor3 = Color3.fromRGB(20, 0, 0) -- 紅色系代表危險
-    Btn.Text = text .. " [OFF]"
-    Btn.TextColor3 = Color3.fromRGB(255, 100, 100)
-    Btn.Font = Enum.Font.GothamBold
-    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 5)
-    
-    local state = false
-    Btn.MouseButton1Click:Connect(function()
-        state = not state
-        if state then Btn.Text = text .. " [ON]"; Btn.BackgroundColor3 = Color3.fromRGB(50, 0, 0); Btn.TextColor3 = Color3.new(1,0,0)
-        else Btn.Text = text .. " [OFF]"; Btn.BackgroundColor3 = Color3.fromRGB(20, 0, 0); Btn.TextColor3 = Color3.fromRGB(255,100,100) end
-        callback(state)
-        SystemAlert(text .. (state and " ENABLED" or " DISABLED"))
-    end)
-end
-
-CreateToggle("KILL AURA", function(v) Config.KillAura = v end)
-CreateToggle("FLING AURA", function(v) Config.AutoFling = v end)
-CreateToggle("HITBOX EXPANDER", function(v) Config.HitboxExpander = v end)
-CreateToggle("GOD SPEED", function(v) Config.Speed = v end)
-CreateToggle("NOCLIP", function(v) Config.Noclip = v end)
-
--- [分頁 3: SYSTEM (開發者/腳本庫)]
-local SysFrame = Instance.new("ScrollingFrame", Content); SysFrame.Size=UDim2.new(1,0,1,0); SysFrame.BackgroundTransparency=1; SysFrame.ScrollBarThickness=2; SysFrame.Visible=false
-local SysList = Instance.new("UIListLayout", SysFrame); SysList.Padding = UDim.new(0, 10)
-
-local function CreateLoader(name, url)
-    local Btn = Instance.new("TextButton", SysFrame)
-    Btn.Size = UDim2.new(1, 0, 0, 50)
-    Btn.BackgroundColor3 = Color3.fromRGB(0, 30, 10)
-    Btn.Text = "LOAD: " .. name
-    Btn.TextColor3 = Color3.fromRGB(100, 255, 100)
-    Btn.Font = Enum.Font.Mono
-    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 5)
-    
-    Btn.MouseButton1Click:Connect(function()
-        SystemAlert("DOWNLOADING " .. name .. "...")
-        loadstring(game:HttpGet(url))()
-    end)
-end
-
-CreateLoader("INFINITE YIELD", "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source")
-CreateLoader("DEX EXPLORER", "https://raw.githubusercontent.com/infyiff/backup/main/dex.lua")
-CreateLoader("REMOTE SPY", "https://raw.githubusercontent.com/exxtremestuffs/SimpleSpySource/master/SimpleSpy.lua")
-
--- [6. 功能循環 (Loops)]
-CreateTabBtn("SKILLS", SkillFrame)
-CreateTabBtn("QUESTS", CheatFrame) -- 暴力功能改名為 Quests (任務) 符合風格
-CreateTabBtn("SYSTEM", SysFrame)
-SwitchTab("SKILLS", SkillFrame) -- 預設分頁
-
--- 暴力功能邏輯
-RunService.Heartbeat:Connect(function()
-    -- Kill Aura
-    if Config.KillAura then
-        for _, p in pairs(Players:GetPlayers()) do
-            if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                if (p.Character.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude < 20 then
-                    VirtualInputManager:SendMouseButtonEvent(0,0,0,true,game,1)
-                    VirtualInputManager:SendMouseButtonEvent(0,0,0,false,game,1)
-                end
-            end
-        end
-    end
-    -- Fling
-    if Config.AutoFling then
-        local Root = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart")
-        if Root then
-            local BAV = Root:FindFirstChild("ZN_Spin") or Instance.new("BodyAngularVelocity", Root)
-            BAV.Name="ZN_Spin"; BAV.MaxTorque=Vector3.new(9e9,9e9,9e9); BAV.AngularVelocity=Vector3.new(0,10000,0)
-            for _, p in pairs(Players:GetPlayers()) do
-                if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                    if (p.Character.HumanoidRootPart.Position - Root.Position).Magnitude < 15 then
-                        Root.CFrame = p.Character.HumanoidRootPart.CFrame * CFrame.new(math.random(-1,1), -1, math.random(-1,1))
-                        Root.Velocity = Vector3.zero
-                    end
-                end
-            end
-        else
-             if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-                local b = LocalPlayer.Character.HumanoidRootPart:FindFirstChild("ZN_Spin")
-                if b then b:Destroy() end
-            end
-        end
-    end
-    -- Speed
-    if Config.Speed and LocalPlayer.Character then
-        LocalPlayer.Character.Humanoid.WalkSpeed = 60
-    end
-    -- Noclip
-    if Config.Noclip and LocalPlayer.Character then
-        for _, v in pairs(LocalPlayer.Character:GetChildren()) do if v:IsA("BasePart") then v.CanCollide = false end end
+local Stroke = Instance.new("UIStroke", Main); Stroke.Color = Color3.fromRGB(0, 255, 255); Stroke.Thickness = 2
+-- 流光特效
+task.spawn(function()
+    while Main.Parent do
+        local t = tick() % 5 / 5
+        local color = Color3.fromHSV(t, 1, 1)
+        Stroke.Color = color
+        task.wait(0.05)
     end
 end)
 
--- 歡迎提示
-SystemAlert("SYSTEM INITIALIZED. WELCOME, PLAYER.")
+task.delay(3, function() Main.Visible = true; Main.Size=UDim2.new(0,0,0,0); TweenService:Create(Main, TweenInfo.new(0.5, Enum.EasingStyle.Back), {Size=UDim2.new(0,700,0,450)}):Play() end)
+
+-- [左側：3D 角色投影 (The Mirror)]
+local Viewport = Instance.new("ViewportFrame", Main)
+Viewport.Size = UDim2.new(0.35, 0, 0.8, 0)
+Viewport.Position = UDim2.new(0.02, 0, 0.15, 0)
+Viewport.BackgroundTransparency = 1
+local VPCam = Instance.new("Camera"); Viewport.CurrentCamera = VPCam; VPCam.Parent = Viewport
+
+task.spawn(function()
+    wait(3)
+    if LocalPlayer.Character then
+        LocalPlayer.Character.Archivable = true
+        local Clone = LocalPlayer.Character:Clone(); Clone.Parent = Viewport
+        for _,s in pairs(Clone:GetDescendants()) do if s:IsA("Script") then s:Destroy() end end
+        local HRP = Clone:FindFirstChild("HumanoidRootPart")
+        if HRP then
+            VPCam.CFrame = CFrame.new(HRP.Position + Vector3.new(0,2,-7), HRP.Position)
+            RunService.RenderStepped:Connect(function() 
+                if Clone.PrimaryPart then Clone:SetPrimaryPartCFrame(Clone.PrimaryPart.CFrame * CFrame.Angles(0,0.01,0)) end 
+            end)
+        end
+    end
+end)
+
+-- [右側：功能矩陣]
+local Title = Instance.new("TextLabel", Main); Title.Text="APEX // CONTROL"; Title.Size=UDim2.new(0.6,0,0.1,0); Title.Position=UDim2.new(0.4,0,0.05,0); Title.Font=Enum.Font.Sarpanch; Title.TextSize=30; Title.TextColor3=Color3.new(1,1,1); Title.BackgroundTransparency=1; Title.TextXAlignment=Enum.TextXAlignment.Left
+
+local TabContainer = Instance.new("Frame", Main); TabContainer.Size=UDim2.new(0.55,0,0.08,0); TabContainer.Position=UDim2.new(0.4,0,0.15,0); TabContainer.BackgroundTransparency=1
+local TabList = Instance.new("UIListLayout", TabContainer); TabList.FillDirection=Enum.FillDirection.Horizontal; TabList.Padding=UDim.new(0,10)
+
+local Content = Instance.new("Frame", Main); Content.Size=UDim2.new(0.55,0,0.7,0); Content.Position=UDim2.new(0.4,0,0.25,0); Content.BackgroundTransparency=1; Content.ClipsDescendants=true
+
+-- 分頁邏輯
+local CurrentPage = nil
+local function Switch(page)
+    if CurrentPage then CurrentPage.Visible=false end
+    page.Visible=true; CurrentPage=page
+    PlaySound("Click")
+end
+
+local function AddTab(text, page)
+    local B = Instance.new("TextButton", TabContainer); B.Size=UDim2.new(0.3,0,1,0); B.BackgroundColor3=Color3.fromRGB(20,20,30); B.Text=text; B.TextColor3=Color3.new(1,1,1); B.Font=Enum.Font.GothamBold; Instance.new("UICorner",B).CornerRadius=UDim.new(0,5)
+    B.MouseButton1Click:Connect(function() Switch(page) end)
+end
+
+-- [頁面 1: DOMINATION (戰鬥)]
+local CombatPage = Instance.new("ScrollingFrame", Content); CombatPage.Size=UDim2.new(1,0,1,0); CombatPage.BackgroundTransparency=1; CombatPage.ScrollBarThickness=3; CombatPage.Visible=false; CombatPage.AutomaticCanvasSize=Enum.AutomaticSize.Y; CombatPage.CanvasSize=UDim2.new(0,0,0,0)
+local CombatList = Instance.new("UIListLayout", CombatPage); CombatList.Padding=UDim.new(0,8)
+
+local function AddToggle(name, func)
+    local B = Instance.new("TextButton", CombatPage); B.Size=UDim2.new(1,0,0,45); B.BackgroundColor3=Color3.fromRGB(30,30,40); B.Text=name.." [OFF]"; B.TextColor3=Color3.fromRGB(255,100,100); B.Font=Enum.Font.GothamBold; Instance.new("UICorner",B).CornerRadius=UDim.new(0,5)
+    local on = false
+    B.MouseButton1Click:Connect(function()
+        on = not on
+        if on then B.Text=name.." [ON]"; B.TextColor3=Color3.new(0,1,0); B.BackgroundColor3=Color3.fromRGB(40,50,60) else B.Text=name.." [OFF]"; B.TextColor3=Color3.fromRGB(255,100,100); B.BackgroundColor3=Color3.fromRGB(30,30,40) end
+        func(on)
+        PlaySound("Click")
+    end)
+end
+
+AddToggle("KILL AURA (暴力)", function(v) 
+    _G.KA = v
+    RunService.Heartbeat:Connect(function()
+        if _G.KA then for _,p in pairs(Players:GetPlayers()) do if p~=LocalPlayer and p.Character and (p.Character.HumanoidRootPart.Position-LocalPlayer.Character.HumanoidRootPart.Position).Magnitude<20 then VirtualInputManager:SendMouseButtonEvent(0,0,0,true,game,1); VirtualInputManager:SendMouseButtonEvent(0,0,0,false,game,1) end end end
+    end)
+end)
+AddToggle("FLING AURA (撞飛)", function(v) 
+    _G.FA = v
+    RunService.Heartbeat:Connect(function()
+        if _G.FA then 
+            local Root = LocalPlayer.Character.HumanoidRootPart
+            local BAV = Root:FindFirstChild("ZN_Spin") or Instance.new("BodyAngularVelocity", Root); BAV.Name="ZN_Spin"; BAV.MaxTorque=Vector3.new(9e9,9e9,9e9); BAV.AngularVelocity=Vector3.new(0,10000,0)
+            for _,p in pairs(Players:GetPlayers()) do if p~=LocalPlayer and p.Character and (p.Character.HumanoidRootPart.Position-Root.Position).Magnitude<15 then Root.CFrame=p.Character.HumanoidRootPart.CFrame*CFrame.new(0,-1,0); Root.Velocity=Vector3.zero end end
+        else
+             if LocalPlayer.Character and LocalPlayer.Character.HumanoidRootPart:FindFirstChild("ZN_Spin") then LocalPlayer.Character.HumanoidRootPart.ZN_Spin:Destroy() end
+        end
+    end)
+end)
+AddToggle("GOD SPEED (加速)", function(v) RunService.Heartbeat:Connect(function() if v then LocalPlayer.Character.Humanoid.WalkSpeed=60 end end) end)
+
+-- [頁面 2: SHADOW (動作)]
+local MovePage = Instance.new("ScrollingFrame", Content); MovePage.Size=UDim2.new(1,0,1,0); MovePage.BackgroundTransparency=1; MovePage.Visible=false; MovePage.AutomaticCanvasSize=Enum.AutomaticSize.Y; MovePage.CanvasSize=UDim2.new(0,0,0,0)
+local MoveList = Instance.new("UIListLayout", MovePage); MoveList.Padding=UDim.new(0,8)
+
+local function AddSkill(id, name, color)
+    local B = Instance.new("TextButton", MovePage); B.Size=UDim2.new(1,0,0,50); B.BackgroundColor3=Color3.fromRGB(20,20,35); B.Text=""; Instance.new("UICorner",B).CornerRadius=UDim.new(0,5); local Str = Instance.new("UIStroke",B); Str.Color=color; Str.Thickness=1
+    local T = Instance.new("TextLabel", B); T.Text="["..id.."] "..name; T.Size=UDim2.new(1,0,1,0); T.BackgroundTransparency=1; T.TextColor3=Color3.new(1,1,1); T.Font=Enum.Font.GothamBlack; T.TextSize=18
+    
+    B.MouseEnter:Connect(function() TweenService:Create(B, TweenInfo.new(0.2), {BackgroundColor3=color}):Play(); PlaySound("Hover") end)
+    B.MouseLeave:Connect(function() TweenService:Create(B, TweenInfo.new(0.2), {BackgroundColor3=Color3.fromRGB(20,20,35)}):Play() end)
+    
+    B.MouseButton1Click:Connect(function()
+        TriggerAction(id)
+        VisualBurst(color)
+        PlaySound("Skill")
+    end)
+end
+
+AddSkill(1, "RUSH // 連擊", Color3.fromRGB(0, 255, 255))
+AddSkill(2, "SMASH // 重擊", Color3.fromRGB(255, 50, 50))
+AddSkill(3, "ARISE // 提取", Color3.fromRGB(150, 0, 255))
+AddSkill(4, "DOMAIN // 領域", Color3.fromRGB(255, 255, 0))
+
+-- [頁面 3: LIBRARY (雲端庫)]
+local HubPage = Instance.new("ScrollingFrame", Content); HubPage.Size=UDim2.new(1,0,1,0); HubPage.BackgroundTransparency=1; HubPage.Visible=false; HubPage.AutomaticCanvasSize=Enum.AutomaticSize.Y; HubPage.CanvasSize=UDim2.new(0,0,0,0)
+local HubList = Instance.new("UIListLayout", HubPage); HubList.Padding=UDim.new(0,8)
+
+local function AddLoader(name, url)
+    local B = Instance.new("TextButton", HubPage); B.Size=UDim2.new(1,0,0,40); B.BackgroundColor3=Color3.fromRGB(10,30,10); B.Text="LOAD: "..name; B.TextColor3=Color3.fromRGB(100,255,100); B.Font=Enum.Font.Mono; Instance.new("UICorner",B).CornerRadius=UDim.new(0,5)
+    B.MouseButton1Click:Connect(function() loadstring(game:HttpGet(url))() end)
+end
+
+AddLoader("INFINITE YIELD", "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source")
+AddLoader("DEX EXPLORER", "https://raw.githubusercontent.com/infyiff/backup/main/dex.lua")
+AddLoader("REMOTE SPY", "https://raw.githubusercontent.com/exxtremestuffs/SimpleSpySource/master/SimpleSpy.lua")
+
+-- [初始化]
+AddTab("COMBAT", CombatPage)
+AddTab("SHADOW", MovePage)
+AddTab("LIBRARY", HubPage)
+Switch(MovePage) -- 預設頁面
+
+-- 手機最小化
+if game:GetService("UserInputService").TouchEnabled then
+    local M = Instance.new("TextButton", ScreenGui); M.Size=UDim2.new(0,50,0,50); M.Position=UDim2.new(0,10,0,50); M.BackgroundColor3=Color3.new(0,0,0); M.BackgroundTransparency=0.3; M.Text="A"; M.TextColor3=Color3.new(0,1,1); Instance.new("UICorner",M).CornerRadius=UDim.new(0.5,0); Instance.new("UIStroke",M).Color=Color3.new(0,1,1)
+    M.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
+end
