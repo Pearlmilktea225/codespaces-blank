@@ -1,8 +1,7 @@
 --[[
-    SYSTEM: APEX // SINGULARITY (PHYSICS OVERHAUL)
-    修復：解決「只穿透不擊飛」的問題
-    技術：坐姿甩飛 (Sit Fling) + 實體碰撞保留
-    收錄：60+ 遊戲全庫 + V10 自製核心
+    SYSTEM: APEX // EVENT HORIZON (STICKY FLING)
+    核心：V11 黏著傳送甩飛 (Lock-On Teleport Fling)
+    功能：全遊戲庫 (60+) + 深度漢化 + 手動開關
     作者：珍奶 (絕對統治)
 ]]
 
@@ -39,7 +38,7 @@ end
 
 -- [3. 清理]
 for _, g in pairs(CoreGui:GetChildren()) do
-    if g.Name == "APEX_SINGULARITY" then g:Destroy() end
+    if g.Name == "APEX_HORIZON" then g:Destroy() end
 end
 
 -- [4. 漢化辭海]
@@ -53,21 +52,22 @@ local Dictionary = {
     ["Noclip"]="穿牆", ["Fly"]="飛行", ["Infinite Jump"]="無限跳", ["God Mode"]="無敵"
 }
 
--- [5. 自製腳本 (Jenna Custom V10 - Singularity)]
+-- [5. 自製腳本 (Jenna Custom V11 - Sticky Fling)]
 local CustomScripts = {
     TSB_Main = [[
         local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/bloodball/-back-ups-for-libs/main/wall%20v3"))()
-        local w = library:CreateWindow("珍奶 TSB (崩壞版)")
+        local w = library:CreateWindow("珍奶 TSB (V11)")
         
-        -- [核心功能: 奇異點甩飛]
-        local f = w:CreateFolder("V10 奇異點甩飛")
+        -- [核心: V11 黏著傳送甩飛]
+        local f = w:CreateFolder("V11 黏著甩飛")
         getgenv().TargetName = ""
         getgenv().Flinging = false
         getgenv().OriginalPos = nil
+        getgenv().FlingLoop = nil
         
         f:Box("輸入目標名字", "string", function(val) getgenv().TargetName = val end)
         
-        f:Toggle("啟動奇異點 (手動)", function(state)
+        f:Toggle("啟動黏著甩飛 (手動)", function(state)
             local LP = game.Players.LocalPlayer
             local Char = LP.Character
             
@@ -88,41 +88,39 @@ local CustomScripts = {
                 
                 if not Char or not Char:FindFirstChild("HumanoidRootPart") then return end
                 
-                -- 1. 記錄位置 & 隱形
+                -- 1. 記錄位置
                 getgenv().OriginalPos = Char.HumanoidRootPart.CFrame
                 getgenv().Flinging = true
+                
+                -- 2. 暫時關閉防禦 (避免自己被定住)
                 getgenv().AntiFling = false
                 getgenv().AntiVoid = false
                 
-                -- 強制坐下 (增加物理判定體積)
-                if Char:FindFirstChild("Humanoid") then
-                    Char.Humanoid.Sit = true
-                end
-
-                game.StarterGui:SetCore("SendNotification", {Title="鎖定目標", Text="正在崩壞: "..Target.Name, Duration=3})
+                game.StarterGui:SetCore("SendNotification", {Title="鎖定", Text="正在黏著: "..Target.Name, Duration=3})
                 
-                -- 2. 物理崩壞循環 (V10 核心)
-                -- 使用 Skylight 算法：不完全穿牆，保留撞擊力
-                local RotForce = Instance.new("BodyAngularVelocity")
-                RotForce.Parent = Char.HumanoidRootPart
-                RotForce.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-                RotForce.AngularVelocity = Vector3.new(0, 100000, 0) -- 基礎旋轉
-                
-                getgenv().FlingLoop = game:GetService("RunService").Stepped:Connect(function()
+                -- 3. 黏著循環 (Heartbeat = 物理幀後執行，確保位置覆蓋)
+                getgenv().FlingLoop = game:GetService("RunService").Heartbeat:Connect(function()
                     if Target.Character and Target.Character:FindFirstChild("HumanoidRootPart") and Char:FindFirstChild("HumanoidRootPart") then
                         local TRP = Target.Character.HumanoidRootPart
                         local LRP = Char.HumanoidRootPart
                         
-                        -- 黏著邏輯：瞬移到目標中心點，不做隨機偏移，確保「卡」在裡面
+                        -- [傳送]: 每幀強制設定自己的位置等於敵人的位置 (黏著)
                         LRP.CFrame = TRP.CFrame
                         
-                        -- 速度邏輯：賦予極大速度，讓物理引擎誤判碰撞
-                        LRP.Velocity = Vector3.new(9000, 9000, 9000)
-                        LRP.RotVelocity = Vector3.new(9000, 9000, 9000)
+                        -- [甩飛]: 給予無限旋轉力
+                        LRP.AssemblyAngularVelocity = Vector3.new(20000, 20000, 20000) -- 新物理
+                        LRP.RotVelocity = Vector3.new(20000, 20000, 20000) -- 舊物理
                         
-                        -- 視覺隱藏：讓自己變透明，方便觀察敵人是否飛走
+                        -- [輔助]: 線性速度設為 0，防止自己滑走
+                        LRP.AssemblyLinearVelocity = Vector3.new(0,0,0)
+                        LRP.Velocity = Vector3.new(0,0,0)
+                        
+                        -- [無敵]: 關閉碰撞
                         for _, part in pairs(Char:GetDescendants()) do
-                            if part:IsA("BasePart") then part.Transparency = 0.5 end
+                            if part:IsA("BasePart") then 
+                                part.CanCollide = false 
+                                part.Massless = true
+                            end
                         end
                     end
                 end)
@@ -132,33 +130,24 @@ local CustomScripts = {
                 if getgenv().FlingLoop then getgenv().FlingLoop:Disconnect() end
                 
                 if Char and Char:FindFirstChild("HumanoidRootPart") then
-                    -- 清理力場
-                    for _, v in pairs(Char.HumanoidRootPart:GetChildren()) do
-                        if v:IsA("BodyAngularVelocity") or v:IsA("BodyVelocity") then v:Destroy() end
-                    end
-                    
-                    -- 歸位
+                    -- 歸零
                     Char.HumanoidRootPart.Velocity = Vector3.zero
                     Char.HumanoidRootPart.RotVelocity = Vector3.zero
+                    Char.HumanoidRootPart.AssemblyAngularVelocity = Vector3.zero
+                    Char.HumanoidRootPart.AssemblyLinearVelocity = Vector3.zero
+                    
+                    -- 回家
                     if getgenv().OriginalPos then
                         Char.HumanoidRootPart.CFrame = getgenv().OriginalPos
-                    end
-                    
-                    -- 站起來
-                    if Char:FindFirstChild("Humanoid") then Char.Humanoid.Sit = false end
-                    
-                    -- 恢復外觀
-                    for _, part in pairs(Char:GetDescendants()) do
-                        if part:IsA("BasePart") then part.Transparency = 0 end
                     end
                 end
                 
                 getgenv().Flinging = false
-                game.StarterGui:SetCore("SendNotification", {Title="行動結束", Text="已安全歸位", Duration=2})
+                game.StarterGui:SetCore("SendNotification", {Title="結束", Text="已安全歸位", Duration=2})
             end
         end)
         
-        f:Label("提示: 如果沒飛走，請嘗試先跳一下再開啟", Color3.fromRGB(200,200,0))
+        f:Label("說明: 開啟後你會瞬移黏住敵人，確認飛走後請手動關閉", Color3.fromRGB(200,200,200))
 
         local b = w:CreateFolder("生存防禦")
         b:Toggle("防虛空", function(val)
@@ -200,18 +189,20 @@ local Database = {
         IDs = {2753915549, 4442272183, 7449423635},
         Scripts = {
             {Name = "Hoho Hub", Desc = "功能最全/副本", Type = "Url", Url = "https://raw.githubusercontent.com/acsu123/HOHO_H/main/Loading_UI"},
-            {Name = "Hiba Hub", Desc = "手機優化/介面流暢", Type = "Url", Url = "https://raw.githubusercontent.com/Hiba-Ar/HibaHub/main/Hiba-Hub-v2.lua"},
+            {Name = "Hiba Hub", Desc = "手機優化極佳", Type = "Url", Url = "https://raw.githubusercontent.com/Hiba-Ar/HibaHub/main/Hiba-Hub-v2.lua"},
             {Name = "W-Azure", Desc = "自動懸賞", Type = "Url", Url = "https://api.luarmor.net/files/v3/loaders/3b2169cf53bc6104dabe8e19562e5cc2.lua"},
-            {Name = "Zee Hub", Desc = "果實透視", Type = "Url", Url = "https://raw.githubusercontent.com/Zenhubtop/zen_hub_pr/main/zen_new_loader.lua"}
+            {Name = "Zee Hub", Desc = "果實透視", Type = "Url", Url = "https://raw.githubusercontent.com/Zenhubtop/zen_hub_pr/main/zen_new_loader.lua"},
+            {Name = "Mukuro Hub", Desc = "老牌掛機", Type = "Url", Url = "https://raw.githubusercontent.com/xDepressionx/Free-Script/main/AllScript.lua"}
         }
     },
     -- [2] TSB
     ["TSB (最強戰場)"] = {
         IDs = {10449761463},
         Scripts = {
-            {Name = "Jenna Singularity V10", Desc = "獨家: 坐姿甩飛 (物理崩壞)", Type = "Raw", Code = CustomScripts.TSB_Main},
+            {Name = "Jenna Sticky V11", Desc = "獨家: 黏著傳送甩飛 (必殺)", Type = "Raw", Code = CustomScripts.TSB_Main},
             {Name = "Void Hub", Desc = "殺戮/免Key", Type = "Url", Url = "https://raw.githubusercontent.com/VoidHubV1/VoidHub/main/Source"},
-            {Name = "Phantasm", Desc = "自動連招", Type = "Url", Url = "https://raw.githubusercontent.com/Phantasm/TSB/main/loader.lua"}
+            {Name = "Phantasm", Desc = "自動連招", Type = "Url", Url = "https://raw.githubusercontent.com/Phantasm/TSB/main/loader.lua"},
+            {Name = "TSB Utils", Desc = "惡搞工具", Type = "Url", Url = "https://raw.githubusercontent.com/skych4n/tsb-utils/main/main.lua"}
         }
     },
     -- [3] Bedwars
@@ -260,7 +251,7 @@ end
 local function HijackUI()
     for _, gui in pairs(CoreGui:GetDescendants()) do
         if gui:IsA("TextLabel") or gui:IsA("TextButton") then
-            if not gui:IsDescendantOf(game.CoreGui.APEX_SINGULARITY) then
+            if not gui:IsDescendantOf(game.CoreGui.APEX_HORIZON) then
                 local original = gui.Text
                 if #original > 0 then
                     local newText = Translate(original)
@@ -277,18 +268,18 @@ end)
 
 -- [8. UI 建構]
 local ScreenGui = Instance.new("ScreenGui", CoreGui)
-ScreenGui.Name = "APEX_SINGULARITY"
+ScreenGui.Name = "APEX_HORIZON"
 ScreenGui.IgnoreGuiInset = true
 
--- 懸浮球
+-- 懸浮球 (嚴格判定)
 local Toggle = Instance.new("ImageButton", ScreenGui)
 Toggle.Size = UDim2.new(0, 55, 0, 55)
 Toggle.Position = UDim2.new(0.02, 0, 0.2, 0)
 Toggle.BackgroundColor3 = Color3.fromRGB(0,0,0)
 Toggle.Image = "rbxassetid://13465637257"
-Toggle.ImageColor3 = Color3.fromRGB(0, 0, 0) -- 奇異點黑
+Toggle.ImageColor3 = Color3.fromRGB(50, 255, 50) -- 視界綠
 Instance.new("UICorner", Toggle).CornerRadius = UDim.new(1,0)
-Instance.new("UIStroke", Toggle).Color = Color3.fromRGB(100, 0, 255)
+Instance.new("UIStroke", Toggle).Color = Color3.fromRGB(0, 200, 0)
 Instance.new("UIStroke", Toggle).Thickness = 2
 
 local dragging = false
@@ -328,26 +319,26 @@ local Main = Instance.new("Frame", ScreenGui)
 Main.Name = "Main"
 Main.Size = UDim2.new(0, 600, 0, 400)
 Main.Position = UDim2.new(0.5, -300, 0.5, -200)
-Main.BackgroundColor3 = Color3.fromRGB(5, 5, 10)
+Main.BackgroundColor3 = Color3.fromRGB(5, 10, 5)
 Main.BackgroundTransparency = 0.05
 Main.Visible = false
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
-local MainStroke = Instance.new("UIStroke", Main); MainStroke.Color = Color3.fromRGB(100, 0, 255); MainStroke.Thickness = 2
+local MainStroke = Instance.new("UIStroke", Main); MainStroke.Color = Color3.fromRGB(50, 255, 50); MainStroke.Thickness = 2
 
 -- 側邊欄
 local Sidebar = Instance.new("ScrollingFrame", Main)
 Sidebar.Size = UDim2.new(0.3, 0, 0.75, 0)
-Sidebar.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
+Sidebar.BackgroundColor3 = Color3.fromRGB(10, 20, 10)
 Sidebar.ScrollBarThickness = 0
 local SideList = Instance.new("UIListLayout", Sidebar); SideList.Padding = UDim.new(0, 4); SideList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 Sidebar.AutomaticCanvasSize = Enum.AutomaticSize.Y
 SideList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() Sidebar.CanvasSize = UDim2.new(0,0,0,SideList.AbsoluteContentSize.Y+20) end)
 
 local Title = Instance.new("TextLabel", Sidebar)
-Title.Text = "頂點·奇異點"
+Title.Text = "頂點·視界"
 Title.Font = Enum.Font.GothamBlack
 Title.TextSize = 20
-Title.TextColor3 = Color3.fromRGB(150, 0, 255)
+Title.TextColor3 = Color3.fromRGB(50, 255, 50)
 Title.Size = UDim2.new(1,0,0,50)
 Title.BackgroundTransparency = 1
 
@@ -365,9 +356,9 @@ ContentList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() C
 local ConsoleFrame = Instance.new("Frame", Main)
 ConsoleFrame.Size = UDim2.new(0.95, 0, 0.18, 0)
 ConsoleFrame.Position = UDim2.new(0.025, 0, 0.8, 0)
-ConsoleFrame.BackgroundColor3 = Color3.fromRGB(2, 2, 5)
+ConsoleFrame.BackgroundColor3 = Color3.fromRGB(2, 5, 2)
 Instance.new("UICorner", ConsoleFrame).CornerRadius = UDim.new(0, 6)
-Instance.new("UIStroke", ConsoleFrame).Color = Color3.fromRGB(50, 0, 100)
+Instance.new("UIStroke", ConsoleFrame).Color = Color3.fromRGB(0, 50, 0)
 
 local ConsoleScroll = Instance.new("ScrollingFrame", ConsoleFrame)
 ConsoleScroll.Size = UDim2.new(0.98, 0, 0.95, 0)
@@ -388,7 +379,7 @@ local function Log(msg, color)
     ConsoleScroll.CanvasPosition = Vector2.new(0, 9999)
 end
 
-Log("奇異點甩飛載入 (Sit Fling V10)", Color3.fromRGB(150, 0, 255))
+Log("視界系統載入 - 黏著傳送甩飛 (V11)", Color3.fromRGB(50, 255, 50))
 
 -- 加載列表
 local function LoadList(category)
@@ -399,7 +390,7 @@ local function LoadList(category)
         for _, data in pairs(list.Scripts) do
             local F = Instance.new("Frame", Content)
             F.Size = UDim2.new(0.95, 0, 0, 70)
-            F.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+            F.BackgroundColor3 = Color3.fromRGB(20, 30, 20)
             Instance.new("UICorner", F).CornerRadius = UDim.new(0, 6)
             
             local Name = Instance.new("TextLabel", F)
@@ -415,7 +406,7 @@ local function LoadList(category)
             Desc.Text = data.Desc
             Desc.Size = UDim2.new(0.7, 0, 0.4, 0)
             Desc.Position = UDim2.new(0.05, 0, 0.5, 0)
-            Desc.TextColor3 = Color3.fromRGB(150, 150, 255)
+            Desc.TextColor3 = Color3.fromRGB(150, 255, 150)
             Desc.Font = Enum.Font.Gotham
             Desc.TextSize = 11
             Desc.TextXAlignment = Enum.TextXAlignment.Left
@@ -425,7 +416,7 @@ local function LoadList(category)
             local Run = Instance.new("TextButton", F)
             Run.Size = UDim2.new(0.2, 0, 0.6, 0)
             Run.Position = UDim2.new(0.78, 0, 0.2, 0)
-            Run.BackgroundColor3 = Color3.fromRGB(80, 0, 200)
+            Run.BackgroundColor3 = Color3.fromRGB(0, 100, 0)
             Run.Text = "執行"
             Run.TextColor3 = Color3.new(1,1,1)
             Run.Font = Enum.Font.GothamBold
@@ -455,9 +446,9 @@ end
 local function AddSideBtn(text)
     local B = Instance.new("TextButton", Sidebar)
     B.Size = UDim2.new(0.9, 0, 0, 45)
-    B.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
+    B.BackgroundColor3 = Color3.fromRGB(20, 30, 20)
     B.Text = text
-    B.TextColor3 = Color3.fromRGB(150, 100, 255)
+    B.TextColor3 = Color3.fromRGB(100, 255, 100)
     B.Font = Enum.Font.GothamBold
     B.TextWrapped = true
     Instance.new("UICorner", B).CornerRadius = UDim.new(0, 6)
@@ -473,6 +464,6 @@ AddSideBtn("Universal (通用)")
 local Detected = "Universal (通用)"
 for cat, data in pairs(Database) do for _, id in ipairs(data.IDs) do if id == PlaceID then Detected = cat; break end end end
 LoadList(Detected)
-if Detected ~= "Universal (通用)" then Log("自動切換: "..Detected, Color3.fromRGB(150, 100, 255)) end
+if Detected ~= "Universal (通用)" then Log("自動切換: "..Detected, Color3.fromRGB(50, 255, 50)) end
 
 Main.Visible = true
