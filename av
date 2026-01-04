@@ -1,0 +1,278 @@
+--[[
+    SYSTEM: APEX // SUPREME (AV CUSTOM EDITION)
+    新增：Jenna Custom AV (自製輔助 + 掛機引擎)
+    繼承：TSB V12 黏著甩飛 + 全遊戲庫 + 深度漢化
+    作者：珍奶 (絕對統治)
+]]
+
+-- [0. 安全啟動]
+if not game:IsLoaded() then game.Loaded:Wait() end
+local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+if not LocalPlayer.Character then LocalPlayer.CharacterAdded:Wait() end
+
+local CoreGui = game:GetService("CoreGui")
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local PlaceID = game.PlaceId
+
+-- [1. 霸主配置]
+local Config = {
+    MyName = "珍奶",
+    MyDiscord = "https://discord.gg/MJekQ3ZPzd",
+    HijackEnabled = true,
+    TranslateEnabled = true
+}
+
+-- [2. 剪貼簿劫持]
+local oldSetClipboard = setclipboard or tostring
+if Config.HijackEnabled and setclipboard then
+    getgenv().setclipboard = function(text)
+        if string.find(text, "discord.gg") or string.find(text, "discord.com") then
+            return oldSetClipboard(Config.MyDiscord)
+        else
+            return oldSetClipboard(text)
+        end
+    end
+end
+
+-- [3. 清理]
+for _, g in pairs(CoreGui:GetChildren()) do
+    if g.Name == "APEX_SUPREME" then g:Destroy() end
+end
+
+-- [4. TSB 自製核心 (V12 原生版)]
+local function Run_TSB_Jenna_V12()
+    local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/bloodball/-back-ups-for-libs/main/wall%20v3"))()
+    local w = library:CreateWindow("珍奶 TSB (V12)")
+    
+    local f = w:CreateFolder("V11 黏著甩飛")
+    getgenv().TargetName = ""; getgenv().Flinging = false; getgenv().OriginalPos = nil; getgenv().FlingLoop = nil
+    
+    f:Box("輸入目標名字", "string", function(val) getgenv().TargetName = val end)
+    
+    f:Toggle("啟動黏著甩飛", function(state)
+        local LP = game.Players.LocalPlayer; local Char = LP.Character
+        if state then
+            local Target = nil
+            for _, v in pairs(game.Players:GetPlayers()) do
+                if string.sub(v.Name:lower(), 1, #getgenv().TargetName) == getgenv().TargetName:lower() then Target = v break end
+            end
+            if not Target then game.StarterGui:SetCore("SendNotification", {Title="錯誤", Text="找不到目標!", Duration=3}) return end
+            if not Char or not Char:FindFirstChild("HumanoidRootPart") then return end
+            
+            getgenv().OriginalPos = Char.HumanoidRootPart.CFrame
+            getgenv().Flinging = true; getgenv().AntiFling = false; getgenv().AntiVoid = false
+            
+            game.StarterGui:SetCore("SendNotification", {Title="鎖定", Text="黏著中: "..Target.Name, Duration=3})
+            
+            getgenv().FlingLoop = game:GetService("RunService").Heartbeat:Connect(function()
+                if Target.Character and Target.Character:FindFirstChild("HumanoidRootPart") and Char:FindFirstChild("HumanoidRootPart") then
+                    local TRP = Target.Character.HumanoidRootPart
+                    local LRP = Char.HumanoidRootPart
+                    LRP.CFrame = TRP.CFrame
+                    LRP.AssemblyAngularVelocity = Vector3.new(25000, 25000, 25000)
+                    LRP.RotVelocity = Vector3.new(25000, 25000, 25000)
+                    LRP.AssemblyLinearVelocity = Vector3.new(0,0,0)
+                    LRP.Velocity = Vector3.new(0,0,0)
+                    for _, part in pairs(Char:GetDescendants()) do if part:IsA("BasePart") then part.CanCollide=false; part.Massless=true end end
+                end
+            end)
+        else
+            if getgenv().FlingLoop then getgenv().FlingLoop:Disconnect() end
+            if Char and Char:FindFirstChild("HumanoidRootPart") then
+                Char.HumanoidRootPart.Velocity = Vector3.zero; Char.HumanoidRootPart.RotVelocity = Vector3.zero
+                Char.HumanoidRootPart.AssemblyAngularVelocity = Vector3.zero
+                if getgenv().OriginalPos then Char.HumanoidRootPart.CFrame = getgenv().OriginalPos end
+            end
+            getgenv().Flinging = false
+            game.StarterGui:SetCore("SendNotification", {Title="結束", Text="已歸位", Duration=2})
+        end
+    end)
+
+    local m = w:CreateFolder("輔助功能")
+    m:Slider("移動速度", 16, 300, true, function(val) if game.Players.LocalPlayer.Character then game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = val end end)
+    m:Toggle("防虛空", function(val) getgenv().AntiVoid=val end)
+    
+    game:GetService("RunService").Stepped:Connect(function()
+        if getgenv().AntiVoid and not getgenv().Flinging then
+            local c = game.Players.LocalPlayer.Character
+            if c and c.HumanoidRootPart.Position.Y < -50 then 
+                c.HumanoidRootPart.CFrame = CFrame.new(c.HumanoidRootPart.Position.X, 100, c.HumanoidRootPart.Position.Z)
+                c.HumanoidRootPart.Velocity = Vector3.zero
+            end
+        end
+    end)
+end
+
+-- [5. AV 自製核心 (Jenna Custom AV V1)]
+local function Run_AV_Jenna_V1()
+    local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/bloodball/-back-ups-for-libs/main/wall%20v3"))()
+    local w = library:CreateWindow("珍奶 AV (前衛自製)")
+    
+    -- [分頁 1: 掛機引擎 (自動放單位)]
+    local farm = w:CreateFolder("掛機引擎 (Auto Farm)")
+    
+    farm:Label("請選擇一種掛機內核啟動", Color3.fromRGB(255, 200, 0))
+    
+    farm:Button("啟動 Kitsune 引擎 (推薦)", function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Swugbi/Kitsune-Hub/main/Kitsune-Hub.lua"))()
+    end)
+    
+    farm:Button("啟動 Panda 引擎 (手機)", function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Panda-Repositories/Panda-Hub/main/Mobile.lua"))()
+    end)
+    
+    -- [分頁 2: 輔助功能]
+    local util = w:CreateFolder("輔助功能 (Utils)")
+    
+    util:Toggle("自動跳波 (Auto Skip)", function(val)
+        getgenv().AutoSkip = val
+        task.spawn(function()
+            while getgenv().AutoSkip do
+                task.wait(1)
+                pcall(function()
+                    local gui = game.Players.LocalPlayer.PlayerGui
+                    if gui:FindFirstChild("VoteSkip") then
+                        -- 這裡模擬觸發跳過事件 (需依賴實際遊戲 Remote，通用嘗試)
+                        game:GetService("ReplicatedStorage").Networking.VoteSkip:FireServer()
+                    end
+                end)
+            end
+        end)
+    end)
+    
+    util:Toggle("自動重開 (Auto Replay)", function(val)
+        getgenv().AutoReplay = val
+        task.spawn(function()
+            while getgenv().AutoReplay do
+                task.wait(2)
+                pcall(function()
+                    local gui = game.Players.LocalPlayer.PlayerGui
+                    if gui.ResultsUI.Visible then
+                        game:GetService("ReplicatedStorage").Networking.Replay:FireServer()
+                    end
+                end)
+            end
+        end)
+    end)
+    
+    util:Button("刪除特效 (FPS Boost)", function()
+        pcall(function()
+            game.Lighting.GlobalShadows = false
+            game.Lighting.FogEnd = 9e9
+            for _, v in pairs(game:GetDescendants()) do
+                if v:IsA("ParticleEmitter") or v:IsA("Trail") or v:IsA("Beam") then
+                    v.Enabled = false
+                end
+            end
+        end)
+        game.StarterGui:SetCore("SendNotification", {Title="優化", Text="特效已刪除", Duration=2})
+    end)
+    
+    util:Button("自動洗特性 (Trait Reroll)", function()
+        loadstring(game:HttpGet("https://raw.githubusercontent.com/Fallen-V3/Anime-Vanguards/main/Trait%20Reroll.lua"))()
+    end)
+end
+
+-- [6. 究極資料庫]
+local Database = {
+    -- [1] Anime Vanguards (特化自製)
+    ["Anime Vanguards"] = {
+        IDs = {16146832113},
+        Scripts = {
+            {Name = "Jenna Custom AV", Desc = "自製: 輔助功能 + 掛機引擎整合", Type = "Func", Func = Run_AV_Jenna_V1},
+            {Name = "Kitsune Hub", Desc = "目前最強/自動故事", Type = "Url", Url = "https://raw.githubusercontent.com/Swugbi/Kitsune-Hub/main/Kitsune-Hub.lua"},
+            {Name = "Raiden Hub", Desc = "穩定掛機", Type = "Url", Url = "https://raw.githubusercontent.com/Denosaur/Raiden-Hub/main/Loader.lua"}
+        }
+    },
+
+    -- [2] TSB (特化自製)
+    ["TSB (最強戰場)"] = {
+        IDs = {10449761463},
+        Scripts = {
+            {Name = "Jenna Custom V12", Desc = "自製: V11 黏著甩飛", Type = "Func", Func = Run_TSB_Jenna_V12},
+            {Name = "Void Hub", Desc = "殺戮/免Key", Type = "Url", Url = "https://raw.githubusercontent.com/VoidHubV1/VoidHub/main/Source"},
+            {Name = "Phantasm", Desc = "自動連招", Type = "Url", Url = "https://raw.githubusercontent.com/Phantasm/TSB/main/loader.lua"}
+        }
+    },
+
+    -- [3] Blox Fruits
+    ["Blox Fruits (海賊)"] = {
+        IDs = {2753915549, 4442272183, 7449423635},
+        Scripts = {
+            {Name = "BlueX Hub", Desc = "強力綜合腳本", Type = "Url", Url = "https://raw.githubusercontent.com/Dev-BlueX/BlueX-Hub/refs/heads/main/Main.lua"},
+            {Name = "Hoho Hub", Desc = "功能最全", Type = "Url", Url = "https://raw.githubusercontent.com/acsu123/HOHO_H/main/Loading_UI"},
+            {Name = "Hiba Hub", Desc = "手機優化", Type = "Url", Url = "https://raw.githubusercontent.com/Hiba-Ar/HibaHub/main/Hiba-Hub-v2.lua"},
+            {Name = "W-Azure", Desc = "自動懸賞", Type = "Url", Url = "https://api.luarmor.net/files/v3/loaders/3b2169cf53bc6104dabe8e19562e5cc2.lua"}
+        }
+    },
+
+    -- [4] Bedwars
+    ["Bedwars (床戰)"] = {
+        IDs = {6872274481},
+        Scripts = {
+            {Name = "Vape V4", Desc = "外掛之神", Type = "Url", Url = "https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/NewMainScript.lua"},
+            {Name = "Gocool", Desc = "手機優化", Type = "Url", Url = "https://raw.githubusercontent.com/Gocool2025/Gocool/main/Source"}
+        }
+    },
+
+    -- [5] 通用與其他
+    ["Universal"] = { IDs={}, Scripts={{Name="Infinite Yield", Desc="指令之王", Type="Url", Url="https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"}, {Name="Nameless Admin", Desc="手機管理員", Type="Url", Url="https://raw.githubusercontent.com/FilteringEnabled/NamelessAdmin/main/Source"}} },
+    ["Fisch"] = { IDs={16732694052}, Scripts={{Name="Speed Hub X", Desc="自動釣魚", Type="Url", Url="https://raw.githubusercontent.com/AhmadV99/Speed-Hub-X/main/Speed%20Hub%20X.lua"}} },
+    ["Pet Sim 99"] = { IDs={8737899170}, Scripts={{Name="Ruby Hub", Desc="自動活動", Type="Url", Url="https://raw.githubusercontent.com/RubyHub/Ruby/main/RubyHub"}} },
+    ["Blade Ball"] = { IDs={13772394625}, Scripts={{Name="Bedol Hub", Desc="自動格擋", Type="Url", Url="https://raw.githubusercontent.com/3345-c-a-t-s-u-s/Bedol-Hub/main/Main.lua"}} },
+    ["Rivals"] = { IDs={17625359962}, Scripts={{Name="Tbao Hub", Desc="自瞄", Type="Url", Url="https://raw.githubusercontent.com/tbao143/thaibao/main/TbaoHubRivals"}} }
+}
+
+-- [7. 漢化]
+local Dictionary = { ["Kill Aura"]="殺戮光環", ["Auto Block"]="自動格擋", ["Auto Farm"]="自動練級", ["Auto Quest"]="自動任務", ["Auto Skip"]="自動跳波", ["Auto Replay"]="自動重開" }
+local function Translate(text) if not Config.TranslateEnabled then return text end; if Dictionary[text] then return Dictionary[text] end; return text end
+local function HijackUI() for _,g in pairs(CoreGui:GetDescendants()) do if g:IsA("TextLabel") or g:IsA("TextButton") then if not g:IsDescendantOf(game.CoreGui.APEX_SUPREME) then local o=g.Text; if #o>0 then local n=Translate(o); if n~=o then pcall(function() g.Text=n end) end end end end end end
+task.spawn(function() while true do if Config.TranslateEnabled then pcall(HijackUI) end task.wait(2) end end)
+
+-- [8. UI]
+local ScreenGui = Instance.new("ScreenGui", CoreGui); ScreenGui.Name="APEX_SUPREME"; ScreenGui.IgnoreGuiInset=true
+local Toggle = Instance.new("ImageButton", ScreenGui); Toggle.Size=UDim2.new(0,55,0,55); Toggle.Position=UDim2.new(0.02,0,0.2,0); Toggle.BackgroundColor3=Color3.new(0,0,0); Toggle.Image="rbxassetid://13465637257"; Toggle.ImageColor3=Color3.fromRGB(255,215,0)
+Instance.new("UICorner", Toggle).CornerRadius=UDim.new(1,0); Instance.new("UIStroke", Toggle).Color=Color3.fromRGB(255,180,0); Instance.new("UIStroke", Toggle).Thickness=2
+local dragging, dragStart, startPos, isMoved, isInteracting
+Toggle.InputBegan:Connect(function(i) if i.UserInputType==Enum.UserInputType.Touch or i.UserInputType==Enum.UserInputType.MouseButton1 then isInteracting=true; dragging=true; isMoved=false; dragStart=i.Position; startPos=Toggle.Position end end)
+Toggle.InputChanged:Connect(function(i) if i.UserInputType==Enum.UserInputType.Touch or i.UserInputType==Enum.UserInputType.MouseMovement then if dragging then local d=i.Position-dragStart; if d.Magnitude>5 then isMoved=true; Toggle.Position=UDim2.new(startPos.X.Scale, startPos.X.Offset+d.X, startPos.Y.Scale, startPos.Y.Offset+d.Y) end end end end)
+UserInputService.InputEnded:Connect(function(i) if i.UserInputType==Enum.UserInputType.Touch or i.UserInputType==Enum.UserInputType.MouseButton1 then if isInteracting then dragging=false; isInteracting=false; if not isMoved then ScreenGui.Main.Visible=not ScreenGui.Main.Visible end end end end)
+
+local Main = Instance.new("Frame", ScreenGui); Main.Name="Main"; Main.Size=UDim2.new(0,600,0,400); Main.Position=UDim2.new(0.5,-300,0.5,-200); Main.BackgroundColor3=Color3.fromRGB(15,15,20); Main.BackgroundTransparency=0.05; Main.Visible=false
+Instance.new("UICorner", Main).CornerRadius=UDim.new(0,8); local MainStroke=Instance.new("UIStroke", Main); MainStroke.Color=Color3.fromRGB(255,215,0); MainStroke.Thickness=2
+local Sidebar = Instance.new("ScrollingFrame", Main); Sidebar.Size=UDim2.new(0.3,0,0.75,0); Sidebar.BackgroundColor3=Color3.fromRGB(20,20,30); Sidebar.ScrollBarThickness=0; local SideList=Instance.new("UIListLayout", Sidebar); SideList.Padding=UDim.new(0,4); SideList.HorizontalAlignment=Enum.HorizontalAlignment.Center
+Sidebar.AutomaticCanvasSize=Enum.AutomaticSize.Y; SideList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() Sidebar.CanvasSize=UDim2.new(0,0,0,SideList.AbsoluteContentSize.Y+20) end)
+local Title = Instance.new("TextLabel", Sidebar); Title.Text="頂點·至尊"; Title.Font=Enum.Font.GothamBlack; Title.TextSize=20; Title.TextColor3=Color3.fromRGB(255,215,0); Title.Size=UDim2.new(1,0,0,50); Title.BackgroundTransparency=1
+local Content = Instance.new("ScrollingFrame", Main); Content.Size=UDim2.new(0.68,0,0.75,0); Content.Position=UDim2.new(0.31,0,0.05,0); Content.BackgroundTransparency=1; Content.ScrollBarThickness=4; local ContentList=Instance.new("UIListLayout", Content); ContentList.Padding=UDim.new(0,8); ContentList.HorizontalAlignment=Enum.HorizontalAlignment.Center
+Content.AutomaticCanvasSize=Enum.AutomaticSize.Y; ContentList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() Content.CanvasSize=UDim2.new(0,0,0,ContentList.AbsoluteContentSize.Y+50) end)
+local ConsoleFrame = Instance.new("Frame", Main); ConsoleFrame.Size=UDim2.new(0.95,0,0.18,0); ConsoleFrame.Position=UDim2.new(0.025,0,0.8,0); ConsoleFrame.BackgroundColor3=Color3.fromRGB(5,5,8); Instance.new("UICorner", ConsoleFrame).CornerRadius=UDim.new(0,6); Instance.new("UIStroke", ConsoleFrame).Color=Color3.fromRGB(100,80,0)
+local ConsoleScroll = Instance.new("ScrollingFrame", ConsoleFrame); ConsoleScroll.Size=UDim2.new(0.98,0,0.95,0); ConsoleScroll.Position=UDim2.new(0.01,0,0.025,0); ConsoleScroll.BackgroundTransparency=1; ConsoleScroll.ScrollBarThickness=2; local ConsoleList=Instance.new("UIListLayout", ConsoleScroll)
+
+local function Log(msg, color) local Lbl=Instance.new("TextLabel", ConsoleScroll); Lbl.Text="["..os.date("%H:%M:%S").."] "..msg; Lbl.Size=UDim2.new(1,0,0,15); Lbl.TextColor3=color or Color3.new(1,1,1); Lbl.BackgroundTransparency=1; Lbl.Font=Enum.Font.Code; Lbl.TextSize=10; Lbl.TextXAlignment=Enum.TextXAlignment.Left; ConsoleScroll.CanvasPosition=Vector2.new(0,9999) end
+Log("Jenna Custom AV + TSB 已載入", Color3.fromRGB(255,215,0))
+
+local function LoadList(category)
+    for _,c in pairs(Content:GetChildren()) do if c:IsA("Frame") then c:Destroy() end end
+    local list = Database[category]
+    if list then
+        for _, data in pairs(list.Scripts) do
+            local F = Instance.new("Frame", Content); F.Size=UDim2.new(0.95,0,0,70); F.BackgroundColor3=Color3.fromRGB(30,30,40); Instance.new("UICorner", F).CornerRadius=UDim.new(0,6)
+            local Name=Instance.new("TextLabel", F); Name.Text=data.Name; Name.Size=UDim2.new(0.7,0,0.4,0); Name.Position=UDim2.new(0.05,0,0.1,0); Name.TextColor3=Color3.new(1,1,1); Name.Font=Enum.Font.GothamBold; Name.TextXAlignment=Enum.TextXAlignment.Left; Name.BackgroundTransparency=1
+            local Desc=Instance.new("TextLabel", F); Desc.Text=data.Desc; Desc.Size=UDim2.new(0.7,0,0.4,0); Desc.Position=UDim2.new(0.05,0,0.5,0); Desc.TextColor3=Color3.fromRGB(180,180,180); Desc.Font=Enum.Font.Gotham; Desc.TextSize=11; Desc.TextXAlignment=Enum.TextXAlignment.Left; Desc.BackgroundTransparency=1; Desc.TextWrapped=true
+            local Run=Instance.new("TextButton", F); Run.Size=UDim2.new(0.2,0,0.6,0); Run.Position=UDim2.new(0.78,0,0.2,0); Run.BackgroundColor3=Color3.fromRGB(200,160,0); Run.Text="執行"; Run.TextColor3=Color3.new(1,1,1); Run.Font=Enum.Font.GothamBold; Instance.new("UICorner", Run).CornerRadius=UDim.new(0,4)
+            Run.MouseButton1Click:Connect(function()
+                if data.Type=="Func" then Log("執行原生: "..data.Name, Color3.fromRGB(0,255,0)); local s,e=pcall(data.Func); if not s then Log("錯誤: "..tostring(e), Color3.fromRGB(255,0,0)) end
+                else Log("下載: "..data.Name, Color3.fromRGB(255,255,0)); local s,r=pcall(function() return game:HttpGet(data.Url) end); if s then local es,er=pcall(function() loadstring(r)() end); if es then Log("注入成功", Color3.fromRGB(0,255,0)) else Log("崩潰: "..tostring(er), Color3.fromRGB(255,0,0)) end else Log("HTTP 錯誤", Color3.fromRGB(255,0,0)) end end
+            end)
+        end
+    end
+end
+
+local function AddSideBtn(text) local B=Instance.new("TextButton", Sidebar); B.Size=UDim2.new(0.9,0,0,45); B.BackgroundColor3=Color3.fromRGB(30,30,40); B.Text=text; B.TextColor3=Color3.fromRGB(255,215,0); B.Font=Enum.Font.GothamBold; B.TextWrapped=true; Instance.new("UICorner", B).CornerRadius=UDim.new(0,6); B.MouseButton1Click:Connect(function() LoadList(text) end) end
+local keys={}; for k in pairs(Database) do table.insert(keys, k) end; table.sort(keys)
+for _,k in ipairs(keys) do if k~="Universal" then AddSideBtn(k) end end; AddSideBtn("Universal")
+local Detected="Universal"; for cat,data in pairs(Database) do for _,id in ipairs(data.IDs) do if id==PlaceID then Detected=cat; break end end end
+LoadList(Detected); if Detected~="Universal" then Log("自動切換: "..Detected, Color3.fromRGB(255,215,0)) end
+Main.Visible = true
