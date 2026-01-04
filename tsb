@@ -1,11 +1,11 @@
 --[[
-    SYSTEM: APEX // BABEL (ULTIMATE TRANSLATION)
-    核心：500+ 詞彙深度漢化 (BF + Bedwars + AV + TSB)
-    繼承：TSB V7 黑洞 + 60+ 遊戲庫 + 防崩潰
+    SYSTEM: APEX // ZERO (GODHAND MANUAL)
+    核心：V6 暴力物理 (Godhand) + V8 手動開關 (Manual)
+    修復：解決 V8 物理太弱無法甩飛的問題
     作者：珍奶 (絕對統治)
 ]]
 
--- [0. 安全啟動 (Anti-Crash)]
+-- [0. 安全啟動]
 if not game:IsLoaded() then game.Loaded:Wait() end
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
@@ -36,113 +36,115 @@ if Config.HijackEnabled and setclipboard then
     end
 end
 
--- [3. 清理舊介面]
+-- [3. 清理]
 for _, g in pairs(CoreGui:GetChildren()) do
-    if g.Name == "APEX_BABEL" then g:Destroy() end
+    if g.Name == "APEX_ZERO" then g:Destroy() end
 end
 
--- [4. 巴別塔辭海 (500+ 詞彙)]
+-- [4. 漢化辭海]
 local Dictionary = {
-    -- [系統通用]
     ["Made by"]="製作: "..Config.MyName, ["Script by"]="腳本: "..Config.MyName,
     ["Settings"]="設置", ["Main"]="主頁", ["Farm"]="農場", ["Combat"]="戰鬥",
     ["Visuals"]="視覺", ["Movement"]="移動", ["Toggle"]="開關", ["Execute"]="執行",
     ["Close"]="關閉", ["Select"]="選擇", ["Status"]="狀態", ["Active"]="已啟動",
     ["Kill Aura"]="殺戮光環", ["Auto Block"]="自動格擋", ["Aimbot"]="自瞄",
     ["ESP"]="透視", ["WalkSpeed"]="速度", ["JumpPower"]="跳躍力",
-    ["Noclip"]="穿牆", ["Fly"]="飛行", ["Infinite Jump"]="無限跳", ["God Mode"]="無敵",
-
-    -- [Blox Fruits 海賊王 - 屬性與介面]
-    ["Melee"]="近戰", ["Defense"]="防禦", ["Sword"]="劍", ["Gun"]="槍", ["Blox Fruit"]="惡魔果實",
-    ["Stats"]="屬性", ["Code"]="兌換碼", ["Redeem"]="兌換", ["Safe"]="安全",
-    ["Server"]="伺服器", ["Hop"]="換服", ["Rejoin"]="重連", ["Team"]="隊伍",
-    ["Pirates"]="海賊", ["Marines"]="海軍", ["Shop"]="商店", ["Inventory"]="背包",
-
-    -- [Blox Fruits 海賊王 - 功能]
-    ["Auto Farm"]="自動練級", ["Auto Quest"]="自動任務", ["Auto Chest"]="自動搜刮寶箱",
-    ["Auto Boss"]="自動打王", ["Auto Raid"]="自動副本", ["Auto Dungeon"]="自動地牢",
-    ["Auto Buddha"]="自動大佛", ["Fast Attack"]="光速攻擊", ["Bring Mob"]="吸怪",
-    ["Mastery"]="精通", ["Observation"]="見聞色", ["Haki"]="霸氣", ["Geppo"]="月步",
-    ["Roll Fruit"]="抽果實", ["Store Fruit"]="存果實", ["Sniper"]="果實狙擊",
-    ["Mirage Island"]="海市蜃樓", ["Sea Event"]="海怪事件", ["Kitsune Island"]="狐狸島",
-    ["Race V4"]="種族V4", ["Lever Pull"]="拉拉桿", ["Trials"]="試煉",
-
-    -- [Blox Fruits 海賊王 - 果實名稱]
-    ["Kitsune"]="狐狸", ["Leopard"]="豹", ["Dragon"]="龍", ["Spirit"]="靈魂",
-    ["Control"]="控制", ["Venom"]="毒", ["Shadow"]="影", ["Dough"]="糯米",
-    ["T-Rex"]="暴龍", ["Mammoth"]="猛瑪", ["Gravity"]="重力", ["Blizzard"]="雪",
-    ["Pain"]="肉球", ["Rumble"]="雷", ["Portal"]="門", ["Phoenix"]="不死鳥",
-    ["Sound"]="音", ["Spider"]="線", ["Love"]="愛", ["Buddha"]="大佛",
-    ["Magma"]="岩漿", ["Light"]="光", ["Ice"]="冰", ["Dark"]="暗", ["Rocket"]="火箭",
-
-    -- [Bedwars 床戰 - 戰鬥與移動]
-    ["Bed Aura"]="拆床光環", ["Scaffold"]="自動搭路", ["Anti Knockback"]="防擊退",
-    ["Velocity"]="反擊退", ["Sprint"]="自動衝刺", ["High Jump"]="跳高",
-    ["Long Jump"]="跳遠", ["Spider"]="爬牆", ["Phase"]="穿牆(Phase)",
-    ["Reach"]="攻擊距離", ["Hitbox"]="攻擊範圍", ["No Fall"]="無掉落傷",
-
-    -- [Bedwars 床戰 - 資源與物品]
-    ["Iron"]="鐵", ["Gold"]="金", ["Diamond"]="鑽石", ["Emerald"]="綠寶石",
-    ["Void"]="虛空", ["Generator"]="生成器", ["Chest Stealer"]="偷箱子",
-    ["Auto Buy"]="自動購買", ["Auto Armor"]="自動買裝", ["Auto Sword"]="自動買劍",
-    ["Wool"]="羊毛", ["Ceramic"]="陶瓷", ["Wood"]="木頭", ["Obsidian"]="黑曜石",
-    ["Balloon"]="氣球", ["Fireball"]="火球", ["Pearl"]="終界珍珠",
-
-    -- [Anime Vanguards 動漫前衛]
-    ["Summon"]="召喚", ["Evolve"]="進化", ["Trait"]="特性", ["Reroll"]="重洗",
-    ["Story"]="故事", ["Legend"]="傳說", ["Mythic"]="神話", ["Secret"]="隱藏",
-    ["Challenge"]="挑戰", ["Infinity"]="無限塔", ["Skip Wave"]="跳過波數",
-    ["Auto Place"]="自動放置", ["Auto Upgrade"]="自動升級", ["Macro"]="掛機腳本",
-
-    -- [TSB 最強戰場]
-    ["Auto Combo"]="自動連招", ["Dash"]="衝刺", ["Counter"]="反擊",
-    ["Ultimate"]="大招", ["Awakening"]="覺醒", ["Ragdoll"]="擊倒",
-    ["Fling"]="甩飛", ["Void"]="虛空", ["Lock"]="鎖定"
+    ["Noclip"]="穿牆", ["Fly"]="飛行", ["Infinite Jump"]="無限跳", ["God Mode"]="無敵"
 }
 
--- [5. 自製腳本 (Jenna Custom V7 - Black Hole)]
+-- [5. 自製腳本 (Jenna Custom V9 - Godhand Manual)]
 local CustomScripts = {
     TSB_Main = [[
         local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/bloodball/-back-ups-for-libs/main/wall%20v3"))()
-        local w = library:CreateWindow("珍奶 TSB (黑洞版)")
-        local f = w:CreateFolder("黑洞甩飛 V7")
-        getgenv().TargetName = ""; getgenv().Flinging = false
+        local w = library:CreateWindow("珍奶 TSB (零式)")
+        
+        -- [核心功能: 手動神之手]
+        local f = w:CreateFolder("零式甩飛 (手動)")
+        getgenv().TargetName = ""
+        getgenv().FlingConnection = nil
+        getgenv().OriginalPos = nil
+        
         f:Box("輸入目標名字", "string", function(val) getgenv().TargetName = val end)
-        f:Button("啟動黑洞 (必殺)", function()
-            if getgenv().Flinging then return end
-            local Target = nil
-            for _, v in pairs(game.Players:GetPlayers()) do
-                if string.sub(v.Name:lower(), 1, #getgenv().TargetName) == getgenv().TargetName:lower() then Target = v break end
-            end
-            if not Target then game.StarterGui:SetCore("SendNotification", {Title="錯誤", Text="找不到目標", Duration=3}) return end
-            local LP = game.Players.LocalPlayer; local Char = LP.Character
-            local OriginalPos = Char.HumanoidRootPart.CFrame
-            getgenv().Flinging = true
-            getgenv().AntiFling = false; getgenv().AntiVoid = false
-            game.StarterGui:SetCore("SendNotification", {Title="黑洞啟動", Text="吞噬: "..Target.Name, Duration=3})
-            local Start = tick()
-            local Conn; Conn = game:GetService("RunService").RenderStepped:Connect(function()
-                if tick()-Start > 1.8 or not Target.Character then
-                    Conn:Disconnect()
-                    Char.HumanoidRootPart.Velocity=Vector3.zero; Char.HumanoidRootPart.RotVelocity=Vector3.zero
-                    Char.HumanoidRootPart.AssemblyLinearVelocity=Vector3.zero
-                    Char.HumanoidRootPart.CFrame=OriginalPos
-                    getgenv().Flinging=false
-                    game.StarterGui:SetCore("SendNotification", {Title="結束", Text="已歸位", Duration=2})
-                else
-                    Char.HumanoidRootPart.CFrame = Target.Character.HumanoidRootPart.CFrame * CFrame.new(0, -4, 0) * CFrame.Angles(math.rad(90), 0, 0)
-                    Char.HumanoidRootPart.Velocity = Vector3.new(20000, 20000, 20000)
-                    Char.HumanoidRootPart.RotVelocity = Vector3.new(20000, 20000, 20000)
-                    Char.HumanoidRootPart.AssemblyLinearVelocity = Vector3.new(20000, 20000, 20000)
+        
+        f:Toggle("啟動神之手 (手動)", function(state)
+            local LP = game.Players.LocalPlayer
+            local Char = LP.Character
+            
+            if state then
+                -- [開啟]：使用 V6 物理核心進行持續攻擊
+                local Target = nil
+                for _, v in pairs(game.Players:GetPlayers()) do
+                    if string.sub(v.Name:lower(), 1, #getgenv().TargetName) == getgenv().TargetName:lower() then 
+                        Target = v 
+                        break 
+                    end
                 end
-            end)
-            for _,p in pairs(Char:GetDescendants()) do if p:IsA("BasePart") then p.CanCollide=false; p.Massless=true end end
+                
+                if not Target then 
+                    game.StarterGui:SetCore("SendNotification", {Title="錯誤", Text="找不到目標!", Duration=3})
+                    return 
+                end
+                
+                if not Char or not Char:FindFirstChild("HumanoidRootPart") then return end
+                
+                -- 1. 記錄家裡位置
+                getgenv().OriginalPos = Char.HumanoidRootPart.CFrame
+                
+                -- 2. 關閉防禦 (必須，否則會把自己定住)
+                getgenv().AntiFling = false
+                getgenv().AntiVoid = false
+                
+                game.StarterGui:SetCore("SendNotification", {Title="神之手啟動", Text="目標: "..Target.Name.." (確認甩飛後請關閉)", Duration=3})
+                
+                -- 3. 啟動 V6 物理震盪循環
+                getgenv().FlingConnection = game:GetService("RunService").RenderStepped:Connect(function()
+                    if Target.Character and Target.Character:FindFirstChild("HumanoidRootPart") and Char:FindFirstChild("HumanoidRootPart") then
+                        local TRP = Target.Character.HumanoidRootPart
+                        local LRP = Char.HumanoidRootPart
+                        
+                        -- [V6 核心] 隨機震盪穿透 (這就是"真正有用"的部分)
+                        LRP.CFrame = TRP.CFrame * CFrame.new(math.random(-1,1), math.random(-1,1), math.random(-1,1)) * CFrame.Angles(math.random(), math.random(), math.random())
+                        
+                        -- [V6 核心] 速度覆蓋
+                        LRP.AssemblyLinearVelocity = Vector3.new(25000, 25000, 25000)
+                        LRP.Velocity = Vector3.new(25000, 25000, 25000) 
+                        LRP.RotVelocity = Vector3.new(25000, 25000, 25000)
+                    else
+                        -- 如果目標死了或消失，稍微懸空等待 (不自動回家，等待玩家確認)
+                        if Char:FindFirstChild("HumanoidRootPart") then
+                            Char.HumanoidRootPart.Velocity = Vector3.zero
+                        end
+                    end
+                end)
+                
+                -- 4. 無碰撞 (確保穿透)
+                for _, p in pairs(Char:GetDescendants()) do 
+                    if p:IsA("BasePart") then 
+                        p.CanCollide = false 
+                        p.Massless = true
+                    end 
+                end
+                
+            else
+                -- [關閉]：停止循環 -> 瞬間回家
+                if getgenv().FlingConnection then getgenv().FlingConnection:Disconnect() end
+                
+                if Char and Char:FindFirstChild("HumanoidRootPart") and getgenv().OriginalPos then
+                    Char.HumanoidRootPart.Velocity = Vector3.zero
+                    Char.HumanoidRootPart.AssemblyLinearVelocity = Vector3.zero
+                    Char.HumanoidRootPart.RotVelocity = Vector3.zero
+                    Char.HumanoidRootPart.CFrame = getgenv().OriginalPos -- 回家
+                end
+                
+                game.StarterGui:SetCore("SendNotification", {Title="行動結束", Text="已安全歸位", Duration=2})
+            end
         end)
+        
         local b = w:CreateFolder("生存防禦")
         b:Toggle("防虛空", function(val)
             getgenv().AntiVoid = val
             game:GetService("RunService").Stepped:Connect(function()
-                if getgenv().AntiVoid and not getgenv().Flinging then
+                if getgenv().AntiVoid then
                     local c = game.Players.LocalPlayer.Character
                     if c and c.HumanoidRootPart.Position.Y < -50 then 
                         c.HumanoidRootPart.CFrame = CFrame.new(c.HumanoidRootPart.Position.X, 100, c.HumanoidRootPart.Position.Z)
@@ -154,70 +156,60 @@ local CustomScripts = {
         b:Toggle("防甩飛", function(val)
             getgenv().AntiFling = val
             game:GetService("RunService").Stepped:Connect(function()
-                if getgenv().AntiFling and not getgenv().Flinging then
+                if getgenv().AntiFling then
                     local c = game.Players.LocalPlayer.Character
                     if c and c.HumanoidRootPart.Velocity.Magnitude > 100 then 
                         c.HumanoidRootPart.Velocity = Vector3.zero
                         c.HumanoidRootPart.RotVelocity = Vector3.zero
                     end
-                    for _,v in pairs(game.Players:GetPlayers()) do if v~=game.Players.LocalPlayer and v.Character then pcall(function() v.Character.HumanoidRootPart.CanCollide=false end) end end
+                    for _,v in pairs(game.Players:GetPlayers()) do 
+                        if v~=game.Players.LocalPlayer and v.Character then 
+                            pcall(function() v.Character.HumanoidRootPart.CanCollide=false end) 
+                        end 
+                    end
                 end
             end)
         end)
     ]]
 }
 
--- [6. 究極資料庫 (BF & Bedwars 特化)]
+-- [6. 究極資料庫]
 local Database = {
     -- [1] Blox Fruits (海賊)
     ["Blox Fruits (海賊)"] = {
         IDs = {2753915549, 4442272183, 7449423635},
         Scripts = {
-            {Name = "Hoho Hub", Desc = "功能最全/副本/水果", Type = "Url", Url = "https://raw.githubusercontent.com/acsu123/HOHO_H/main/Loading_UI"},
-            {Name = "Hiba Hub", Desc = "手機優化極佳/介面流暢", Type = "Url", Url = "https://raw.githubusercontent.com/Hiba-Ar/HibaHub/main/Hiba-Hub-v2.lua"},
-            {Name = "W-Azure", Desc = "自動懸賞/PVP", Type = "Url", Url = "https://api.luarmor.net/files/v3/loaders/3b2169cf53bc6104dabe8e19562e5cc2.lua"},
-            {Name = "Zee Hub", Desc = "果實/海怪透視", Type = "Url", Url = "https://raw.githubusercontent.com/Zenhubtop/zen_hub_pr/main/zen_new_loader.lua"},
-            {Name = "Mukuro Hub", Desc = "老牌掛機/低配手機", Type = "Url", Url = "https://raw.githubusercontent.com/xDepressionx/Free-Script/main/AllScript.lua"}
+            {Name = "Hoho Hub", Desc = "功能最全/副本", Type = "Url", Url = "https://raw.githubusercontent.com/acsu123/HOHO_H/main/Loading_UI"},
+            {Name = "Hiba Hub", Desc = "手機優化極佳", Type = "Url", Url = "https://raw.githubusercontent.com/Hiba-Ar/HibaHub/main/Hiba-Hub-v2.lua"},
+            {Name = "W-Azure", Desc = "自動懸賞", Type = "Url", Url = "https://api.luarmor.net/files/v3/loaders/3b2169cf53bc6104dabe8e19562e5cc2.lua"},
+            {Name = "Zee Hub", Desc = "果實透視", Type = "Url", Url = "https://raw.githubusercontent.com/Zenhubtop/zen_hub_pr/main/zen_new_loader.lua"}
         }
     },
-
-    -- [2] Bedwars (床戰)
-    ["Bedwars (床戰)"] = {
-        IDs = {6872274481},
-        Scripts = {
-            {Name = "Vape V4", Desc = "外掛之神 (殺戮/搭路)", Type = "Url", Url = "https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/NewMainScript.lua"},
-            {Name = "Gocool", Desc = "手機優化/殺戮光環", Type = "Url", Url = "https://raw.githubusercontent.com/Gocool2025/Gocool/main/Source"},
-            {Name = "Nightbed", Desc = "強力拆床/搭路", Type = "Url", Url = "https://raw.githubusercontent.com/Nightbed/Nightbed/main/Source"}
-        }
-    },
-
-    -- [3] TSB (最強戰場)
+    -- [2] TSB (最強戰場)
     ["TSB (最強戰場)"] = {
         IDs = {10449761463},
         Scripts = {
-            {Name = "Jenna BlackHole V7", Desc = "獨家: 黑洞甩飛 + 絕對防禦", Type = "Raw", Code = CustomScripts.TSB_Main},
+            {Name = "Jenna Custom V9", Desc = "獨家: 零式甩飛 (手動/V6物理)", Type = "Raw", Code = CustomScripts.TSB_Main},
             {Name = "Void Hub", Desc = "殺戮/免Key", Type = "Url", Url = "https://raw.githubusercontent.com/VoidHubV1/VoidHub/main/Source"},
-            {Name = "Phantasm", Desc = "自動連招 (PC)", Type = "Url", Url = "https://raw.githubusercontent.com/Phantasm/TSB/main/loader.lua"}
+            {Name = "Phantasm", Desc = "自動連招", Type = "Url", Url = "https://raw.githubusercontent.com/Phantasm/TSB/main/loader.lua"}
         }
     },
-
-    -- [4] Anime Vanguards (動漫前衛)
-    ["Anime Vanguards"] = {
-        IDs = {16146832113},
+    -- [3] Bedwars (床戰)
+    ["Bedwars (床戰)"] = {
+        IDs = {6872274481},
         Scripts = {
-            {Name = "Soul Hub", Desc = "自動戰鬥/技能", Type = "Url", Url = "https://raw.githubusercontent.com/MariyaFurmanova/Library/main/SoulHub/AnimeVanguards"},
-            {Name = "Panda Hub", Desc = "自動故事/挑戰", Type = "Url", Url = "https://raw.githubusercontent.com/Panda-Repositories/Panda-Hub/main/Mobile.lua"},
-            {Name = "Trait Reroll", Desc = "自動洗特性", Type = "Url", Url = "https://raw.githubusercontent.com/Fallen-V3/Anime-Vanguards/main/Trait%20Reroll.lua"}
+            {Name = "Vape V4", Desc = "外掛之神", Type = "Url", Url = "https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/NewMainScript.lua"},
+            {Name = "Gocool", Desc = "手機優化", Type = "Url", Url = "https://raw.githubusercontent.com/Gocool2025/Gocool/main/Source"},
+            {Name = "Nightbed", Desc = "拆床光環", Type = "Url", Url = "https://raw.githubusercontent.com/Nightbed/Nightbed/main/Source"}
         }
     },
-
-    -- [5] 其他熱門
-    ["Rivals (死對頭)"] = { IDs={17625359962}, Scripts={{Name="Tbao Hub", Desc="自瞄/透視", Type="Url", Url="https://raw.githubusercontent.com/tbao143/thaibao/main/TbaoHubRivals"}} },
-    ["Fisch (釣魚)"] = { IDs={16732694052}, Scripts={{Name="Speed Hub X", Desc="自動釣魚", Type="Url", Url="https://raw.githubusercontent.com/AhmadV99/Speed-Hub-X/main/Speed%20Hub%20X.lua"}} },
+    -- [4] 其他熱門
+    ["Anime Vanguards"] = { IDs={16146832113}, Scripts={{Name="Soul Hub", Desc="自動戰鬥", Type="Url", Url="https://raw.githubusercontent.com/MariyaFurmanova/Library/main/SoulHub/AnimeVanguards"}} },
+    ["Fisch"] = { IDs={16732694052}, Scripts={{Name="Speed Hub X", Desc="自動釣魚", Type="Url", Url="https://raw.githubusercontent.com/AhmadV99/Speed-Hub-X/main/Speed%20Hub%20X.lua"}} },
     ["Pet Sim 99"] = { IDs={8737899170}, Scripts={{Name="Ruby Hub", Desc="自動活動", Type="Url", Url="https://raw.githubusercontent.com/RubyHub/Ruby/main/RubyHub"}} },
-    ["Blade Ball (劍球)"] = { IDs={13772394625}, Scripts={{Name="Bedol Hub", Desc="自動格擋", Type="Url", Url="https://raw.githubusercontent.com/3345-c-a-t-s-u-s/Bedol-Hub/main/Main.lua"}} },
-    ["Doors (門)"] = { IDs={6516141723}, Scripts={{Name="Black King", Desc="自動通關", Type="Url", Url="https://raw.githubusercontent.com/KINGHUB01/BlackKing/main/BlackKingObf.lua"}} },
-    ["MM2 (殺手)"] = { IDs={142823291}, Scripts={{Name="Eclipse", Desc="透視/自瞄", Type="Url", Url="https://raw.githubusercontent.com/Ethanoj1/EclipseMM2/master/Script"}} },
+    ["Blade Ball"] = { IDs={13772394625}, Scripts={{Name="Bedol Hub", Desc="自動格擋", Type="Url", Url="https://raw.githubusercontent.com/3345-c-a-t-s-u-s/Bedol-Hub/main/Main.lua"}} },
+    ["Rivals"] = { IDs={17625359962}, Scripts={{Name="Tbao Hub", Desc="自瞄", Type="Url", Url="https://raw.githubusercontent.com/tbao143/thaibao/main/TbaoHubRivals"}} },
+    ["Dress To Impress"] = { IDs={15101393044}, Scripts={{Name="DTI Farm", Desc="自動票券", Type="Url", Url="https://raw.githubusercontent.com/ToraIsMe/ToraIsMe/main/0DressToImpress"}} },
     ["Universal (通用)"] = {
         IDs = {},
         Scripts = {
@@ -232,31 +224,18 @@ local Database = {
 local function Translate(text)
     if not Config.TranslateEnabled then return text end
     if string.find(text, "discord.gg") then return Config.MyDiscord end
-    
-    -- 優先查找字典
     if Dictionary[text] then return Dictionary[text] end
-    
-    -- 模糊匹配 (Partial Match) - 解決 "Kill Aura [Beta]" 這種無法完全匹配的情況
-    for eng, chn in pairs(Dictionary) do
-        if string.find(text, eng) then 
-            return string.gsub(text, eng, chn) 
-        end
-    end
     return text
 end
 
 local function HijackUI()
-    -- 遍歷 CoreGui 下的所有介面 (包含注入的腳本)
     for _, gui in pairs(CoreGui:GetDescendants()) do
-        if gui:IsA("TextLabel") or gui:IsA("TextButton") or gui:IsA("TextBox") then
-            -- 排除自己的介面
-            if not gui:IsDescendantOf(game.CoreGui.APEX_BABEL) then
+        if gui:IsA("TextLabel") or gui:IsA("TextButton") then
+            if not gui:IsDescendantOf(game.CoreGui.APEX_ZERO) then
                 local original = gui.Text
                 if #original > 0 then
                     local newText = Translate(original)
-                    if newText ~= original then 
-                        pcall(function() gui.Text = newText end) 
-                    end
+                    if newText ~= original then pcall(function() gui.Text = newText end) end
                 end
             end
         end
@@ -269,7 +248,7 @@ end)
 
 -- [8. UI 建構]
 local ScreenGui = Instance.new("ScreenGui", CoreGui)
-ScreenGui.Name = "APEX_BABEL"
+ScreenGui.Name = "APEX_ZERO"
 ScreenGui.IgnoreGuiInset = true
 
 -- 懸浮球 (嚴格判定)
@@ -278,9 +257,9 @@ Toggle.Size = UDim2.new(0, 55, 0, 55)
 Toggle.Position = UDim2.new(0.02, 0, 0.2, 0)
 Toggle.BackgroundColor3 = Color3.fromRGB(0,0,0)
 Toggle.Image = "rbxassetid://13465637257"
-Toggle.ImageColor3 = Color3.fromRGB(0, 255, 255) -- 巴別塔青
+Toggle.ImageColor3 = Color3.fromRGB(255, 255, 255) -- 零式白
 Instance.new("UICorner", Toggle).CornerRadius = UDim.new(1,0)
-Instance.new("UIStroke", Toggle).Color = Color3.fromRGB(0, 200, 255)
+Instance.new("UIStroke", Toggle).Color = Color3.fromRGB(200, 200, 200)
 Instance.new("UIStroke", Toggle).Thickness = 2
 
 local dragging = false
@@ -320,26 +299,26 @@ local Main = Instance.new("Frame", ScreenGui)
 Main.Name = "Main"
 Main.Size = UDim2.new(0, 600, 0, 400)
 Main.Position = UDim2.new(0.5, -300, 0.5, -200)
-Main.BackgroundColor3 = Color3.fromRGB(10, 15, 20)
+Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
 Main.BackgroundTransparency = 0.05
 Main.Visible = false
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
-local MainStroke = Instance.new("UIStroke", Main); MainStroke.Color = Color3.fromRGB(0, 255, 255); MainStroke.Thickness = 2
+local MainStroke = Instance.new("UIStroke", Main); MainStroke.Color = Color3.fromRGB(255, 255, 255); MainStroke.Thickness = 2
 
 -- 側邊欄
 local Sidebar = Instance.new("ScrollingFrame", Main)
 Sidebar.Size = UDim2.new(0.3, 0, 0.75, 0)
-Sidebar.BackgroundColor3 = Color3.fromRGB(15, 20, 30)
+Sidebar.BackgroundColor3 = Color3.fromRGB(25, 25, 25)
 Sidebar.ScrollBarThickness = 0
 local SideList = Instance.new("UIListLayout", Sidebar); SideList.Padding = UDim.new(0, 4); SideList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 Sidebar.AutomaticCanvasSize = Enum.AutomaticSize.Y
 SideList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() Sidebar.CanvasSize = UDim2.new(0,0,0,SideList.AbsoluteContentSize.Y+20) end)
 
 local Title = Instance.new("TextLabel", Sidebar)
-Title.Text = "頂點·巴別塔"
+Title.Text = "頂點·零式"
 Title.Font = Enum.Font.GothamBlack
 Title.TextSize = 20
-Title.TextColor3 = Color3.fromRGB(0, 255, 255)
+Title.TextColor3 = Color3.fromRGB(255, 255, 255)
 Title.Size = UDim2.new(1,0,0,50)
 Title.BackgroundTransparency = 1
 
@@ -359,7 +338,7 @@ ConsoleFrame.Size = UDim2.new(0.95, 0, 0.18, 0)
 ConsoleFrame.Position = UDim2.new(0.025, 0, 0.8, 0)
 ConsoleFrame.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
 Instance.new("UICorner", ConsoleFrame).CornerRadius = UDim.new(0, 6)
-Instance.new("UIStroke", ConsoleFrame).Color = Color3.fromRGB(0, 100, 100)
+Instance.new("UIStroke", ConsoleFrame).Color = Color3.fromRGB(100, 100, 100)
 
 local ConsoleScroll = Instance.new("ScrollingFrame", ConsoleFrame)
 ConsoleScroll.Size = UDim2.new(0.98, 0, 0.95, 0)
@@ -380,7 +359,7 @@ local function Log(msg, color)
     ConsoleScroll.CanvasPosition = Vector2.new(0, 9999)
 end
 
-Log("全知翻譯系統已啟動 (BF/Bedwars/AV)", Color3.fromRGB(0, 255, 255))
+Log("零式系統載入 - V6物理 + 手動控制", Color3.fromRGB(255, 255, 255))
 
 -- 加載列表
 local function LoadList(category)
@@ -391,7 +370,7 @@ local function LoadList(category)
         for _, data in pairs(list.Scripts) do
             local F = Instance.new("Frame", Content)
             F.Size = UDim2.new(0.95, 0, 0, 70)
-            F.BackgroundColor3 = Color3.fromRGB(25, 35, 40)
+            F.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
             Instance.new("UICorner", F).CornerRadius = UDim.new(0, 6)
             
             local Name = Instance.new("TextLabel", F)
@@ -407,7 +386,7 @@ local function LoadList(category)
             Desc.Text = data.Desc
             Desc.Size = UDim2.new(0.7, 0, 0.4, 0)
             Desc.Position = UDim2.new(0.05, 0, 0.5, 0)
-            Desc.TextColor3 = Color3.fromRGB(150, 200, 200)
+            Desc.TextColor3 = Color3.fromRGB(150, 150, 150)
             Desc.Font = Enum.Font.Gotham
             Desc.TextSize = 11
             Desc.TextXAlignment = Enum.TextXAlignment.Left
@@ -417,7 +396,7 @@ local function LoadList(category)
             local Run = Instance.new("TextButton", F)
             Run.Size = UDim2.new(0.2, 0, 0.6, 0)
             Run.Position = UDim2.new(0.78, 0, 0.2, 0)
-            Run.BackgroundColor3 = Color3.fromRGB(0, 150, 150)
+            Run.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
             Run.Text = "執行"
             Run.TextColor3 = Color3.new(1,1,1)
             Run.Font = Enum.Font.GothamBold
@@ -447,9 +426,9 @@ end
 local function AddSideBtn(text)
     local B = Instance.new("TextButton", Sidebar)
     B.Size = UDim2.new(0.9, 0, 0, 45)
-    B.BackgroundColor3 = Color3.fromRGB(25, 35, 40)
+    B.BackgroundColor3 = Color3.fromRGB(35, 35, 35)
     B.Text = text
-    B.TextColor3 = Color3.fromRGB(100, 255, 255)
+    B.TextColor3 = Color3.fromRGB(200, 200, 200)
     B.Font = Enum.Font.GothamBold
     B.TextWrapped = true
     Instance.new("UICorner", B).CornerRadius = UDim.new(0, 6)
@@ -465,6 +444,6 @@ AddSideBtn("Universal (通用)")
 local Detected = "Universal (通用)"
 for cat, data in pairs(Database) do for _, id in ipairs(data.IDs) do if id == PlaceID then Detected = cat; break end end end
 LoadList(Detected)
-if Detected ~= "Universal (通用)" then Log("自動切換: "..Detected, Color3.fromRGB(0, 200, 255)) end
+if Detected ~= "Universal (通用)" then Log("自動切換: "..Detected, Color3.fromRGB(200, 200, 200)) end
 
 Main.Visible = true
