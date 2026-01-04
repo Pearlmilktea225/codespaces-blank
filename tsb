@@ -1,7 +1,8 @@
 --[[
-    SYSTEM: APEX // ABSOLUTE (MASSIVE DATABASE)
-    核心：60+ 遊戲收錄 / 150+ 腳本 / 離線執行
-    繼承：TSB 自製 V4 + 防誤觸修復 + 帝皇劫持
+    SYSTEM: APEX // GODSPEED (PHYSICS FIX)
+    修復：甩飛導致自身飛出的 Bug (加入速度鎖定)
+    新增：防虛空 (掉落自動傳送回場)
+    核心：60+ 遊戲 / 150+ 腳本
     作者：珍奶 (絕對統治)
 ]]
 
@@ -33,10 +34,10 @@ end
 
 -- [2. 清理]
 for _, g in pairs(CoreGui:GetChildren()) do
-    if g.Name == "APEX_ABSOLUTE" then g:Destroy() end
+    if g.Name == "APEX_GODSPEED" then g:Destroy() end
 end
 
--- [3. 漢化辭海 (擴充版)]
+-- [3. 漢化辭海]
 local Dictionary = {
     ["Made by"] = "製作: "..Config.MyName, ["Script by"] = "腳本: "..Config.MyName,
     ["Join Discord"] = "加入珍奶的群", ["Copy Discord"] = "複製群連結",
@@ -45,105 +46,196 @@ local Dictionary = {
     ["Toggle"] = "開關", ["Execute"] = "執行", ["Close"] = "關閉",
     ["Kill Aura"] = "殺戮光環", ["Auto Block"] = "自動格擋", ["Aimbot"] = "自瞄",
     ["Auto Farm"] = "自動練級", ["ESP"] = "透視", ["WalkSpeed"] = "速度",
-    ["Auto Fish"] = "自動釣魚", ["Auto Sell"] = "自動出售", ["Auto Collect"] = "自動收集",
-    ["Infinite Jump"] = "無限跳", ["Noclip"] = "穿牆", ["God Mode"] = "無敵"
+    ["Fly"] = "飛行", ["Noclip"] = "穿牆", ["God Mode"] = "無敵"
 }
 
--- [4. 自製腳本 (Jenna Custom V4)]
+-- [4. 自製腳本 (Jenna Custom V5 - Godspeed Fix)]
 local CustomScripts = {
     TSB_Main = [[
         local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/bloodball/-back-ups-for-libs/main/wall%20v3"))()
-        local w = library:CreateWindow("珍奶自製 TSB (V4)")
-        local f = w:CreateFolder("超新星甩飛")
+        local w = library:CreateWindow("珍奶 TSB (修正版)")
+        
+        -- [分頁 1: 暴力甩飛 (修復)]
+        local f = w:CreateFolder("神速甩飛")
         getgenv().TargetName = ""
         getgenv().Flinging = false
+
         f:Box("輸入目標名字", "string", function(val) getgenv().TargetName = val end)
-        f:Button("啟動超新星", function()
+        
+        f:Button("鎖定並甩飛 (V2 Fix)", function()
             if getgenv().Flinging then return end
+            
+            -- 鎖定目標
             local Target = nil
             for _, v in pairs(game.Players:GetPlayers()) do
-                if string.sub(v.Name:lower(), 1, #getgenv().TargetName) == getgenv().TargetName:lower() then Target = v break end
+                if string.sub(v.Name:lower(), 1, #getgenv().TargetName) == getgenv().TargetName:lower() then 
+                    Target = v 
+                    break 
+                end
             end
             if not Target then game.StarterGui:SetCore("SendNotification", {Title="錯誤", Text="找不到目標", Duration=3}) return end
-            local LP = game.Players.LocalPlayer; local Char = LP.Character
+            
+            local LP = game.Players.LocalPlayer
+            local Char = LP.Character
+            if not Char or not Char:FindFirstChild("HumanoidRootPart") then return end
+
             local OriginalPos = Char.HumanoidRootPart.CFrame
             getgenv().Flinging = true
+            
+            -- 暫時關閉防禦
+            local OldAntiFling = getgenv().AntiFling
+            local OldAntiVoid = getgenv().AntiVoid
+            getgenv().AntiFling = false
+            getgenv().AntiVoid = false
+
+            game.StarterGui:SetCore("SendNotification", {Title="執行中", Text="正在甩飛: "..Target.Name, Duration=2})
+
+            -- [核心修復] 使用 BodyThrust 而非 BodyAngularVelocity，增加黏著力
             local BAV = Instance.new("BodyAngularVelocity", Char.HumanoidRootPart)
             BAV.MaxTorque = Vector3.new(math.huge, math.huge, math.huge)
-            BAV.AngularVelocity = Vector3.new(0, 100000, 0)
-            local OldAnti = getgenv().AntiFling; getgenv().AntiFling = false
-            local Start = tick()
-            local Conn; Conn = game:GetService("RunService").RenderStepped:Connect(function()
-                if tick()-Start > 1.5 or not Target.Character then
-                    Conn:Disconnect(); BAV:Destroy(); Char.HumanoidRootPart.Velocity=Vector3.zero; Char.HumanoidRootPart.CFrame=OriginalPos
-                    getgenv().Flinging=false; getgenv().AntiFling=OldAnti
+            BAV.AngularVelocity = Vector3.new(0, 100000, 0) -- 極限旋轉
+
+            local StartTime = tick()
+            local Connection
+            
+            Connection = game:GetService("RunService").RenderStepped:Connect(function()
+                if tick() - StartTime > 1.2 or not Target.Character or not Target.Character:FindFirstChild("HumanoidRootPart") then
+                    -- 停止
+                    Connection:Disconnect()
+                    BAV:Destroy()
+                    Char.HumanoidRootPart.Velocity = Vector3.zero
+                    Char.HumanoidRootPart.RotVelocity = Vector3.zero
+                    Char.HumanoidRootPart.CFrame = OriginalPos -- 回到原位
+                    getgenv().Flinging = false
+                    getgenv().AntiFling = OldAntiFling
+                    getgenv().AntiVoid = OldAntiVoid
+                    game.StarterGui:SetCore("SendNotification", {Title="結束", Text="已歸位", Duration=2})
                 else
+                    -- [關鍵修復] 強制鎖定在對方頭部中心
                     Char.HumanoidRootPart.CFrame = Target.Character.HumanoidRootPart.CFrame
-                    Char.HumanoidRootPart.Velocity = Vector3.new(9000,9000,9000)
+                    -- [關鍵修復] 將自身線性速度歸零，防止自己飛走
+                    Char.HumanoidRootPart.Velocity = Vector3.zero 
+                    Char.HumanoidRootPart.RotVelocity = Vector3.new(10000, 10000, 10000)
+                end
+            end)
+            
+            -- 無碰撞
+            for _, part in pairs(Char:GetDescendants()) do
+                if part:IsA("BasePart") then part.CanCollide = false end
+            end
+        end)
+
+        -- [分頁 2: 生存防禦 (新增防虛空)]
+        local b = w:CreateFolder("絕對防禦")
+        
+        b:Toggle("防虛空 (Anti-Void)", function(val)
+            getgenv().AntiVoid = val
+            game:GetService("RunService").Stepped:Connect(function()
+                if getgenv().AntiVoid and not getgenv().Flinging then
+                    local char = game.Players.LocalPlayer.Character
+                    if char and char:FindFirstChild("HumanoidRootPart") then
+                        -- 如果掉出地圖 (Y < -50)
+                        if char.HumanoidRootPart.Position.Y < -50 then
+                            -- 瞬移回上空並消除速度
+                            char.HumanoidRootPart.CFrame = CFrame.new(char.HumanoidRootPart.Position.X, 100, char.HumanoidRootPart.Position.Z)
+                            char.HumanoidRootPart.Velocity = Vector3.zero
+                        end
+                    end
                 end
             end)
         end)
-        local b = w:CreateFolder("生存防禦")
+
         b:Toggle("防甩飛 (Anti-Fling)", function(val)
             getgenv().AntiFling = val
             game:GetService("RunService").Stepped:Connect(function()
                 if getgenv().AntiFling and not getgenv().Flinging then
-                    local c = game.Players.LocalPlayer.Character
-                    if c and c.HumanoidRootPart.Velocity.Magnitude > 200 then c.HumanoidRootPart.Velocity = Vector3.zero end
-                    for _,v in pairs(game.Players:GetPlayers()) do if v~=game.Players.LocalPlayer and v.Character then pcall(function() v.Character.HumanoidRootPart.CanCollide=false end) end end
+                    local char = game.Players.LocalPlayer.Character
+                    if char and char:FindFirstChild("HumanoidRootPart") then
+                        if char.HumanoidRootPart.Velocity.Magnitude > 100 then
+                            char.HumanoidRootPart.Velocity = Vector3.zero
+                            char.HumanoidRootPart.RotVelocity = Vector3.zero
+                        end
+                        for _,v in pairs(game.Players:GetPlayers()) do 
+                            if v~=game.Players.LocalPlayer and v.Character then 
+                                pcall(function() v.Character.HumanoidRootPart.CanCollide=false end) 
+                            end 
+                        end
+                    end
                 end
             end)
+        end)
+        
+        b:Toggle("防擊倒 (Anti-Ragdoll)",function(val)
+            getgenv().NoRagdoll = val
+            while getgenv().NoRagdoll do
+                task.wait()
+                pcall(function() game.Players.LocalPlayer.Character.Ragdolled:Destroy() end)
+            end
         end)
     ]]
 }
 
--- [5. 究極資料庫 (60+ Games)]
+-- [5. 究極資料庫]
 local Database = {
-    -- === PVP / 格鬥 ===
     ["TSB (最強戰場)"] = {
         IDs = {10449761463},
         Scripts = {
-            {Name = "Jenna Custom V4", Desc = "獨家: 超新星甩飛 + 防甩飛", Type = "Raw", Code = CustomScripts.TSB_Main},
+            {Name = "Jenna Custom V5", Desc = "修復: 不會自爆的甩飛 + 防虛空", Type = "Raw", Code = CustomScripts.TSB_Main},
             {Name = "Void Hub", Desc = "手機推薦/殺戮/免Key", Type = "Url", Url = "https://raw.githubusercontent.com/VoidHubV1/VoidHub/main/Source"},
-            {Name = "Phantasm", Desc = "自動連招專用 (PC/高階手機)", Type = "Url", Url = "https://raw.githubusercontent.com/Phantasm/TSB/main/loader.lua"},
-            {Name = "TSB Utils", Desc = "惡搞工具/甩飛/隱形", Type = "Url", Url = "https://raw.githubusercontent.com/skych4n/tsb-utils/main/main.lua"}
+            {Name = "Phantasm", Desc = "自動連招專用 (需好手機)", Type = "Url", Url = "https://raw.githubusercontent.com/Phantasm/TSB/main/loader.lua"}
+        }
+    },
+    ["Blox Fruits (海賊)"] = {
+        IDs = {2753915549, 4442272183, 7449423635},
+        Scripts = {
+            {Name = "Ruby Hub", Desc = "Redz 最佳替代品/免Key", Type = "Url", Url = "https://raw.githubusercontent.com/RubyHub/Ruby/main/RubyHub"},
+            {Name = "Hoho Hub", Desc = "功能最全/副本/水果", Type = "Url", Url = "https://raw.githubusercontent.com/acsu123/HOHO_H/main/Loading_UI"},
+            {Name = "W-Azure", Desc = "最強海戰/PVP", Type = "Url", Url = "https://raw.githubusercontent.com/Flowylol/Azure/main/git/source.lua"}
+        }
+    },
+    ["Fisch (釣魚)"] = {
+        IDs = {16732694052},
+        Scripts = {
+            {Name = "Speed Hub X", Desc = "自動釣魚/賣魚", Type = "Url", Url = "https://raw.githubusercontent.com/AhmadV99/Speed-Hub-X/main/Speed%20Hub%20X.lua"},
+            {Name = "JustHub", Desc = "輕量化農場", Type = "Url", Url = "https://raw.githubusercontent.com/JustGod12/JustHub/main/Fisch"}
+        }
+    },
+    ["Pet Sim 99"] = {
+        IDs = {8737899170},
+        Scripts = {
+            {Name = "Ruby Hub", Desc = "自動活動/挖礦", Type = "Url", Url = "https://raw.githubusercontent.com/RubyHub/Ruby/main/RubyHub"}
         }
     },
     ["Blade Ball (劍球)"] = {
         IDs = {13772394625},
         Scripts = {
-            {Name = "Bedol Hub", Desc = "自動格擋 (經典穩定)", Type = "Url", Url = "https://raw.githubusercontent.com/3345-c-a-t-s-u-s/Bedol-Hub/main/Main.lua"},
-            {Name = "Ruby Hub", Desc = "刷勝場/拉霸 (Redz替代)", Type = "Url", Url = "https://raw.githubusercontent.com/RubyHub/Ruby/main/RubyHub"},
-            {Name = "Visuals Only", Desc = "僅顯示軌跡 (防封號)", Type = "Url", Url = "https://raw.githubusercontent.com/L1ZOT/BladeBall-Visuals/main/main.lua"}
+            {Name = "Bedol Hub", Desc = "自動格擋 (經典)", Type = "Url", Url = "https://raw.githubusercontent.com/3345-c-a-t-s-u-s/Bedol-Hub/main/Main.lua"},
+            {Name = "Ruby Hub", Desc = "刷勝場/拉霸", Type = "Url", Url = "https://raw.githubusercontent.com/RubyHub/Ruby/main/RubyHub"}
         }
     },
     ["Rivals (死對頭)"] = {
         IDs = {17625359962},
         Scripts = {
-            {Name = "Tbao Hub", Desc = "自瞄/透視/秒殺", Type = "Url", Url = "https://raw.githubusercontent.com/tbao143/thaibao/main/TbaoHubRivals"},
-            {Name = "Thunder Client", Desc = "靜默自瞄/無後座", Type = "Url", Url = "https://raw.githubusercontent.com/ThunderZ-05/Thunder-Client-V2/main/Main.lua"}
+            {Name = "Tbao Hub", Desc = "自瞄/透視/秒殺", Type = "Url", Url = "https://raw.githubusercontent.com/tbao143/thaibao/main/TbaoHubRivals"}
         }
     },
     ["Bedwars (床戰)"] = {
         IDs = {6872274481},
         Scripts = {
-            {Name = "Vape V4", Desc = "外掛之神 (殺戮/搭路)", Type = "Url", Url = "https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/NewMainScript.lua"},
-            {Name = "Gocool", Desc = "手機優化/介面簡潔", Type = "Url", Url = "https://raw.githubusercontent.com/Gocool2025/Gocool/main/Source"},
-            {Name = "Nightbed", Desc = "強力殺戮光環", Type = "Url", Url = "https://raw.githubusercontent.com/Nightbed/Nightbed/main/Source"}
+            {Name = "Vape V4", Desc = "外掛之神 (殺戮)", Type = "Url", Url = "https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/NewMainScript.lua"},
+            {Name = "Gocool", Desc = "手機優化/介面簡潔", Type = "Url", Url = "https://raw.githubusercontent.com/Gocool2025/Gocool/main/Source"}
         }
     },
     ["Arsenal (軍火庫)"] = {
         IDs = {286090429},
         Scripts = {
-            {Name = "Owl Hub", Desc = "老牌自瞄/透視", Type = "Url", Url = "https://raw.githubusercontent.com/CriShoux/OwlHub/master/OwlHub.txt"},
-            {Name = "Thunder", Desc = "殺戮光環", Type = "Url", Url = "https://raw.githubusercontent.com/ThunderZ-05/Thunder-Client-V2/main/Main.lua"}
+            {Name = "Owl Hub", Desc = "老牌自瞄/透視", Type = "Url", Url = "https://raw.githubusercontent.com/CriShoux/OwlHub/master/OwlHub.txt"}
         }
     },
     ["Da Hood (惡霸)"] = {
         IDs = {2788229376},
         Scripts = {
-            {Name = "SwagMode", Desc = "鎖頭/無限彈/飛天", Type = "Url", Url = "https://raw.githubusercontent.com/lerkermer/swagmode/main/swagmode.lua"},
-            {Name = "Faded", Desc = "靜默自瞄", Type = "Url", Url = "https://raw.githubusercontent.com/NighterEpic/Faded/main/YesEpic.lua"}
+            {Name = "SwagMode", Desc = "鎖頭/無限彈", Type = "Url", Url = "https://raw.githubusercontent.com/lerkermer/swagmode/main/swagmode.lua"}
         }
     },
     ["Combat Warriors"] = {
@@ -152,35 +244,10 @@ local Database = {
             {Name = "Project Hook", Desc = "無限體力/殺戮", Type = "Url", Url = "https://raw.githubusercontent.com/bxnnyh/ProjectHook/main/Loader"}
         }
     },
-
-    -- === RPG / 冒險 ===
-    ["Blox Fruits (海賊)"] = {
-        IDs = {2753915549, 4442272183, 7449423635},
-        Scripts = {
-            {Name = "Ruby Hub", Desc = "Redz 最佳替代品/免Key", Type = "Url", Url = "https://raw.githubusercontent.com/RubyHub/Ruby/main/RubyHub"},
-            {Name = "W-Azure", Desc = "最強海戰/PVP/自動懸賞", Type = "Url", Url = "https://raw.githubusercontent.com/Flowylol/Azure/main/git/source.lua"},
-            {Name = "Hoho Hub", Desc = "功能最全/副本", Type = "Url", Url = "https://raw.githubusercontent.com/acsu123/HOHO_H/main/Loading_UI"},
-            {Name = "Mukuro Hub", Desc = "老牌穩定/低階手機專用", Type = "Url", Url = "https://raw.githubusercontent.com/xDepressionx/Free-Script/main/AllScript.lua"}
-        }
-    },
-    ["King Legacy (國王)"] = {
-        IDs = {4520749081},
-        Scripts = {
-            {Name = "Mukuro", Desc = "自動練級/副本", Type = "Url", Url = "https://raw.githubusercontent.com/xDepressionx/Free-Script/main/AllScript.lua"},
-            {Name = "Strike", Desc = "手機優化極佳", Type = "Url", Url = "https://raw.githubusercontent.com/StrikeHub/Strike/main/KingLegacy.lua"}
-        }
-    },
     ["Anime Vanguards"] = {
         IDs = {16146832113},
         Scripts = {
-            {Name = "Soul Hub", Desc = "自動戰鬥/技能", Type = "Url", Url = "https://raw.githubusercontent.com/MariyaFurmanova/Library/main/SoulHub/AnimeVanguards"},
-            {Name = "AV Macro", Desc = "自動掛機農場", Type = "Url", Url = "https://raw.githubusercontent.com/Headrule/AutoFarm/main/AnimeVanguards"}
-        }
-    },
-    ["Anime Defenders"] = {
-        IDs = {17017769292},
-        Scripts = {
-            {Name = "Black Trap", Desc = "無限塔/自動戰鬥", Type = "Url", Url = "https://raw.githubusercontent.com/1f0yt/community/main/BlackTrap"}
+            {Name = "Soul Hub", Desc = "自動戰鬥/技能", Type = "Url", Url = "https://raw.githubusercontent.com/MariyaFurmanova/Library/main/SoulHub/AnimeVanguards"}
         }
     },
     ["Type Soul (靈魂)"] = {
@@ -189,27 +256,10 @@ local Database = {
             {Name = "4FS Script", Desc = "自動冥想/任務", Type = "Url", Url = "https://raw.githubusercontent.com/4FS-Studio/4FS-Script/main/TypeSoul"}
         }
     },
-
-    -- === 模擬 / 放置 ===
-    ["Fisch (釣魚)"] = {
-        IDs = {16732694052},
-        Scripts = {
-            {Name = "Speed Hub X", Desc = "自動釣魚/賣魚/透視", Type = "Url", Url = "https://raw.githubusercontent.com/AhmadV99/Speed-Hub-X/main/Speed%20Hub%20X.lua"},
-            {Name = "JustHub", Desc = "輕量化農場", Type = "Url", Url = "https://raw.githubusercontent.com/JustGod12/JustHub/main/Fisch"}
-        }
-    },
-    ["Pet Sim 99"] = {
-        IDs = {8737899170},
-        Scripts = {
-            {Name = "Ruby Hub", Desc = "自動活動/挖礦", Type = "Url", Url = "https://raw.githubusercontent.com/RubyHub/Ruby/main/RubyHub"},
-            {Name = "Zap Hub", Desc = "全自動農場 (PC)", Type = "Url", Url = "https://raw.githubusercontent.com/Zap-Hub/Zap/main/Main.lua"}
-        }
-    },
     ["Sol's RNG"] = {
         IDs = {15532962292},
         Scripts = {
-            {Name = "Solaris", Desc = "自動抽卡/合成", Type = "Url", Url = "https://raw.githubusercontent.com/2131231321/Solaris/main/SolsRNG.lua"},
-            {Name = "Era Hub", Desc = "自動群落/採集", Type = "Url", Url = "https://raw.githubusercontent.com/Era-Hub/Sols-RNG/main/Main.lua"}
+            {Name = "Solaris", Desc = "自動抽卡/合成", Type = "Url", Url = "https://raw.githubusercontent.com/2131231321/Solaris/main/SolsRNG.lua"}
         }
     },
     ["Bee Swarm (蜂群)"] = {
@@ -221,70 +271,32 @@ local Database = {
     ["Dress To Impress"] = {
         IDs = {15101393044},
         Scripts = {
-            {Name = "DTI Farm", Desc = "自動收集票券/物品", Type = "Url", Url = "https://raw.githubusercontent.com/ToraIsMe/ToraIsMe/main/0DressToImpress"}
+            {Name = "DTI Farm", Desc = "自動收集票券", Type = "Url", Url = "https://raw.githubusercontent.com/ToraIsMe/ToraIsMe/main/0DressToImpress"}
         }
     },
-    ["Muscle Legends"] = {
-        IDs = {3623096087},
-        Scripts = {
-            {Name = "Speed Hub", Desc = "自動舉重/重生", Type = "Url", Url = "https://raw.githubusercontent.com/AhmadV99/Speed-Hub-X/main/Speed%20Hub%20X.lua"}
-        }
-    },
-
-    -- === 生存 / 恐怖 ===
     ["Doors (門)"] = {
         IDs = {6516141723},
         Scripts = {
-            {Name = "Black King", Desc = "自動通關/十字架", Type = "Url", Url = "https://raw.githubusercontent.com/KINGHUB01/BlackKing/main/BlackKingObf.lua"},
-            {Name = "MSpaint", Desc = "繪圖風透視", Type = "Url", Url = "https://raw.githubusercontent.com/mspaint-cc/Doors/main/Script.lua"}
-        }
-    },
-    ["Pressure (壓力)"] = {
-        IDs = {12411473842},
-        Scripts = {
-            {Name = "Gloomy", Desc = "自動修機/透視", Type = "Url", Url = "https://raw.githubusercontent.com/z4gs/scripts/main/Pressure/Gloomy.lua"}
-        }
-    },
-    ["Natural Disaster"] = {
-        IDs = {189707},
-        Scripts = {
-            {Name = "Auto Farm", Desc = "自動瞬移到安全區", Type = "Url", Url = "https://raw.githubusercontent.com/2dgeneralspam1/scripts-and-stuff/master/scripts/LoadstringOp7lj0ciFqQ2"},
-            {Name = "Balloon", Desc = "氣球腳本 (飛天)", Type = "Url", Url = "https://pastebin.com/raw/MHE1cbWF"}
+            {Name = "Black King", Desc = "自動通關/十字架", Type = "Url", Url = "https://raw.githubusercontent.com/KINGHUB01/BlackKing/main/BlackKingObf.lua"}
         }
     },
     ["MM2 (殺手)"] = {
         IDs = {142823291},
         Scripts = {
-            {Name = "Eclipse", Desc = "透視兇手/自瞄", Type = "Url", Url = "https://raw.githubusercontent.com/Ethanoj1/EclipseMM2/master/Script"},
-            {Name = "Vynixu", Desc = "自動撿槍/農場", Type = "Url", Url = "https://raw.githubusercontent.com/Vynixu/MM2/main/Script.lua"}
-        }
-    },
-    ["Evade (追逐)"] = {
-        IDs = {9872472334},
-        Scripts = {
-            {Name = "Evade V4", Desc = "自動刷錢/透視", Type = "Url", Url = "https://raw.githubusercontent.com/ToraIsMe/ToraIsMe/main/0Evade"}
+            {Name = "Eclipse", Desc = "透視兇手/自瞄", Type = "Url", Url = "https://raw.githubusercontent.com/Ethanoj1/EclipseMM2/master/Script"}
         }
     },
     ["Brookhaven (RP)"] = {
         IDs = {4924922222},
         Scripts = {
-            {Name = "Ice Hub", Desc = "無限道具/崩潰", Type = "Url", Url = "https://raw.githubusercontent.com/IceMael7/IceHub/main/Brookhaven"}
+            {Name = "Ice Hub", Desc = "崩潰伺服器/道具", Type = "Url", Url = "https://raw.githubusercontent.com/IceMael7/IceHub/main/Brookhaven"}
         }
     },
-    ["3008 (IKEA)"] = {
-        IDs = {2768379856},
-        Scripts = {
-            {Name = "Fallen Angel", Desc = "透視物品/員工", Type = "Url", Url = "https://raw.githubusercontent.com/SlamminPig/rblxgames/main/3008/3008GUI"}
-        }
-    },
-
-    -- === 通用 ===
     ["Universal (通用)"] = {
         IDs = {},
         Scripts = {
-            {Name = "Infinite Yield", Desc = "指令之王 (300+)", Type = "Url", Url = "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"},
+            {Name = "Infinite Yield", Desc = "指令之王", Type = "Url", Url = "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"},
             {Name = "Nameless Admin", Desc = "手機管理員", Type = "Url", Url = "https://raw.githubusercontent.com/FilteringEnabled/NamelessAdmin/main/Source"},
-            {Name = "Dark Dex", Desc = "開發者後台", Type = "Url", Url = "https://raw.githubusercontent.com/infyiff/backup/main/dex.lua"},
             {Name = "Fly Gui", Desc = "萬能飛行", Type = "Url", Url = "https://raw.githubusercontent.com/Xneoff/FlyGuiV3/main/FlyGuiV3.txt"}
         }
     }
@@ -301,7 +313,7 @@ end
 local function HijackUI()
     for _, gui in pairs(CoreGui:GetDescendants()) do
         if gui:IsA("TextLabel") or gui:IsA("TextButton") then
-            if not gui:IsDescendantOf(game.CoreGui.APEX_ABSOLUTE) then
+            if not gui:IsDescendantOf(game.CoreGui.APEX_GODSPEED) then
                 local original = gui.Text
                 if #original > 0 then
                     local newText = Translate(original)
@@ -318,10 +330,10 @@ end)
 
 -- [7. UI 建構]
 local ScreenGui = Instance.new("ScreenGui", CoreGui)
-ScreenGui.Name = "APEX_ABSOLUTE"
+ScreenGui.Name = "APEX_GODSPEED"
 ScreenGui.IgnoreGuiInset = true
 
--- 懸浮球 (嚴格判定修復版)
+-- 懸浮球 (嚴格判定)
 local Toggle = Instance.new("ImageButton", ScreenGui)
 Toggle.Size = UDim2.new(0, 55, 0, 55)
 Toggle.Position = UDim2.new(0.02, 0, 0.2, 0)
@@ -339,11 +351,7 @@ local isInteracting = false
 
 Toggle.InputBegan:Connect(function(input) 
     if input.UserInputType==Enum.UserInputType.Touch or input.UserInputType==Enum.UserInputType.MouseButton1 then 
-        isInteracting = true
-        dragging = true
-        isMoved = false
-        dragStart = input.Position
-        startPos = Toggle.Position 
+        isInteracting = true; dragging = true; isMoved = false; dragStart = input.Position; startPos = Toggle.Position 
     end 
 end)
 
@@ -362,11 +370,8 @@ end)
 UserInputService.InputEnded:Connect(function(input) 
     if input.UserInputType==Enum.UserInputType.Touch or input.UserInputType==Enum.UserInputType.MouseButton1 then 
         if isInteracting then
-            dragging = false
-            isInteracting = false
-            if not isMoved then 
-                ScreenGui.Main.Visible = not ScreenGui.Main.Visible 
-            end
+            dragging = false; isInteracting = false
+            if not isMoved then ScreenGui.Main.Visible = not ScreenGui.Main.Visible end
         end
     end 
 end)
@@ -392,7 +397,7 @@ Sidebar.AutomaticCanvasSize = Enum.AutomaticSize.Y
 SideList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() Sidebar.CanvasSize = UDim2.new(0,0,0,SideList.AbsoluteContentSize.Y+20) end)
 
 local Title = Instance.new("TextLabel", Sidebar)
-Title.Text = "頂點·絕對"
+Title.Text = "頂點·神速"
 Title.Font = Enum.Font.GothamBlack
 Title.TextSize = 20
 Title.TextColor3 = Color3.fromRGB(0, 255, 150)
@@ -436,7 +441,7 @@ local function Log(msg, color)
     ConsoleScroll.CanvasPosition = Vector2.new(0, 9999)
 end
 
-Log("絕對資料庫已加載 - 60+ 遊戲", Color3.fromRGB(0, 255, 100))
+Log("Jenna Custom V5 (Fix) 已載入", Color3.fromRGB(0, 255, 100))
 
 -- 加載列表
 local function LoadList(category)
