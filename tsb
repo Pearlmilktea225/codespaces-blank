@@ -1,6 +1,7 @@
 --[[
-    SYSTEM: APEX // OMEGA-PRIME (THE FINAL MERGE)
-    核心：V11 成功甩飛 + 基礎功能回歸 + 全遊戲庫 + 漢化
+    SYSTEM: APEX // NEBULA (BLUE-X EDITION)
+    新增：BlueX Hub (Blox Fruits)
+    核心：V11 甩飛 + 基礎功能 + 60+ 遊戲庫 + 漢化
     作者：珍奶 (絕對統治)
 ]]
 
@@ -37,10 +38,10 @@ end
 
 -- [3. 清理]
 for _, g in pairs(CoreGui:GetChildren()) do
-    if g.Name == "APEX_PRIME" then g:Destroy() end
+    if g.Name == "APEX_NEBULA" then g:Destroy() end
 end
 
--- [4. 漢化辭海 (500+)]
+-- [4. 漢化辭海]
 local Dictionary = {
     ["Made by"]="製作: "..Config.MyName, ["Script by"]="腳本: "..Config.MyName,
     ["Settings"]="設置", ["Main"]="主頁", ["Farm"]="農場", ["Combat"]="戰鬥",
@@ -54,13 +55,13 @@ local Dictionary = {
     ["Bed Aura"]="拆床光環", ["Scaffold"]="自動搭路", ["Anti Knockback"]="防擊退"
 }
 
--- [5. 自製腳本 (Jenna Custom V12 - All Features Restored)]
+-- [5. 自製腳本 (Jenna Custom V12 - Full Feature Sticky)]
 local CustomScripts = {
     TSB_Main = [[
         local library = loadstring(game:HttpGet("https://raw.githubusercontent.com/bloodball/-back-ups-for-libs/main/wall%20v3"))()
         local w = library:CreateWindow("珍奶 TSB (全盛版)")
         
-        -- [分頁 1: 必殺甩飛 (V11 Core)]
+        -- [分頁 1: 必殺甩飛 (V11 核心)]
         local f = w:CreateFolder("V11 黏著甩飛")
         getgenv().TargetName = ""
         getgenv().Flinging = false
@@ -115,17 +116,14 @@ local CustomScripts = {
             end
         end)
 
-        -- [分頁 2: 基礎能力 (回歸)]
+        -- [分頁 2: 基礎能力]
         local m = w:CreateFolder("基礎能力")
-        
         m:Slider("移動速度", 16, 300, true, function(val)
             if game.Players.LocalPlayer.Character then game.Players.LocalPlayer.Character.Humanoid.WalkSpeed = val end
         end)
-        
         m:Slider("跳躍高度", 50, 500, true, function(val)
             if game.Players.LocalPlayer.Character then game.Players.LocalPlayer.Character.Humanoid.JumpPower = val end
         end)
-        
         m:Toggle("隱形 (Invisible)", function(val)
             local char = game.Players.LocalPlayer.Character
             if char then
@@ -134,8 +132,7 @@ local CustomScripts = {
                 end
             end
         end)
-        
-        m:Button("獲得傳送工具 (Click TP)", function()
+        m:Button("獲得傳送工具", function()
             local tool = Instance.new("Tool")
             tool.RequiresHandle = false; tool.Name = "點擊傳送"
             tool.Activated:Connect(function()
@@ -174,28 +171,25 @@ local CustomScripts = {
                 end
             end)
         end)
-        b:Toggle("無限衝刺", function(val)
-            getgenv().InfDash = val
-            while getgenv().InfDash do task.wait(); local D=game:GetService("ReplicatedStorage").Resources.KJEffects.Dash; if D then D:FireServer() end end
-        end)
     ]]
 }
 
--- [6. 究極資料庫 (完整回歸)]
+-- [6. 究極資料庫]
 local Database = {
     -- [1] TSB
     ["TSB (最強戰場)"] = {
         IDs = {10449761463},
         Scripts = {
-            {Name = "Jenna V12 (Full)", Desc = "V11甩飛 + 速度/跳躍/工具", Type = "Raw", Code = CustomScripts.TSB_Main},
+            {Name = "Jenna V12 (Full)", Desc = "V11黏著甩飛 + 完整功能", Type = "Raw", Code = CustomScripts.TSB_Main},
             {Name = "Void Hub", Desc = "殺戮/免Key", Type = "Url", Url = "https://raw.githubusercontent.com/VoidHubV1/VoidHub/main/Source"},
             {Name = "Phantasm", Desc = "自動連招", Type = "Url", Url = "https://raw.githubusercontent.com/Phantasm/TSB/main/loader.lua"}
         }
     },
-    -- [2] BF
+    -- [2] BF (加入 BlueX)
     ["Blox Fruits (海賊)"] = {
         IDs = {2753915549, 4442272183, 7449423635},
         Scripts = {
+            {Name = "BlueX Hub", Desc = "[新加入] 強力綜合腳本", Type = "Url", Url = "https://raw.githubusercontent.com/Dev-BlueX/BlueX-Hub/refs/heads/main/Main.lua"},
             {Name = "Hoho Hub", Desc = "功能最全/副本", Type = "Url", Url = "https://raw.githubusercontent.com/acsu123/HOHO_H/main/Loading_UI"},
             {Name = "Hiba Hub", Desc = "手機優化極佳", Type = "Url", Url = "https://raw.githubusercontent.com/Hiba-Ar/HibaHub/main/Hiba-Hub-v2.lua"},
             {Name = "W-Azure", Desc = "自動懸賞", Type = "Url", Url = "https://api.luarmor.net/files/v3/loaders/3b2169cf53bc6104dabe8e19562e5cc2.lua"},
@@ -246,7 +240,7 @@ end
 local function HijackUI()
     for _, gui in pairs(CoreGui:GetDescendants()) do
         if gui:IsA("TextLabel") or gui:IsA("TextButton") then
-            if not gui:IsDescendantOf(game.CoreGui.APEX_PRIME) then
+            if not gui:IsDescendantOf(game.CoreGui.APEX_NEBULA) then
                 local original = gui.Text
                 if #original > 0 then
                     local newText = Translate(original)
@@ -263,7 +257,7 @@ end)
 
 -- [8. UI 建構]
 local ScreenGui = Instance.new("ScreenGui", CoreGui)
-ScreenGui.Name = "APEX_PRIME"
+ScreenGui.Name = "APEX_NEBULA"
 ScreenGui.IgnoreGuiInset = true
 
 -- 懸浮球 (嚴格判定)
@@ -272,9 +266,9 @@ Toggle.Size = UDim2.new(0, 55, 0, 55)
 Toggle.Position = UDim2.new(0.02, 0, 0.2, 0)
 Toggle.BackgroundColor3 = Color3.fromRGB(0,0,0)
 Toggle.Image = "rbxassetid://13465637257"
-Toggle.ImageColor3 = Color3.fromRGB(255, 100, 0) -- 全盛橙
+Toggle.ImageColor3 = Color3.fromRGB(0, 100, 255) -- 星雲藍
 Instance.new("UICorner", Toggle).CornerRadius = UDim.new(1,0)
-Instance.new("UIStroke", Toggle).Color = Color3.fromRGB(255, 50, 0)
+Instance.new("UIStroke", Toggle).Color = Color3.fromRGB(0, 50, 255)
 Instance.new("UIStroke", Toggle).Thickness = 2
 
 local dragging = false
@@ -314,26 +308,26 @@ local Main = Instance.new("Frame", ScreenGui)
 Main.Name = "Main"
 Main.Size = UDim2.new(0, 600, 0, 400)
 Main.Position = UDim2.new(0.5, -300, 0.5, -200)
-Main.BackgroundColor3 = Color3.fromRGB(15, 12, 10)
+Main.BackgroundColor3 = Color3.fromRGB(10, 10, 15)
 Main.BackgroundTransparency = 0.05
 Main.Visible = false
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
-local MainStroke = Instance.new("UIStroke", Main); MainStroke.Color = Color3.fromRGB(255, 100, 0); MainStroke.Thickness = 2
+local MainStroke = Instance.new("UIStroke", Main); MainStroke.Color = Color3.fromRGB(0, 100, 255); MainStroke.Thickness = 2
 
 -- 側邊欄
 local Sidebar = Instance.new("ScrollingFrame", Main)
 Sidebar.Size = UDim2.new(0.3, 0, 0.75, 0)
-Sidebar.BackgroundColor3 = Color3.fromRGB(25, 18, 15)
+Sidebar.BackgroundColor3 = Color3.fromRGB(15, 15, 25)
 Sidebar.ScrollBarThickness = 0
 local SideList = Instance.new("UIListLayout", Sidebar); SideList.Padding = UDim.new(0, 4); SideList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 Sidebar.AutomaticCanvasSize = Enum.AutomaticSize.Y
 SideList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() Sidebar.CanvasSize = UDim2.new(0,0,0,SideList.AbsoluteContentSize.Y+20) end)
 
 local Title = Instance.new("TextLabel", Sidebar)
-Title.Text = "頂點·全盛"
+Title.Text = "頂點·星雲"
 Title.Font = Enum.Font.GothamBlack
 Title.TextSize = 20
-Title.TextColor3 = Color3.fromRGB(255, 100, 0)
+Title.TextColor3 = Color3.fromRGB(0, 100, 255)
 Title.Size = UDim2.new(1,0,0,50)
 Title.BackgroundTransparency = 1
 
@@ -353,7 +347,7 @@ ConsoleFrame.Size = UDim2.new(0.95, 0, 0.18, 0)
 ConsoleFrame.Position = UDim2.new(0.025, 0, 0.8, 0)
 ConsoleFrame.BackgroundColor3 = Color3.fromRGB(5, 5, 5)
 Instance.new("UICorner", ConsoleFrame).CornerRadius = UDim.new(0, 6)
-Instance.new("UIStroke", ConsoleFrame).Color = Color3.fromRGB(100, 40, 0)
+Instance.new("UIStroke", ConsoleFrame).Color = Color3.fromRGB(0, 50, 100)
 
 local ConsoleScroll = Instance.new("ScrollingFrame", ConsoleFrame)
 ConsoleScroll.Size = UDim2.new(0.98, 0, 0.95, 0)
@@ -374,7 +368,7 @@ local function Log(msg, color)
     ConsoleScroll.CanvasPosition = Vector2.new(0, 9999)
 end
 
-Log("全盛完全體載入 (V12 Full Feature)", Color3.fromRGB(255, 100, 0))
+Log("NEBULA 已載入 (BlueX Hub Added)", Color3.fromRGB(0, 150, 255))
 
 -- 加載列表
 local function LoadList(category)
@@ -385,7 +379,7 @@ local function LoadList(category)
         for _, data in pairs(list.Scripts) do
             local F = Instance.new("Frame", Content)
             F.Size = UDim2.new(0.95, 0, 0, 70)
-            F.BackgroundColor3 = Color3.fromRGB(35, 25, 20)
+            F.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
             Instance.new("UICorner", F).CornerRadius = UDim.new(0, 6)
             
             local Name = Instance.new("TextLabel", F)
@@ -401,7 +395,7 @@ local function LoadList(category)
             Desc.Text = data.Desc
             Desc.Size = UDim2.new(0.7, 0, 0.4, 0)
             Desc.Position = UDim2.new(0.05, 0, 0.5, 0)
-            Desc.TextColor3 = Color3.fromRGB(200, 150, 100)
+            Desc.TextColor3 = Color3.fromRGB(150, 150, 200)
             Desc.Font = Enum.Font.Gotham
             Desc.TextSize = 11
             Desc.TextXAlignment = Enum.TextXAlignment.Left
@@ -411,7 +405,7 @@ local function LoadList(category)
             local Run = Instance.new("TextButton", F)
             Run.Size = UDim2.new(0.2, 0, 0.6, 0)
             Run.Position = UDim2.new(0.78, 0, 0.2, 0)
-            Run.BackgroundColor3 = Color3.fromRGB(200, 80, 0)
+            Run.BackgroundColor3 = Color3.fromRGB(0, 100, 200)
             Run.Text = "執行"
             Run.TextColor3 = Color3.new(1,1,1)
             Run.Font = Enum.Font.GothamBold
@@ -441,9 +435,9 @@ end
 local function AddSideBtn(text)
     local B = Instance.new("TextButton", Sidebar)
     B.Size = UDim2.new(0.9, 0, 0, 45)
-    B.BackgroundColor3 = Color3.fromRGB(35, 25, 20)
+    B.BackgroundColor3 = Color3.fromRGB(25, 25, 35)
     B.Text = text
-    B.TextColor3 = Color3.fromRGB(255, 180, 100)
+    B.TextColor3 = Color3.fromRGB(100, 180, 255)
     B.Font = Enum.Font.GothamBold
     B.TextWrapped = true
     Instance.new("UICorner", B).CornerRadius = UDim.new(0, 6)
@@ -459,6 +453,6 @@ AddSideBtn("Universal (通用)")
 local Detected = "Universal (通用)"
 for cat, data in pairs(Database) do for _, id in ipairs(data.IDs) do if id == PlaceID then Detected = cat; break end end end
 LoadList(Detected)
-if Detected ~= "Universal (通用)" then Log("自動切換: "..Detected, Color3.fromRGB(255, 100, 0)) end
+if Detected ~= "Universal (通用)" then Log("自動切換: "..Detected, Color3.fromRGB(0, 150, 255)) end
 
 Main.Visible = true
