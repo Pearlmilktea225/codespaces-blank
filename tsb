@@ -1,325 +1,351 @@
 --[[
-    珍奶腳本 (ZhenNai Hub) - v32.0 暗影提取版 (SHADOW EXTRACTION)
-    核心更新：Necromancer 職業增強
-    功能：讀取目標模型 -> 轉化為影子士兵 -> 召喚至身後
+    珍奶腳本 (ZhenNai Hub) - v36.0 覺醒系統最終版 (SYSTEM: AWAKENING)
+    特色：TSB 專屬覺醒機制 (按 G 變身)
+    內容：4大職業 x 2種型態 (普通/覺醒) x 4個技能 = 32種特效組合
+    支援：實戰傷害 + 手機/電腦雙端
 ]]
 
--- [1. 系統喚醒]
-local CoreGui = game:GetService("CoreGui")
+-- [1. 系統初始化]
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
-local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
-local Lighting = game:GetService("Lighting")
+local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
+local Lighting = game:GetService("Lighting")
 local LocalPlayer = Players.LocalPlayer
 local Camera = workspace.CurrentCamera
 
--- 偵測裝置
-local IsMobile = UserInputService.TouchEnabled
-local PlatformName = IsMobile and "MOBILE" or "PC"
-
--- 清理舊介面
+local CoreGui = game:GetService("CoreGui")
 for _, gui in pairs(CoreGui:GetChildren()) do
-    if gui.Name == "ZhenNai_System_HUD" or gui.Name == "Fluent" then gui:Destroy() end
+    if gui.Name == "ZhenNai_HUD_v36" or gui.Name == "Fluent" then gui:Destroy() end
 end
 if LocalPlayer.Character then
     for _, x in pairs(LocalPlayer.Character:GetDescendants()) do
         if x.Name:find("ZN_") then x:Destroy() end
     end
-    -- 清理殘留影子
-    for _, x in pairs(workspace:GetChildren()) do
-        if x.Name == "ZN_Shadow_Soldier" then x:Destroy() end
-    end
 end
-Lighting:ClearAllChildren()
 
 local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/releases/latest/download/main.lua"))()
 
--- [2. 系統配置]
+-- [2. 配置]
 local Config = {
-    -- 玩家數值
-    TargetName = "", CurrentTarget = nil, 
-    RulerAuthority = false,
-    Bloodlust = false, 
-    DaggerReach = false, ReachSize = 20,
+    Job = "None", -- JinWoo, Saitama, Garou, Sukuna
+    IsAwakened = false, -- 是否覺醒
     
-    -- 職業技能 (Mode)
-    Job = "None", -- Assassin, Necromancer, Monarch
+    -- 戰鬥
+    TargetName = "", CurrentTarget = nil, RealDamage = false,
     
-    -- 系統視覺
-    SystemVisuals = true,
-    Eyes = true, Aura = true, Shadows = true,
+    -- 視覺
+    Visuals = true, CamShake = true,
     
-    -- 移動
-    SprintSpeed = 100, SprintEnabled = false, ShadowStep = false,
-    Levitate = false, AntiVoid = true
+    -- 機動
+    Speed = 100, SpeedEnabled = false, Noclip = false, Invisible = false, AntiVoid = true,
+}
+
+-- 通用動作 ID (Roblox 公開動作)
+local Anims = {
+    Punch = "rbxassetid://10471336737",
+    Kick = "rbxassetid://10479335397",
+    Slam = "rbxassetid://10470104242",
+    Cast = "rbxassetid://33796059",
+    Float = "rbxassetid://10714347256",
 }
 
 --------------------------------------------------------------------------------
--- 3. 暗影提取引擎 (Shadow Extraction Engine)
+-- 3. 引擎核心 (特效/動作/傷害)
 --------------------------------------------------------------------------------
 
--- [尋找最近的玩家模型]
-local function GetNearestCharacter(radius)
-    local closest = nil
-    local minDist = radius
-    for _, p in pairs(Players:GetPlayers()) do
-        if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-            local dist = (p.Character.HumanoidRootPart.Position - LocalPlayer.Character.HumanoidRootPart.Position).Magnitude
-            if dist < minDist then
-                minDist = dist
-                closest = p.Character
-            end
+-- [物理傷害]
+local function ExecuteRealDamage(duration)
+    if not Config.RealDamage or not Config.CurrentTarget then return end
+    local Char, TChar = LocalPlayer.Character, Config.CurrentTarget.Character
+    if not Char or not TChar then return end
+    local Root, TRoot = Char:FindFirstChild("HumanoidRootPart"), TChar:FindFirstChild("HumanoidRootPart")
+    if not Root or not TRoot then return end
+
+    -- 物理注入
+    local BAV = Instance.new("BodyAngularVelocity", Root); BAV.Name="ZN_Phys"; BAV.MaxTorque=Vector3.new(9e9,9e9,9e9); BAV.AngularVelocity=Vector3.new(0,100000,0)
+    local BV = Instance.new("BodyVelocity", Root); BV.Name="ZN_Phys"; BV.MaxForce=Vector3.new(9e9,9e9,9e9); BV.Velocity=Vector3.new(0,0,0)
+    Config.Noclip = true
+
+    -- 攻擊
+    local start = tick()
+    task.spawn(function()
+        while tick() - start < duration do
+            if not Config.RealDamage then break end
+            Root.CFrame = TRoot.CFrame * CFrame.new(math.random(-2,2)/2, math.random(-2,2)/2, math.random(-2,2)/2)
+            RunService.RenderStepped:Wait()
         end
-    end
-    return closest
+        for _, x in pairs(Root:GetChildren()) do if x.Name=="ZN_Phys" then x:Destroy() end end
+        Root.Velocity = Vector3.zero
+    end)
 end
 
--- [轉化為影子士兵]
-local function CreateShadowSoldier(targetChar)
-    if not targetChar then return end
-    
-    -- 1. 複製模型
-    targetChar.Archivable = true -- 確保可複製
-    local shadow = targetChar:Clone()
-    shadow.Name = "ZN_Shadow_Soldier"
-    shadow.Parent = workspace
-    
-    -- 2. 移除雜項 (腳本、血條、動畫器)
-    for _, v in pairs(shadow:GetDescendants()) do
-        if v:IsA("Script") or v:IsA("LocalScript") or v:IsA("BillboardGui") then
-            v:Destroy()
-        elseif v:IsA("Humanoid") then
-            v.DisplayDistanceType = Enum.HumanoidDisplayDistanceType.None
-            v.HealthDisplayType = Enum.HumanoidHealthDisplayType.AlwaysOff
-        end
+-- [動作播放]
+local function PlayAnim(id)
+    local Hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
+    if Hum then
+        local anim = Instance.new("Animation"); anim.AnimationId = id
+        local track = Hum.Animator:LoadAnimation(anim); track.Priority = Enum.AnimationPriority.Action4
+        track:Play()
+        return track
     end
-    
-    -- 3. 材質黑化 (暗影風格)
-    for _, v in pairs(shadow:GetDescendants()) do
-        if v:IsA("BasePart") then
-            v.Color = Color3.fromRGB(0, 0, 0) -- 純黑
-            v.Material = Enum.Material.Neon -- 霓虹
-            v.Transparency = 0.2
-            v.CanCollide = false
-            v.Anchored = true -- 固定住
-            -- 移除貼圖 (臉、衣服)
-            for _, child in pairs(v:GetChildren()) do
-                if child:IsA("Decal") or child:IsA("Texture") then child:Destroy() end
-            end
-        elseif v:IsA("SpecialMesh") then
-            v.TextureId = "" -- 移除網格貼圖
-        end
-        -- 處理飾品
-        if v.Parent:IsA("Accessory") and v:IsA("BasePart") then
-            v.Color = Color3.fromRGB(0, 0, 0)
-            v.Material = Enum.Material.Neon
-        end
+end
+
+-- [基礎特效]
+local function PlaySound(id, vol)
+    local s = Instance.new("Sound", workspace); s.SoundId="rbxassetid://"..id; s.Volume=vol or 2; s:Play(); Debris:AddItem(s, 5)
+end
+
+local function Shake(intensity)
+    if not Config.CamShake then return end
+    task.spawn(function()
+        for i=1, 10 do Camera.CFrame = Camera.CFrame * CFrame.new(math.random(-1,1)*intensity/20, math.random(-1,1)*intensity/20, 0); RunService.RenderStepped:Wait() end
+    end)
+end
+
+local function CreateFX(type, pos, color, size)
+    if type == "Ball" then
+        local p = Instance.new("Part", workspace); p.Shape="Ball"; p.Size=Vector3.new(1,1,1); p.CFrame=CFrame.new(pos); p.Material="Neon"; p.Color=color; p.Anchored=true; p.CanCollide=false
+        TweenService:Create(p, TweenInfo.new(0.5), {Size=Vector3.new(size,size,size), Transparency=1}):Play(); Debris:AddItem(p, 0.5)
+    elseif type == "Beam" then
+        local p = Instance.new("Part", workspace); p.Size=Vector3.new(size,size,size*10); p.CFrame=CFrame.new(pos)*CFrame.Angles(0,0,math.rad(90)); p.Material="Neon"; p.Color=color; p.Anchored=true; p.CanCollide=false
+        TweenService:Create(p, TweenInfo.new(0.5), {Transparency=1, Size=Vector3.new(0,0,size*10)}):Play(); Debris:AddItem(p, 0.5)
     end
-    
-    -- 4. 添加藍色火光特效
-    local root = shadow:FindFirstChild("HumanoidRootPart")
-    if root then
-        local p = Instance.new("ParticleEmitter", root)
-        p.Texture = "rbxassetid://242205514"
-        p.Color = ColorSequence.new(Color3.fromRGB(0, 50, 255))
-        p.Size = NumberSequence.new(0.5)
-        p.Rate = 50
-        p.Lifetime = NumberRange.new(0.5)
-        p.Transparency = NumberSequence.new({NumberSequenceKeypoint.new(0,0), NumberSequenceKeypoint.new(1,1)})
-        p.ZOffset = 1
-        
-        -- 5. 位置設定 (站在玩家身後)
-        local myRoot = LocalPlayer.Character.HumanoidRootPart
-        -- 初始位置在地底
-        local startCFrame = myRoot.CFrame * CFrame.new(0, -8, 5) 
-        local endCFrame = myRoot.CFrame * CFrame.new(0, 0, 5) -- 最終位置在身後
-        
-        shadow:SetPrimaryPartCFrame(startCFrame)
-        
-        -- 6. 升起動畫 (Tween)
-        -- 由於模型不能直接 Tween CFrame，我們用簡易循環模擬升起
-        task.spawn(function()
-            for i = 0, 1, 0.05 do
-                if shadow and shadow.PrimaryPart then
-                    shadow:SetPrimaryPartCFrame(startCFrame:Lerp(endCFrame, i))
-                end
-                task.wait(0.02)
-            end
-        end)
-    end
-    
-    -- 10秒後消失
-    Debris:AddItem(shadow, 10)
 end
 
 --------------------------------------------------------------------------------
--- 4. 技能邏輯
+-- 4. 職業技能邏輯 (Base & Awakened)
 --------------------------------------------------------------------------------
 
--- [支配者之手]
-local function ActivateAuthority(root)
-    for _, x in pairs(root:GetChildren()) do if x.Name:find("ZN_Phys") then x:Destroy() end end
-    local BAV = Instance.new("BodyAngularVelocity", root); BAV.Name="ZN_Phys_Spin"; BAV.MaxTorque=Vector3.new(9e9,9e9,9e9); BAV.AngularVelocity=Vector3.new(0,100000,0)
-    local BV = Instance.new("BodyVelocity", root); BV.Name="ZN_Phys_Lift"; BV.MaxForce=Vector3.new(9e9,9e9,9e9); BV.Velocity=Vector3.new(0,0,0)
-    Config.ShadowStep = true
-end
-
-local function DeactivateAuthority(root)
-    for _, x in pairs(root:GetChildren()) do if x.Name:find("ZN_Phys") then x:Destroy() end end
-    root.Velocity = Vector3.zero
-end
-
--- [職業技能觸發]
-local function CastJobSkill(key)
-    local Char = LocalPlayer.Character; local Root = Char.HumanoidRootPart
-    
-    -- [職業：死靈法師 (Necromancer)]
-    if Config.Job == "Necromancer" then
-        if key == "1" then -- 提取影子 (ARISE)
-            -- 音效
-            local s = Instance.new("Sound", workspace); s.SoundId="rbxassetid://3450654944"; s.Volume=5; s:Play(); Debris:AddItem(s,3)
-            
-            -- 文字特效
-            local bg = Instance.new("BillboardGui", Root); bg.Size=UDim2.new(0,200,0,100); bg.AlwaysOnTop=true; bg.StudsOffset=Vector3.new(0,3,0)
-            local t = Instance.new("TextLabel", bg); t.Size=UDim2.new(1,0,1,0); t.BackgroundTransparency=1; t.Text="ARISE"; t.TextColor3=Color3.fromRGB(0,255,255); t.Font=Enum.Font.GothamBlack; t.TextSize=0; t.TextStrokeTransparency=0
-            TweenService:Create(t, TweenInfo.new(0.5, Enum.EasingStyle.Bounce), {TextSize=50}):Play()
-            Debris:AddItem(bg, 3)
-            
-            -- 尋找並轉化
-            local target = GetNearestCharacter(50) -- 搜尋 50 碼內
-            if target then
-                CreateShadowSoldier(target)
-                Fluent:Notify({Title="提取成功", Content="已將目標轉化為影子", Duration=2})
-            else
-                Fluent:Notify({Title="提取失敗", Content="附近沒有可提取的對象", Duration=2})
-                -- 如果沒人，隨機召喚一個假影子 (選自己)
-                CreateShadowSoldier(LocalPlayer.Character)
-            end
+-- [暗影君王 JinWoo]
+local function Skill_JinWoo(key, awakened)
+    local Root = LocalPlayer.Character.HumanoidRootPart
+    if not awakened then
+        -- === 普通狀態 ===
+        if key == "1" then -- 匕首斬
+            PlayAnim(Anims.Kick); PlaySound("5633641724")
+            local t = Instance.new("Trail", Root); t.Lifetime=0.2; t.Color=ColorSequence.new(Color3.fromRGB(150,0,255)); Debris:AddItem(t,0.5)
+            ExecuteRealDamage(0.3)
+        elseif key == "2" then -- 踢擊
+            PlayAnim(Anims.Punch); PlaySound("2977754636")
+            CreateFX("Ball", Root.Position, Color3.fromRGB(0,0,255), 10)
+            ExecuteRealDamage(0.5)
+        elseif key == "3" then -- 暗影拳
+            PlayAnim(Anims.Slam); PlaySound("8585081596")
+            ExecuteRealDamage(0.5)
+        elseif key == "4" then -- 隱身
+            PlayAnim(Anims.Cast); PlaySound("260433746")
+            local hl = Instance.new("Highlight", LocalPlayer.Character); hl.FillColor=Color3.new(0,0,0); hl.FillTransparency=0
+            TweenService:Create(hl, TweenInfo.new(0.5), {FillTransparency=1}):Play(); Debris:AddItem(hl,0.5)
         end
-    
-    -- [職業：刺客 (Assassin)]
-    elseif Config.Job == "Assassin" then
-        if key == "1" then -- 隱身突襲
-            local hl = Instance.new("Highlight", Char); hl.FillColor=Color3.fromRGB(0,0,0); hl.FillTransparency=0
-            TweenService:Create(hl, TweenInfo.new(0.5), {FillTransparency=1}):Play(); Debris:AddItem(hl, 0.5)
-            Root.CFrame = Root.CFrame * CFrame.new(0,0,-25)
-        end
-        
-    -- [職業：暗影君王 (Monarch)]
-    elseif Config.Job == "Monarch" then
-        if key == "4" then -- 領域展開
-            local cc = Instance.new("ColorCorrectionEffect", Lighting); cc.TintColor=Color3.fromRGB(100,100,255); cc.Contrast=0.5; Debris:AddItem(cc, 3)
-            local s = Instance.new("Sound", workspace); s.SoundId="rbxassetid://1496738980"; s.Volume=3; s:Play(); Debris:AddItem(s,5)
+    else
+        -- === 覺醒狀態：暗影君王 ===
+        if key == "1" then -- 軍團衝鋒
+            PlayAnim(Anims.Cast); PlaySound("3450654944", 5)
+            CreateFX("Ball", Root.Position, Color3.fromRGB(0,0,0), 50)
+            ExecuteRealDamage(1.0)
+        elseif key == "2" then -- 支配者之手
+            PlayAnim(Anims.Float); PlaySound("8585081596", 3)
+            local h=Instance.new("Part",workspace); h.Size=Vector3.new(10,50,10); h.CFrame=Root.CFrame*CFrame.new(0,0,-20); h.Anchored=true; h.Material="Neon"; h.Color=Color3.fromRGB(100,0,255); h.Transparency=0.5
+            TweenService:Create(h, TweenInfo.new(0.5), {Size=Vector3.new(0,50,0)}):Play(); Debris:AddItem(h,0.5)
+            ExecuteRealDamage(1.0)
+        elseif key == "3" then -- 卡米什之怒
+            PlayAnim(Anims.Slam); PlaySound("6953048937", 3)
+            CreateFX("Beam", Root.Position, Color3.fromRGB(255,0,0), 20)
+            ExecuteRealDamage(1.5)
+        elseif key == "4" then -- 全圖 ARISE
+            PlayAnim(Anims.Float); PlaySound("1496738980", 5)
+            Shake(20)
+            local cc = Instance.new("ColorCorrectionEffect", Lighting); cc.TintColor=Color3.fromRGB(0,0,255); Debris:AddItem(cc,2)
+            ExecuteRealDamage(2.0)
         end
     end
 end
 
--- [按鍵監聽]
+-- [禿頭披風 Saitama]
+local function Skill_Saitama(key, awakened)
+    local Root = LocalPlayer.Character.HumanoidRootPart
+    if not awakened then
+        -- === 普通 ===
+        if key == "1" then PlayAnim(Anims.Punch); PlaySound("2977754636"); CreateFX("Ball", Root.Position, Color3.new(1,1,1), 10); ExecuteRealDamage(0.3)
+        elseif key == "2" then PlayAnim(Anims.Kick); PlaySound("536642316"); ExecuteRealDamage(0.5)
+        elseif key == "3" then PlayAnim(Anims.Punch); PlaySound("2977754636"); ExecuteRealDamage(0.5)
+        elseif key == "4" then PlayAnim(Anims.Slam); PlaySound("8585081596"); CreateFX("Ball", Root.Position, Color3.new(1,0,0), 20); ExecuteRealDamage(0.8)
+        end
+    else
+        -- === 覺醒：認真模式 ===
+        if key == "1" then -- 認真毆打
+            PlayAnim(Anims.Punch); PlaySound("6953048937", 3)
+            CreateFX("Beam", Root.Position, Color3.new(1,0,0), 50); Shake(10); ExecuteRealDamage(1.5)
+        elseif key == "2" then -- 認真掀桌
+            PlayAnim(Anims.Slam); PlaySound("8585081596", 4)
+            for i=1,10 do local r=Instance.new("Part",workspace); r.Size=Vector3.new(5,5,5); r.CFrame=Root.CFrame*CFrame.new(math.random(-20,20),-5,-20); r.Velocity=Vector3.new(0,100,0); Debris:AddItem(r,3) end
+            Shake(15); ExecuteRealDamage(1.5)
+        elseif key == "3" then -- 連續認真拳
+            PlayAnim(Anims.Punch); PlaySound("2977754636", 2)
+            CreateFX("Ball", Root.Position, Color3.new(0,0,0), 30); ExecuteRealDamage(2.0)
+        elseif key == "4" then -- 全方位毆打
+            PlayAnim(Anims.Float); PlaySound("1496738980", 5)
+            local cc = Instance.new("ColorCorrectionEffect", Lighting); cc.Contrast=1; Debris:AddItem(cc,2)
+            Shake(30); ExecuteRealDamage(3.0)
+        end
+    end
+end
+
+-- [詛咒之王 Sukuna]
+local function Skill_Sukuna(key, awakened)
+    local Root = LocalPlayer.Character.HumanoidRootPart
+    if not awakened then
+        -- === 普通 ===
+        if key == "1" then PlayAnim(Anims.Punch); PlaySound("5633641724"); ExecuteRealDamage(0.3) -- 解
+        elseif key == "2" then PlayAnim(Anims.Kick); PlaySound("5633641724"); ExecuteRealDamage(0.5) -- 捌
+        elseif key == "3" then PlayAnim(Anims.Cast); PlaySound("8585081596"); CreateFX("Ball", Root.Position, Color3.new(1,0.5,0), 10); ExecuteRealDamage(0.8) -- 火箭
+        elseif key == "4" then PlayAnim(Anims.Slam); PlaySound("2977754636"); ExecuteRealDamage(0.5)
+        end
+    else
+        -- === 覺醒：平安時代 ===
+        if key == "1" then -- 世界斬
+            PlayAnim(Anims.Cast); PlaySound("5633641724", 2)
+            local cut = Instance.new("Part", workspace); cut.Size=Vector3.new(1,50,50); cut.CFrame=Root.CFrame*CFrame.new(0,0,-20); cut.Material="Neon"; cut.Color=Color3.new(1,0,0); cut.Anchored=true; cut.CanCollide=false
+            TweenService:Create(cut, TweenInfo.new(0.5), {Transparency=1}):Play(); Debris:AddItem(cut,0.5); ExecuteRealDamage(1.5)
+        elseif key == "2" then -- 蜘蛛網
+            PlayAnim(Anims.Slam); PlaySound("8585081596"); ExecuteRealDamage(1.0)
+        elseif key == "3" then -- 開 (核彈)
+            PlayAnim(Anims.Cast); PlaySound("6953048937", 3)
+            local sun = Instance.new("Part", workspace); sun.Shape="Ball"; sun.Size=Vector3.new(5,5,5); sun.CFrame=Root.CFrame*CFrame.new(0,20,0); sun.Material="Neon"; sun.Color=Color3.new(1,0.5,0); sun.Anchored=true
+            TweenService:Create(sun, TweenInfo.new(2), {Size=Vector3.new(100,100,100), Transparency=1}):Play(); Debris:AddItem(sun,2); Shake(20); ExecuteRealDamage(2.0)
+        elseif key == "4" then -- 伏魔御廚子 (完全體)
+            PlayAnim(Anims.Float); PlaySound("1496738980", 5)
+            local shrine = Instance.new("Part", workspace); shrine.Size=Vector3.new(150,1,150); shrine.CFrame=Root.CFrame*CFrame.new(0,-2,0); shrine.Material="ForceField"; shrine.Color=Color3.new(1,0,0); shrine.Anchored=true
+            Debris:AddItem(shrine,5); Shake(10); ExecuteRealDamage(3.0)
+        end
+    end
+end
+
+-- [宇宙餓狼 Garou]
+local function Skill_Garou(key, awakened)
+    local Root = LocalPlayer.Character.HumanoidRootPart
+    if not awakened then
+        -- === 普通 ===
+        if key == "1" then PlayAnim(Anims.Punch); PlaySound("536642316"); ExecuteRealDamage(0.3)
+        elseif key == "2" then PlayAnim(Anims.Kick); PlaySound("536642316"); ExecuteRealDamage(0.5)
+        elseif key == "3" then PlayAnim(Anims.Slam); PlaySound("2977754636"); ExecuteRealDamage(0.5)
+        elseif key == "4" then PlayAnim(Anims.Cast); PlaySound("2977754636"); ExecuteRealDamage(0.8)
+        end
+    else
+        -- === 覺醒：宇宙恐懼 ===
+        if key == "1" then -- 核分裂拳
+            PlayAnim(Anims.Punch); PlaySound("8585081596", 3)
+            CreateFX("Ball", Root.Position, Color3.fromRGB(255,100,0), 60); Shake(15); ExecuteRealDamage(1.5)
+        elseif key == "2" then -- 伽瑪射線
+            PlayAnim(Anims.Cast); PlaySound("6953048937", 3)
+            CreateFX("Beam", Root.Position, Color3.fromRGB(100,0,255), 30); Shake(10); ExecuteRealDamage(1.5)
+        elseif key == "3" then -- 重力
+            PlayAnim(Anims.Slam); PlaySound("1645854854"); ExecuteRealDamage(1.0)
+        elseif key == "4" then -- 傳送門連打
+            PlayAnim(Anims.Float); PlaySound("536642316", 5); ExecuteRealDamage(2.0)
+        end
+    end
+end
+
+-- [技能分發]
+local function CastSkill(key)
+    if Config.Job == "JinWoo" then Skill_JinWoo(key, Config.IsAwakened)
+    elseif Config.Job == "Saitama" then Skill_Saitama(key, Config.IsAwakened)
+    elseif Config.Job == "Garou" then Skill_Garou(key, Config.IsAwakened)
+    elseif Config.Job == "Sukuna" then Skill_Sukuna(key, Config.IsAwakened)
+    end
+end
+
+-- [覺醒切換]
+local function ToggleAwakening()
+    Config.IsAwakened = not Config.IsAwakened
+    local state = Config.IsAwakened and "AWAKENED" or "BASE"
+    Fluent:Notify({Title="形態切換", Content=state.." MODE", Duration=2})
+    
+    -- 覺醒特效
+    if Config.IsAwakened then
+        PlaySound("1496738980", 5)
+        local burst = Instance.new("ParticleEmitter", LocalPlayer.Character.HumanoidRootPart)
+        burst.Texture="rbxassetid://243660364"; burst.Size=NumberSequence.new(10); burst.Color=ColorSequence.new(Color3.new(1,1,1)); burst:Emit(50); Debris:AddItem(burst, 2)
+        Shake(10)
+    end
+end
+
+-- 按鍵
 UserInputService.InputBegan:Connect(function(input, gp)
-    if gp then return end
-    if input.KeyCode == Enum.KeyCode.One then CastJobSkill("1") end
-    if input.KeyCode == Enum.KeyCode.Four then CastJobSkill("4") end
+    if input.KeyCode == Enum.KeyCode.One then CastSkill("1") end
+    if input.KeyCode == Enum.KeyCode.Two then CastSkill("2") end
+    if input.KeyCode == Enum.KeyCode.Three then CastSkill("3") end
+    if input.KeyCode == Enum.KeyCode.Four then CastSkill("4") end
+    if input.KeyCode == Enum.KeyCode.G then ToggleAwakening() end
 end)
 
 --------------------------------------------------------------------------------
--- 5. 系統視覺與 UI
+-- 5. Fluent UI
 --------------------------------------------------------------------------------
-local function UpdateShadowVisuals(char, enable)
-    if not char then return end
-    local root = char:FindFirstChild("HumanoidRootPart")
-    local head = char:FindFirstChild("Head")
-    
-    if not enable then
-        for _, v in pairs(char:GetDescendants()) do if v.Name:find("ZN_") then v:Destroy() end end
-        return
-    end
-    if Config.Eyes and head and not head:FindFirstChild("ZN_Eyes") then
-        local t1 = Instance.new("ParticleEmitter", head); t1.Name="ZN_Eyes"; t1.Texture="rbxassetid://242205514"; t1.Rate=50; t1.Color=ColorSequence.new(Color3.fromRGB(0, 150, 255)); t1.Lifetime=NumberRange.new(0.2); t1.Size=NumberSequence.new(0.5); t1.Speed=NumberRange.new(0)
-    end
-    if Config.Aura and root and not root:FindFirstChild("ZN_Aura") then
-        local p = Instance.new("ParticleEmitter", root); p.Name="ZN_Aura"; p.Texture="rbxassetid://243660364"; p.Rate=80; p.Color=ColorSequence.new(Color3.fromRGB(0,0,0)); p.Size=NumberSequence.new({NumberSequenceKeypoint.new(0,3),NumberSequenceKeypoint.new(1,0)}); p.Transparency=NumberSequence.new(0.5); p.ZOffset=-1
-    end
-end
-
 local Window = Fluent:CreateWindow({
-    Title = "SYSTEM: SOLO LEVELING v32", SubTitle = "Shadow Extraction",
-    TabWidth = 160, Size = UDim2.fromOffset(580, 460), Acrylic = true, Theme = "Dark", MinimizeKey = Enum.KeyCode.RightControl
+    Title = "SYSTEM: AWAKENING v36", SubTitle = PlatformName,
+    TabWidth = 160, Size = UDim2.fromOffset(580, 460), Acrylic = true, Theme = "Amethyst", MinimizeKey = Enum.KeyCode.RightControl
 })
 
 local Tabs = {
-    Job = Window:AddTab({ Title = "職業 (Class)", Icon = "user" }),
+    Main = Window:AddTab({ Title = "職業 (Class)", Icon = "user" }),
     Combat = Window:AddTab({ Title = "戰鬥 (Combat)", Icon = "swords" }),
     Visuals = Window:AddTab({ Title = "視覺 (Visuals)", Icon = "eye" }),
-    Stats = Window:AddTab({ Title = "屬性 (Stats)", Icon = "bar-chart" }),
+    Settings = Window:AddTab({ Title = "設定 (Settings)", Icon = "settings" })
 }
 
-Tabs.Job:AddDropdown("JobSelect", {
-    Title = "選擇職業", Values = {"None", "Assassin", "Necromancer", "Monarch"}, Default = "None",
-    Callback = function(v) Config.Job = v; Fluent:Notify({Title="轉職成功", Content=v, Duration=2}) end
-})
-Tabs.Job:AddParagraph({Title="Necromancer 專屬", Content="按 1 鍵對準附近的玩家 (或屍體)\n發動「提取影子」 (ARISE)"})
-
--- Combat
-local function FindPlayer(str) for _,p in pairs(Players:GetPlayers()) do if p~=LocalPlayer and (p.Name:lower():find(str:lower()) or p.DisplayName:lower():find(str:lower())) then return p end end return nil end
-Tabs.Combat:AddInput("Target", {Title = "鎖定目標", Placeholder = "Player Name", Callback = function(v) Config.TargetName=v; local t=FindPlayer(v); if t then Config.CurrentTarget=t; Fluent:Notify({Title="系統",Content="鎖定: "..t.Name,Duration=2}) end end})
-local AuthToggle = Tabs.Combat:AddToggle("Authority", {Title = "支配者之手 (Fling)", Default = false })
-AuthToggle:OnChanged(function(v) Config.RulerAuthority=v; if v then ActivateAuthority(LocalPlayer.Character.HumanoidRootPart) else DeactivateAuthority(LocalPlayer.Character.HumanoidRootPart) end end)
-Tabs.Combat:AddToggle("Hitbox", {Title = "Hitbox", Default = false }):OnChanged(function(v) Config.DaggerReach=v end)
-
--- Visuals
-Tabs.Visuals:AddToggle("MasterVis", {Title = "系統視覺", Default = true }):OnChanged(function(v) Config.SystemVisuals=v end)
-Tabs.Visuals:AddToggle("Aura", {Title = "君王氣場", Default = true }):OnChanged(function(v) Config.Aura=v end)
-Tabs.Visuals:AddToggle("Eyes", {Title = "殺意之眼", Default = true }):OnChanged(function(v) Config.Eyes=v end)
-
--- Stats
-Tabs.Stats:AddSlider("Speed", {Title = "敏捷", Default = 100, Min = 16, Max = 300, Rounding = 1, Callback = function(v) Config.SprintSpeed=v end})
-Tabs.Stats:AddToggle("Sprint", {Title = "啟用衝刺", Default = false }):OnChanged(function(v) Config.SprintEnabled=v end)
-Tabs.Stats:AddToggle("Step", {Title = "影步 (Noclip)", Default = false }):OnChanged(function(v) Config.ShadowStep=v end)
-Tabs.Stats:AddToggle("Levitate", {Title = "懸浮", Default = false }):OnChanged(function(v) Config.Levitate=v end)
-Tabs.Stats:AddToggle("AntiVoid", {Title = "地下城防護", Default = true }):OnChanged(function(v) Config.AntiVoid=v end)
-
 -- Mobile HUD
-if IsMobile then
-    local HUD = Instance.new("ScreenGui", CoreGui); HUD.Name = "ZhenNai_System_HUD"
-    local function CreateBtn(t, p, c) local b=Instance.new("TextButton", HUD); b.Size=UDim2.new(0,70,0,70); b.Position=p; b.BackgroundColor3=Color3.new(0,0,0); b.BackgroundTransparency=0.2; b.Text=t; b.TextColor3=c; b.Font=Enum.Font.GothamBlack; b.TextSize=14; Instance.new("UICorner",b).CornerRadius=UDim.new(0,10); local s=Instance.new("UIStroke",b); s.Color=c; s.Thickness=2; return b end
-    local Menu = CreateBtn("SYSTEM", UDim2.new(0,20,0,60), Color3.fromRGB(0,150,255))
-    local Kill = CreateBtn("RULE", UDim2.new(0.85,0,0.45,0), Color3.fromRGB(100,0,255))
-    local Skill = CreateBtn("ARISE", UDim2.new(0.85,0,0.65,0), Color3.fromRGB(0,255,255))
+local HUD = Instance.new("ScreenGui", CoreGui); HUD.Name="ZhenNai_HUD_v36"
+local SkillBar = nil
+
+local function UpdateHUD()
+    if not IsMobile then return end
+    if SkillBar then SkillBar:Destroy() end
+    if Config.Job == "None" then return end
     
-    Menu.MouseButton1Click:Connect(function() pcall(function() Fluent:ToggleWindow() end) end)
-    Kill.MouseButton1Click:Connect(function() Config.RulerAuthority = not Config.RulerAuthority; if Config.RulerAuthority then ActivateAuthority(LocalPlayer.Character.HumanoidRootPart); Kill.Text="STOP" else DeactivateAuthority(LocalPlayer.Character.HumanoidRootPart); Kill.Text="RULE" end end)
-    Skill.MouseButton1Click:Connect(function() CastJobSkill("1") end)
+    SkillBar = Instance.new("Frame", HUD); SkillBar.Size=UDim2.new(0,60,0,310); SkillBar.Position=UDim2.new(0.9,0,0.3,0); SkillBar.BackgroundTransparency=1
+    local keys = {"G", "4","3","2","1"} -- 增加 G 鍵
+    for i,k in ipairs(keys) do
+        local b=Instance.new("TextButton",SkillBar); b.Size=UDim2.new(0,55,0,55); b.Position=UDim2.new(0,0,0,(i-1)*60); b.BackgroundColor3=Color3.new(0,0,0); b.BackgroundTransparency=0.3; b.Text=k; b.TextColor3=Color3.new(1,1,1); b.Font=Enum.Font.GothamBlack; b.TextSize=20
+        Instance.new("UICorner",b).CornerRadius=UDim.new(0.5,0); local s=Instance.new("UIStroke",b); s.Color=Color3.fromRGB(255,50,50); s.Thickness=2
+        if k == "G" then b.TextColor3 = Color3.new(1,1,0); s.Color = Color3.new(1,1,0) end
+        b.MouseButton1Click:Connect(function() 
+            if k == "G" then ToggleAwakening() else CastSkill(k) end
+        end)
+    end
 end
 
---------------------------------------------------------------------------------
--- 6. 循環
---------------------------------------------------------------------------------
-RunService.RenderStepped:Connect(function()
-    local Char = LocalPlayer.Character; if not Char then return end
-    if Config.SystemVisuals then UpdateShadowVisuals(Char, true) end
-    if Config.RulerAuthority and Config.CurrentTarget then
-        local TChar = Config.CurrentTarget.Character
-        if TChar and TChar:FindFirstChild("HumanoidRootPart") then
-            Char.HumanoidRootPart.CFrame = TChar.HumanoidRootPart.CFrame * CFrame.new(math.random(-2,2), -1, math.random(-2,2))
-            Char.HumanoidRootPart.Velocity = Vector3.new(0,0,0)
-        else
-            Config.RulerAuthority = false; DeactivateAuthority(Char.HumanoidRootPart)
-        end
-    end
-end)
+-- UI Items
+local function FindPlayer(str) for _,p in pairs(Players:GetPlayers()) do if p~=LocalPlayer and (p.Name:lower():find(str:lower()) or p.DisplayName:lower():find(str:lower())) then return p end end return nil end
 
+Tabs.Main:AddDropdown("Job", {
+    Title = "選擇職業", Values = {"None", "JinWoo", "Saitama", "Garou", "Sukuna"}, Default = "None",
+    Callback = function(v) Config.Job = v; Fluent:Notify({Title="轉職", Content=v, Duration=2}); UpdateHUD() end
+})
+
+Tabs.Main:AddParagraph({Title="覺醒機制", Content="按下 G 鍵 (或手機 G 鈕) 進入覺醒模式。\n覺醒後技能威力與特效大幅增強。"})
+
+Tabs.Combat:AddInput("Target", {Title="鎖定目標", Placeholder="Name", Callback=function(v) Config.TargetName=v; local t=FindPlayer(v); if t then Config.CurrentTarget=t; Fluent:Notify({Title="鎖定",Content=t.Name,Duration=2}) end end})
+Tabs.Combat:AddToggle("Dmg", {Title="實戰傷害 (Fling)", Default=false}):OnChanged(function(v) Config.RealDamage=v end)
+
+Tabs.Visuals:AddToggle("Vis", {Title="特效開關", Default=true}):OnChanged(function(v) Config.Visuals=v end)
+Tabs.Visuals:AddToggle("Shake", {Title="鏡頭震動", Default=true}):OnChanged(function(v) Config.CamShake=v end)
+
+-- AntiVoid & Loop
 RunService.Heartbeat:Connect(function()
-    local Char = LocalPlayer.Character; if not Char then return end
-    local Hum = Char:FindFirstChild("Humanoid")
-    if Config.SprintEnabled and Hum then Hum.WalkSpeed = Config.SprintSpeed end
-    if Config.ShadowStep then for _,v in pairs(Char:GetChildren()) do if v:IsA("BasePart") then v.CanCollide=false end end end
-    if Config.Levitate and Hum then Hum.HipHeight = 4 + math.sin(tick()*1.5)*0.5 else Hum.HipHeight = 0 end
-    if Config.AntiVoid and Char.HumanoidRootPart and Char.HumanoidRootPart.Position.Y < -50 then
-        Char.HumanoidRootPart.Anchored = true; Char.HumanoidRootPart.CFrame = CFrame.new(Char.HumanoidRootPart.Position.X, 50, Char.HumanoidRootPart.Position.Z)
-        task.delay(0.5, function() if Char.HumanoidRootPart then Char.HumanoidRootPart.Anchored = false end end)
+    local Char = LocalPlayer.Character
+    if Config.AntiVoid and Char and Char.HumanoidRootPart and Char.HumanoidRootPart.Position.Y < -50 then
+        Char.HumanoidRootPart.CFrame = CFrame.new(Char.HumanoidRootPart.Position.X, 50, Char.HumanoidRootPart.Position.Z)
+        Char.HumanoidRootPart.Velocity = Vector3.zero
     end
 end)
 
-Fluent:Notify({Title = "SYSTEM", Content = "提取程序就緒。尋找目標...", Duration = 5})
+if IsMobile then
+    local MB = Instance.new("TextButton", HUD); MB.Size=UDim2.new(0,55,0,55); MB.Position=UDim2.new(0,20,0,50); MB.BackgroundColor3=Color3.new(0,0,0); MB.BackgroundTransparency=0.3; MB.Text="M"; MB.TextColor3=Color3.new(0,1,0); Instance.new("UICorner",MB).CornerRadius=UDim.new(0.5,0); Instance.new("UIStroke",MB).Color=Color3.new(0,1,0)
+    MB.MouseButton1Click:Connect(function() pcall(function() Fluent:ToggleWindow() end) end)
+end
+
+Fluent:Notify({Title = "SYSTEM: AWAKENING", Content = "覺醒系統已載入。\n按 G 鍵釋放全力。", Duration = 5})
