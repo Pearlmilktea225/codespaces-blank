@@ -1,380 +1,225 @@
 --[[
-    SYSTEM: OMEGA // RESTORED
-    核心：全熱門遊戲庫回歸 + 移除標籤 + 劫持保留
-    收錄：30+ 遊戲 / 100+ 腳本
-    作者：珍奶 (隱藏式統治)
+    SYSTEM: APEX // REBORN (CRASH FIX EDITION)
+    針對：Delta / 手機注入器優化
+    修復：attempt to index nil (紅字報錯)
+    核心：安全啟動 + 錯誤攔截 + 輕量化載入
 ]]
 
+-- [1. 安全啟動檢查] (最重要的一步)
+if not game:IsLoaded() then
+    game.Loaded:Wait()
+end
+
+-- 等待人物完全加載
 local Players = game:GetService("Players")
+local LocalPlayer = Players.LocalPlayer
+if not LocalPlayer.Character then
+    LocalPlayer.CharacterAdded:Wait()
+end
+
+-- [2. 服務與變數]
 local CoreGui = game:GetService("CoreGui")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
 local Debris = game:GetService("Debris")
 local PlaceID = game.PlaceId
 
--- [0. 配置]
+-- [3. 霸主配置]
 local Config = {
+    MyName = "珍奶",
     MyDiscord = "https://discord.gg/MJekQ3ZPzd",
-    HijackEnabled = true,   -- 保留 Discord 連結劫持
-    TranslateUI = true      -- 保留 UI 介面漢化 (如 Kill Aura -> 殺戮光環)
+    HijackEnabled = true,
+    TranslateEnabled = true
 }
 
--- [1. 剪貼簿劫持 (保留核心利益)]
-local oldSetClipboard = setclipboard or tostring
-if Config.HijackEnabled and setclipboard then
-    getgenv().setclipboard = function(text)
-        if string.find(text, "discord.gg") or string.find(text, "discord.com") then
-            return oldSetClipboard(Config.MyDiscord)
-        else
-            return oldSetClipboard(text)
-        end
+-- [4. 清理舊介面]
+pcall(function()
+    if CoreGui:FindFirstChild("APEX_REBORN") then
+        CoreGui.APEX_REBORN:Destroy()
     end
-end
+end)
 
--- [2. 清理]
-for _, g in pairs(CoreGui:GetChildren()) do
-    if g.Name == "OMEGA_RESTORED" then g:Destroy() end
-end
+-- [5. 剪貼簿劫持 (Delta 安全版)]
+task.spawn(function()
+    pcall(function()
+        local oldSetClipboard = setclipboard or tostring
+        if Config.HijackEnabled and setclipboard then
+            getgenv().setclipboard = function(text)
+                if string.find(text, "discord.gg") or string.find(text, "discord.com") then
+                    return oldSetClipboard(Config.MyDiscord)
+                else
+                    return oldSetClipboard(text)
+                end
+            end
+        end
+    end)
+end)
 
--- [3. 翻譯辭海 (僅翻譯功能按鈕，不改腳本名)]
+-- [6. 翻譯辭海 (精簡常用)]
 local Dictionary = {
-    -- [通用]
-    ["Settings"] = "設置", ["Main"] = "主頁", ["Farm"] = "農場",
-    ["Combat"] = "戰鬥", ["Visuals"] = "視覺", ["Movement"] = "移動",
-    ["Teleport"] = "傳送", ["Misc"] = "雜項", ["Credits"] = "名單",
-    ["Toggle"] = "開關", ["Button"] = "按鈕", ["Execute"] = "執行",
-    ["Close"] = "關閉", ["Clear"] = "清除", ["Refresh"] = "刷新",
-    ["Join Discord"] = "加入官方群", ["Copy Discord"] = "複製群連結",
-
-    -- [功能]
+    ["Made by"] = "製作: "..Config.MyName, ["Script by"] = "腳本: "..Config.MyName,
+    ["Join Discord"] = "加入珍奶的群", ["Copy Discord"] = "複製群連結",
+    ["Settings"] = "設置", ["Main"] = "主頁", ["Combat"] = "戰鬥",
+    ["Visuals"] = "視覺", ["Movement"] = "移動", ["Misc"] = "雜項",
+    ["Toggle"] = "開關", ["Execute"] = "執行", ["Close"] = "關閉",
     ["Kill Aura"] = "殺戮光環", ["Auto Block"] = "自動格擋", ["Aimbot"] = "自瞄",
-    ["Silent Aim"] = "靜默自瞄", ["Hitbox"] = "判定範圍", ["Reach"] = "攻擊距離",
-    ["Auto Farm"] = "自動練級", ["Auto Quest"] = "自動任務", ["Auto Hatch"] = "自動抽蛋",
-    ["ESP"] = "透視", ["Box"] = "方框", ["Tracer"] = "射線", ["Name"] = "名字",
-    ["WalkSpeed"] = "移動速度", ["JumpPower"] = "跳躍力", ["Fly"] = "飛行",
-    ["Noclip"] = "穿牆", ["Infinite Jump"] = "無限跳", ["Spectate"] = "觀戰",
-    
-    -- [TSB 特化]
-    ["Auto Combo"] = "自動連招", ["Dash"] = "衝刺", ["Counter"] = "反擊",
-    ["Ultimate"] = "大招", ["Awakening"] = "覺醒", ["Ragdoll"] = "擊倒"
+    ["Silent Aim"] = "靜默自瞄", ["Auto Farm"] = "自動練級", ["ESP"] = "透視",
+    ["WalkSpeed"] = "速度", ["Fly"] = "飛行", ["Noclip"] = "穿牆"
 }
 
--- [4. 完整遊戲資料庫 (30+ Games)]
+-- [7. 資料庫 (精選穩定版)]
 local Database = {
-    -- [1. 格鬥 & PVP]
+    -- TSB 專區
     ["TSB (最強戰場)"] = {
         IDs = {10449761463},
         Scripts = {
-            {Name = "Void Hub", Desc = "手機推薦/殺戮/免Key", Url = "https://raw.githubusercontent.com/VoidHubV1/VoidHub/main/Source"},
-            {Name = "Kade Hub", Desc = "最強免費 (PC建議)", Url = "https://raw.githubusercontent.com/3345-c-a-t-s-u-s/Kade-Hub/main/main.lua"},
+            {Name = "Void Hub", Desc = "手機推薦/免Key/殺戮", Url = "https://raw.githubusercontent.com/VoidHubV1/VoidHub/main/Source"},
             {Name = "Phantasm", Desc = "自動連招專用", Url = "https://raw.githubusercontent.com/Phantasm/TSB/main/loader.lua"},
-            {Name = "Vector Hub", Desc = "動作模組 (KJ/五條)", Url = "https://raw.githubusercontent.com/Cypher6969/VectorHub/main/loader"},
-            {Name = "TSB Utils", Desc = "惡搞/甩飛/隱形", Url = "https://raw.githubusercontent.com/skych4n/tsb-utils/main/main.lua"}
+            {Name = "Vector Hub", Desc = "動作模組(KJ/五條)", Url = "https://raw.githubusercontent.com/Cypher6969/VectorHub/main/loader"},
+            {Name = "TSB Utils", Desc = "輕量惡搞/甩飛", Url = "https://raw.githubusercontent.com/skych4n/tsb-utils/main/main.lua"}
+        }
+    },
+    -- 熱門遊戲
+    ["Blox Fruits (海賊)"] = {
+        IDs = {2753915549, 4442272183, 7449423635},
+        Scripts = {
+            {Name = "Hoho Hub", Desc = "全能刷怪/最穩", Url = "https://raw.githubusercontent.com/acsu123/HOHO_H/main/Loading_UI"},
+            {Name = "Redz Hub", Desc = "手機最強/免Key", Url = "https://raw.githubusercontent.com/REDzHUB/BloxFruits/main/main.lua"},
+            {Name = "W-Azure", Desc = "海戰/PVP", Url = "https://raw.githubusercontent.com/Flowylol/Azure/main/git/source.lua"}
+        }
+    },
+    ["Fisch (釣魚)"] = {
+        IDs = {16732694052},
+        Scripts = {
+            {Name = "Speed Hub X", Desc = "自動釣魚/賣魚", Url = "https://raw.githubusercontent.com/AhmadV99/Speed-Hub-X/main/Speed%20Hub%20X.lua"},
+            {Name = "Fisch Utils", Desc = "透視稀有魚", Url = "https://pastebin.com/raw/MbBnZq3k"}
         }
     },
     ["Blade Ball (劍球)"] = {
         IDs = {13772394625},
         Scripts = {
-            {Name = "Bedol Hub", Desc = "自動格擋 (Auto Parry)", Url = "https://raw.githubusercontent.com/3345-c-a-t-s-u-s/Bedol-Hub/main/Main.lua"},
-            {Name = "Redz Hub", Desc = "自動刷勝場/拉霸", Url = "https://raw.githubusercontent.com/REDzHUB/BladeBall/main/main.lua"},
-            {Name = "Visuals Only", Desc = "僅顯示軌跡 (防封)", Url = "https://raw.githubusercontent.com/L1ZOT/BladeBall-Visuals/main/main.lua"}
-        }
-    },
-    ["Rivals (死對頭)"] = {
-        IDs = {17625359962},
-        Scripts = {
-            {Name = "Tbao Hub", Desc = "自瞄/透視/秒殺", Url = "https://raw.githubusercontent.com/tbao143/thaibao/main/TbaoHubRivals"},
-            {Name = "Thunder Client", Desc = "靜默自瞄/無後座", Url = "https://raw.githubusercontent.com/ThunderZ-05/Thunder-Client-V2/main/Main.lua"}
-        }
-    },
-    ["Bedwars (床戰)"] = {
-        IDs = {6872274481},
-        Scripts = {
-            {Name = "Vape V4", Desc = "殺戮/飛行/搭路 (經典)", Url = "https://raw.githubusercontent.com/7GrandDadPGN/VapeV4ForRoblox/main/NewMainScript.lua"},
-            {Name = "Snoopy", Desc = "輕量級 PVP 輔助", Url = "https://raw.githubusercontent.com/juywQm/Snoopy/main/Source.lua"}
-        }
-    },
-    ["Arsenal (軍火庫)"] = {
-        IDs = {286090429},
-        Scripts = {
-            {Name = "Owl Hub", Desc = "老牌自瞄/透視", Url = "https://raw.githubusercontent.com/CriShoux/OwlHub/master/OwlHub.txt"},
-            {Name = "Thunder", Desc = "殺戮光環/瞬移", Url = "https://raw.githubusercontent.com/ThunderZ-05/Thunder-Client-V2/main/Main.lua"}
-        }
-    },
-    ["Da Hood (惡霸)"] = {
-        IDs = {2788229376},
-        Scripts = {
-            {Name = "SwagMode", Desc = "鎖頭/飛天/無限彈", Url = "https://raw.githubusercontent.com/lerkermer/swagmode/main/swagmode.lua"},
-            {Name = "Faded", Desc = "靜默自瞄", Url = "https://raw.githubusercontent.com/NighterEpic/Faded/main/YesEpic.lua"}
-        }
-    },
-    ["Combat Warriors"] = {
-        IDs = {4282985734},
-        Scripts = {
-            {Name = "Project Hook", Desc = "無限體力/殺戮", Url = "https://raw.githubusercontent.com/bxnnyh/ProjectHook/main/Loader"},
-            {Name = "Vortex", Desc = "靜默自瞄/透視", Url = "https://raw.githubusercontent.com/ImagineProUser/vortex/main/vortex.lua"}
-        }
-    },
-    ["Slap Battles (巴掌)"] = {
-        IDs = {6403373529},
-        Scripts = {
-            {Name = "Rell Hub", Desc = "自動刷巴掌/競技場", Url = "https://raw.githubusercontent.com/RellHub/Slap-Battles/main/Load.lua"}
-        }
-    },
-
-    -- [2. RPG & 動漫]
-    ["Blox Fruits (海賊)"] = {
-        IDs = {2753915549, 4442272183, 7449423635},
-        Scripts = {
-            {Name = "Hoho Hub", Desc = "刷怪/副本/水果 (最穩)", Url = "https://raw.githubusercontent.com/acsu123/HOHO_H/main/Loading_UI"},
-            {Name = "Redz Hub", Desc = "手機最強/免Key", Url = "https://raw.githubusercontent.com/REDzHUB/BloxFruits/main/main.lua"},
-            {Name = "W-Azure", Desc = "海戰/PVP/懸賞", Url = "https://raw.githubusercontent.com/Flowylol/Azure/main/git/source.lua"},
-            {Name = "Mukuro Hub", Desc = "刷骨頭/精通", Url = "https://raw.githubusercontent.com/xDepressionx/Free-Script/main/AllScript.lua"}
-        }
-    },
-    ["King Legacy (國王)"] = {
-        IDs = {4520749081},
-        Scripts = {
-            {Name = "Mukuro", Desc = "自動練級/副本", Url = "https://raw.githubusercontent.com/xDepressionx/Free-Script/main/AllScript.lua"},
-            {Name = "Strike", Desc = "手機優化極佳", Url = "https://raw.githubusercontent.com/StrikeHub/Strike/main/KingLegacy.lua"}
-        }
-    },
-    ["Type Soul (靈魂)"] = {
-        IDs = {14069678431},
-        Scripts = {
-            {Name = "4FS Script", Desc = "自動冥想/任務/農場", Url = "https://raw.githubusercontent.com/4FS-Studio/4FS-Script/main/TypeSoul"},
-            {Name = "R3TH", Desc = "自動農場/透視", Url = "https://raw.githubusercontent.com/R3TH-PRIV/R3TH/main/loader.lua"}
-        }
-    },
-    ["Anime Vanguards"] = {
-        IDs = {16146832113},
-        Scripts = {
-            {Name = "Soul Hub", Desc = "自動戰鬥/技能", Url = "https://raw.githubusercontent.com/MariyaFurmanova/Library/main/SoulHub/AnimeVanguards"},
-            {Name = "AV Macro", Desc = "自動掛機農場", Url = "https://raw.githubusercontent.com/Headrule/AutoFarm/main/AnimeVanguards"}
-        }
-    },
-    ["Anime Defenders"] = {
-        IDs = {17017769292},
-        Scripts = {
-            {Name = "Black Trap", Desc = "自動戰鬥/無限塔", Url = "https://raw.githubusercontent.com/1f0yt/community/main/BlackTrap"},
-            {Name = "Soul Hub", Desc = "自動防守/巨集", Url = "https://raw.githubusercontent.com/MariyaFurmanova/Library/main/SoulHub/AnimeDefenders"}
-        }
-    },
-    ["Fruit Battlegrounds"] = {
-        IDs = {11445923563},
-        Scripts = {
-            {Name = "Kirka Hub", Desc = "自動熟練度/打王", Url = "https://raw.githubusercontent.com/KirkaHub/KirkaHubV2/main/Loader"}
-        }
-    },
-
-    -- [3. 模擬 & 放置]
-    ["Fisch (釣魚)"] = {
-        IDs = {16732694052},
-        Scripts = {
-            {Name = "Speed Hub X", Desc = "自動釣魚/賣魚/透視", Url = "https://raw.githubusercontent.com/AhmadV99/Speed-Hub-X/main/Speed%20Hub%20X.lua"},
-            {Name = "Fisch Utils", Desc = "稀有魚位置/深海", Url = "https://pastebin.com/raw/MbBnZq3k"},
-            {Name = "JustHub", Desc = "輕量化農場", Url = "https://raw.githubusercontent.com/JustGod12/JustHub/main/Fisch"}
+            {Name = "Bedol Hub", Desc = "自動格擋", Url = "https://raw.githubusercontent.com/3345-c-a-t-s-u-s/Bedol-Hub/main/Main.lua"},
+            {Name = "Redz Hub", Desc = "自動刷勝場", Url = "https://raw.githubusercontent.com/REDzHUB/BladeBall/main/main.lua"}
         }
     },
     ["Pet Sim 99"] = {
         IDs = {8737899170, 15434623619},
         Scripts = {
-            {Name = "Redz Hub", Desc = "手機推薦/自動活動", Url = "https://raw.githubusercontent.com/REDzHUB/PetSimulator99/main/Source.lua"},
-            {Name = "Zap Hub", Desc = "全自動農場 (電腦)", Url = "https://raw.githubusercontent.com/Zap-Hub/Zap/main/Main.lua"}
+            {Name = "Redz Hub", Desc = "自動活動/挖礦", Url = "https://raw.githubusercontent.com/REDzHUB/PetSimulator99/main/Source.lua"}
         }
     },
-    ["Sol's RNG (運氣)"] = {
-        IDs = {15532962292},
-        Scripts = {
-            {Name = "Solaris", Desc = "自動抽卡/合成", Url = "https://raw.githubusercontent.com/2131231321/Solaris/main/SolsRNG.lua"},
-            {Name = "Lime Hub", Desc = "自動任務/採集", Url = "https://raw.githubusercontent.com/LimeHub/Sol-s-RNG/main/Loader.lua"}
-        }
-    },
-    ["Bee Swarm (蜂群)"] = {
-        IDs = {1537690962},
-        Scripts = {
-            {Name = "Kocmoc", Desc = "自動採集/殺怪/任務", Url = "https://raw.githubusercontent.com/Boxking776/kocmoc/main/kocmoc-remaster.lua"}
-        }
-    },
-    ["Muscle Legends"] = {
-        IDs = {3623096087},
-        Scripts = {
-            {Name = "Speed Hub", Desc = "自動舉重/重生", Url = "https://raw.githubusercontent.com/AhmadV99/Speed-Hub-X/main/Speed%20Hub%20X.lua"},
-            {Name = "Vortex", Desc = "自動農場", Url = "https://raw.githubusercontent.com/ImagineProUser/vortex/main/vortex.lua"}
-        }
-    },
-    ["Gym League"] = {
-        IDs = {17450551531},
-        Scripts = {
-            {Name = "Vortex", Desc = "自動健身/比賽", Url = "https://raw.githubusercontent.com/ImagineProUser/vortex/main/vortex.lua"}
-        }
-    },
-    ["A Dusty Trip"] = {
-        IDs = {16389386625},
-        Scripts = {
-            {Name = "Black Trap", Desc = "無限燃料/上帝模式", Url = "https://raw.githubusercontent.com/1f0yt/community/main/BlackTrap"}
-        }
-    },
-
-    -- [4. 生存 & 恐怖]
-    ["Doors (門)"] = {
-        IDs = {6516141723, 6839171747},
-        Scripts = {
-            {Name = "Black King", Desc = "自動通關/十字架", Url = "https://raw.githubusercontent.com/KINGHUB01/BlackKing/main/BlackKingObf.lua"},
-            {Name = "MSpaint", Desc = "繪圖風透視", Url = "https://raw.githubusercontent.com/mspaint-cc/Doors/main/Script.lua"}
-        }
-    },
-    ["MM2 (殺手)"] = {
-        IDs = {142823291},
-        Scripts = {
-            {Name = "Eclipse", Desc = "透視兇手/自動射擊", Url = "https://raw.githubusercontent.com/Ethanoj1/EclipseMM2/master/Script"},
-            {Name = "Vynixu", Desc = "自動撿槍/農場", Url = "https://raw.githubusercontent.com/Vynixu/MM2/main/Script.lua"}
-        }
-    },
-    ["Pressure (壓力)"] = {
-        IDs = {12411473842},
-        Scripts = {
-            {Name = "Gloomy", Desc = "自動修機/透視", Url = "https://raw.githubusercontent.com/z4gs/scripts/main/Pressure/Gloomy.lua"}
-        }
-    },
-    ["Brookhaven (RP)"] = {
-        IDs = {4924922222},
-        Scripts = {
-            {Name = "Ice Hub", Desc = "崩潰伺服器/無限道具", Url = "https://raw.githubusercontent.com/IceMael7/IceHub/main/Brookhaven"},
-            {Name = "Unfair Hub", Desc = "RP 破壞工具", Url = "https://raw.githubusercontent.com/rblxscriptsnet/unfair/main/rblxhub.lua"}
-        }
-    },
-    ["Break In 2"] = {
-        IDs = {13864667823},
-        Scripts = {
-            {Name = "Requiem", Desc = "自動打怪/訓練", Url = "https://raw.githubusercontent.com/Vasily12345/Requiem/main/Break%20In%202"}
-        }
-    },
-    ["3008 (IKEA)"] = {
-        IDs = {2768379856},
-        Scripts = {
-            {Name = "Fallen Angel", Desc = "透視物品/員工", Url = "https://raw.githubusercontent.com/SlamminPig/rblxgames/main/3008/3008GUI"}
-        }
-    },
-    ["Jailbreak"] = {
-        IDs = {606849621},
-        Scripts = {
-            {Name = "Project Auto", Desc = "自動搶劫/逮捕", Url = "https://raw.githubusercontent.com/Project-Auto/Auto/main/Auto.lua"}
-        }
-    },
-
-    -- [5. 萬能工具]
     ["Universal (通用)"] = {
         IDs = {},
         Scripts = {
-            {Name = "Infinite Yield", Desc = "指令之王 (300+功能)", Url = "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"},
-            {Name = "Nameless Admin", Desc = "手機管理員 (甩飛/惡搞)", Url = "https://raw.githubusercontent.com/FilteringEnabled/NamelessAdmin/main/Source"},
-            {Name = "Dark Dex V3", Desc = "開發者後台 (複製遊戲)", Url = "https://raw.githubusercontent.com/infyiff/backup/main/dex.lua"},
-            {Name = "Remote Spy", Desc = "監聽器", Url = "https://raw.githubusercontent.com/exxtremestuffs/SimpleSpySource/master/SimpleSpy.lua"},
-            {Name = "Fly Gui V3", Desc = "萬能飛行", Url = "https://raw.githubusercontent.com/Xneoff/FlyGuiV3/main/FlyGuiV3.txt"}
+            {Name = "Infinite Yield", Desc = "指令之王 (飛行/穿牆)", Url = "https://raw.githubusercontent.com/EdgeIY/infiniteyield/master/source"},
+            {Name = "Nameless Admin", Desc = "手機管理員 (甩飛)", Url = "https://raw.githubusercontent.com/FilteringEnabled/NamelessAdmin/main/Source"},
+            {Name = "Fly Gui", Desc = "萬能飛行", Url = "https://raw.githubusercontent.com/Xneoff/FlyGuiV3/main/FlyGuiV3.txt"}
         }
     }
 }
 
--- [5. 漢化與劫持引擎]
+-- [8. 漢化引擎 (安全版)]
 local function Translate(text)
-    if not Config.TranslateUI then return text end
+    if not Config.TranslateEnabled then return text end
     if string.find(text, "discord.gg") then return Config.MyDiscord end
     if Dictionary[text] then return Dictionary[text] end
-    for eng, chn in pairs(Dictionary) do
-        if string.find(text, eng) then return string.gsub(text, eng, chn) end
-    end
     return text
 end
 
 local function HijackUI()
-    for _, gui in pairs(CoreGui:GetDescendants()) do
-        if gui:IsA("TextLabel") or gui:IsA("TextButton") then
-            -- 排除自己的介面，避免自己翻譯自己
-            if not gui:IsDescendantOf(game.CoreGui.OMEGA_RESTORED) then
-                local original = gui.Text
-                if #original > 0 then
-                    local newText = Translate(original)
-                    if newText ~= original then pcall(function() gui.Text = newText end) end
+    pcall(function()
+        for _, gui in pairs(CoreGui:GetDescendants()) do
+            if gui:IsA("TextLabel") or gui:IsA("TextButton") then
+                if not gui:IsDescendantOf(CoreGui:FindFirstChild("APEX_REBORN")) then
+                    local original = gui.Text
+                    if #original > 0 then
+                        local newText = Translate(original)
+                        if newText ~= original then gui.Text = newText end
+                    end
                 end
             end
         end
-    end
+    end)
 end
 
 task.spawn(function()
-    while true do if Config.TranslateUI then pcall(HijackUI) end task.wait(1.5) end
+    while true do if Config.TranslateEnabled then HijackUI() end task.wait(2) end
 end)
 
--- [6. UI 建構]
+-- [9. UI 建構]
 local ScreenGui = Instance.new("ScreenGui", CoreGui)
-ScreenGui.Name = "OMEGA_RESTORED"
+ScreenGui.Name = "APEX_REBORN"
 ScreenGui.IgnoreGuiInset = true
 
--- 懸浮球 (Drag & Click Fix)
+-- 懸浮球 (絕對修復版)
 local Toggle = Instance.new("ImageButton", ScreenGui)
-Toggle.Size = UDim2.new(0, 55, 0, 55)
-Toggle.Position = UDim2.new(0.02, 0, 0.2, 0)
+Toggle.Size = UDim2.new(0, 50, 0, 50)
+Toggle.Position = UDim2.new(0.05, 0, 0.2, 0)
 Toggle.BackgroundColor3 = Color3.fromRGB(0,0,0)
 Toggle.Image = "rbxassetid://13465637257"
-Toggle.ImageColor3 = Color3.fromRGB(0, 255, 100) -- 恢復科技綠
+Toggle.ImageColor3 = Color3.fromRGB(255, 50, 50)
 Instance.new("UICorner", Toggle).CornerRadius = UDim.new(1,0)
-Instance.new("UIStroke", Toggle).Color = Color3.fromRGB(0, 200, 80)
+Instance.new("UIStroke", Toggle).Color = Color3.fromRGB(255, 0, 0)
 Instance.new("UIStroke", Toggle).Thickness = 2
 
-local dragging, dragInput, dragStart, startPos
+local dragging, dragStart, startPos
 local isMoved = false
 
-Toggle.InputBegan:Connect(function(input) 
-    if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then 
-        dragging = true; isMoved = false; dragStart = input.Position; startPos = Toggle.Position 
-    end 
-end)
-Toggle.InputChanged:Connect(function(input) 
-    if input.UserInputType==Enum.UserInputType.MouseMovement or input.UserInputType==Enum.UserInputType.Touch then dragInput = input end 
-end)
-UserInputService.InputChanged:Connect(function(input) 
-    if input==dragInput and dragging then 
-        local delta = input.Position - dragStart
-        if delta.Magnitude > 5 then 
-            isMoved = true
-            Toggle.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset+delta.X, startPos.Y.Scale, startPos.Y.Offset+delta.Y) 
-        end
-    end 
-end)
-UserInputService.InputEnded:Connect(function(input) 
-    if input.UserInputType==Enum.UserInputType.MouseButton1 or input.UserInputType==Enum.UserInputType.Touch then 
-        dragging = false
-        if not isMoved then ScreenGui.Main.Visible = not ScreenGui.Main.Visible end
-    end 
+Toggle.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = true
+        isMoved = false
+        dragStart = input.Position
+        startPos = Toggle.Position
+    end
 end)
 
--- 主視窗
+Toggle.InputChanged:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseMovement then
+        if dragging then
+            local delta = input.Position - dragStart
+            if delta.Magnitude > 5 then -- 防手抖
+                isMoved = true
+                Toggle.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            end
+        end
+    end
+end)
+
+UserInputService.InputEnded:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.Touch or input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragging = false
+        if not isMoved then
+            ScreenGui.Main.Visible = not ScreenGui.Main.Visible
+        end
+    end
+end)
+
+-- 主介面
 local Main = Instance.new("Frame", ScreenGui)
 Main.Name = "Main"
-Main.Size = UDim2.new(0, 580, 0, 360)
-Main.Position = UDim2.new(0.5, -290, 0.5, -180)
-Main.BackgroundColor3 = Color3.fromRGB(10, 15, 20)
+Main.Size = UDim2.new(0, 500, 0, 320)
+Main.Position = UDim2.new(0.5, -250, 0.5, -160)
+Main.BackgroundColor3 = Color3.fromRGB(15, 10, 10)
 Main.BackgroundTransparency = 0.05
 Main.Visible = false
-Main.ClipsDescendants = true
 Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 8)
-local MainStroke = Instance.new("UIStroke", Main); MainStroke.Color = Color3.fromRGB(0, 255, 150); MainStroke.Thickness = 2
+local MainStroke = Instance.new("UIStroke", Main); MainStroke.Color = Color3.fromRGB(255, 50, 50); MainStroke.Thickness = 2
 
 -- 側邊欄
 local Sidebar = Instance.new("ScrollingFrame", Main)
 Sidebar.Size = UDim2.new(0.3, 0, 1, 0)
-Sidebar.BackgroundColor3 = Color3.fromRGB(15, 20, 30)
+Sidebar.BackgroundColor3 = Color3.fromRGB(20, 15, 15)
 Sidebar.ScrollBarThickness = 0
 local SideList = Instance.new("UIListLayout", Sidebar); SideList.Padding = UDim.new(0, 4); SideList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 Sidebar.AutomaticCanvasSize = Enum.AutomaticSize.Y
-SideList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() Sidebar.CanvasSize = UDim2.new(0, 0, 0, SideList.AbsoluteContentSize.Y + 20) end)
+SideList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() Sidebar.CanvasSize = UDim2.new(0,0,0,SideList.AbsoluteContentSize.Y+20) end)
 
 local Title = Instance.new("TextLabel", Sidebar)
-Title.Text = "歐米茄·復原"
+Title.Text = "頂點·重生"
 Title.Font = Enum.Font.GothamBlack
-Title.TextSize = 20
-Title.TextColor3 = Color3.fromRGB(0, 255, 150)
+Title.TextSize = 18
+Title.TextColor3 = Color3.fromRGB(255, 50, 50)
 Title.Size = UDim2.new(1,0,0,50)
 Title.BackgroundTransparency = 1
 
@@ -386,19 +231,19 @@ Content.BackgroundTransparency = 1
 Content.ScrollBarThickness = 4
 local ContentList = Instance.new("UIListLayout", Content); ContentList.Padding = UDim.new(0, 8); ContentList.HorizontalAlignment = Enum.HorizontalAlignment.Center
 Content.AutomaticCanvasSize = Enum.AutomaticSize.Y
-ContentList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() Content.CanvasSize = UDim2.new(0, 0, 0, ContentList.AbsoluteContentSize.Y + 50) end)
+ContentList:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() Content.CanvasSize = UDim2.new(0,0,0,ContentList.AbsoluteContentSize.Y+50) end)
 
--- 狀態
+-- 狀態欄
 local Status = Instance.new("TextLabel", Main)
 Status.Size = UDim2.new(0.68, 0, 0.1, 0)
 Status.Position = UDim2.new(0.31, 0, 0.9, 0)
 Status.BackgroundTransparency = 1
-Status.TextColor3 = Color3.fromRGB(150, 255, 200)
-Status.Text = "系統就緒"
+Status.TextColor3 = Color3.fromRGB(255, 150, 150)
+Status.Text = "安全模式已啟動 - 製作: 珍奶"
 Status.Font = Enum.Font.Code
 Status.TextSize = 11
 
--- 加載列表
+-- 加載功能
 local function LoadList(category)
     for _, c in pairs(Content:GetChildren()) do if c:IsA("Frame") then c:Destroy() end end
     Status.Text = "分類: " .. category
@@ -407,11 +252,10 @@ local function LoadList(category)
     if list then
         for _, data in pairs(list.Scripts) do
             local F = Instance.new("Frame", Content)
-            F.Size = UDim2.new(0.95, 0, 0, 70)
-            F.BackgroundColor3 = Color3.fromRGB(20, 25, 35)
+            F.Size = UDim2.new(0.95, 0, 0, 60)
+            F.BackgroundColor3 = Color3.fromRGB(30, 20, 20)
             Instance.new("UICorner", F).CornerRadius = UDim.new(0, 6)
             
-            -- [修改] 不再顯示 "漢化: 珍奶"，只顯示原名
             local Name = Instance.new("TextLabel", F)
             Name.Text = data.Name
             Name.Size = UDim2.new(0.7, 0, 0.4, 0)
@@ -425,71 +269,64 @@ local function LoadList(category)
             Desc.Text = data.Desc
             Desc.Size = UDim2.new(0.7, 0, 0.4, 0)
             Desc.Position = UDim2.new(0.05, 0, 0.5, 0)
-            Desc.TextColor3 = Color3.fromRGB(150, 200, 200)
+            Desc.TextColor3 = Color3.fromRGB(150, 150, 150)
             Desc.Font = Enum.Font.Gotham
-            Desc.TextSize = 11
+            Desc.TextSize = 10
             Desc.TextXAlignment = Enum.TextXAlignment.Left
             Desc.BackgroundTransparency = 1
-            Desc.TextWrapped = true
             
             local Run = Instance.new("TextButton", F)
             Run.Size = UDim2.new(0.2, 0, 0.6, 0)
             Run.Position = UDim2.new(0.78, 0, 0.2, 0)
-            Run.BackgroundColor3 = Color3.fromRGB(0, 150, 100)
+            Run.BackgroundColor3 = Color3.fromRGB(200, 50, 50)
             Run.Text = "執行"
             Run.TextColor3 = Color3.new(1,1,1)
             Run.Font = Enum.Font.GothamBold
             Instance.new("UICorner", Run).CornerRadius = UDim.new(0, 4)
             
             Run.MouseButton1Click:Connect(function()
-                Status.Text = "正在載入..."
-                local s, e = pcall(function() loadstring(game:HttpGet(data.Url))() end)
+                Status.Text = "載入中..."
+                -- 錯誤攔截核心
+                local s, e = pcall(function()
+                    loadstring(game:HttpGet(data.Url))()
+                end)
                 if s then
-                    Status.Text = "載入成功! 等待介面..."
+                    Status.Text = "載入成功!"
                     task.delay(2, HijackUI)
                 else
-                    Status.Text = "載入失敗 (連結可能失效)"
-                    warn(e)
+                    Status.Text = "錯誤! 請查看F9"
+                    warn("Script Error: " .. tostring(e))
                 end
             end)
         end
     end
 end
 
--- 生成側邊按鈕
 local function AddSideBtn(text)
     local B = Instance.new("TextButton", Sidebar)
-    B.Size = UDim2.new(0.9, 0, 0, 45)
-    B.BackgroundColor3 = Color3.fromRGB(20, 25, 35)
+    B.Size = UDim2.new(0.9, 0, 0, 40)
+    B.BackgroundColor3 = Color3.fromRGB(35, 25, 25)
     B.Text = text
-    B.TextColor3 = Color3.fromRGB(100, 255, 150)
+    B.TextColor3 = Color3.fromRGB(255, 200, 200)
     B.Font = Enum.Font.GothamBold
     B.TextWrapped = true
     Instance.new("UICorner", B).CornerRadius = UDim.new(0, 6)
     B.MouseButton1Click:Connect(function() LoadList(text) end)
 end
 
--- 排序
-local keys = {}
-for k in pairs(Database) do table.insert(keys, k) end
-table.sort(keys)
-
-for _, k in ipairs(keys) do
-    if k ~= "Universal (通用)" then AddSideBtn(k) end
-end
+for name, _ in pairs(Database) do if name ~= "Universal (通用)" then AddSideBtn(name) end end
 AddSideBtn("Universal (通用)")
 
 -- 智能偵測
 local Detected = "Universal (通用)"
 for cat, data in pairs(Database) do
-    for _, id in ipairs(data.IDs) do
-        if id == PlaceID then Detected = cat; break end
-    end
+    for _, id in ipairs(data.IDs) do if id == PlaceID then Detected = cat; break end end
 end
 LoadList(Detected)
 Main.Visible = true
 
+-- 提示
 local N = Instance.new("TextLabel", ScreenGui)
-N.Size=UDim2.new(0,300,0,40); N.Position=UDim2.new(0.5,-150,0.1,0); N.BackgroundColor3=Color3.new(0,0,0); N.BackgroundTransparency=0.3; N.TextColor3=Color3.fromRGB(0,255,100); N.Text="資料庫已修復 - 全熱門遊戲收錄"
+N.Size=UDim2.new(0,300,0,40); N.Position=UDim2.new(0.5,-150,0.1,0); N.BackgroundColor3=Color3.new(0,0,0); N.BackgroundTransparency=0.3; N.TextColor3=Color3.fromRGB(255,50,50); N.Text="系統已重啟 - 安全模式"
 N.Font = Enum.Font.GothamBold
 game.Debris:AddItem(N, 5)
