@@ -1,19 +1,20 @@
 --[[
-    珍奶腳本 (ZhenNai Hub) - v43.0 絕對執行版 (ABSOLUTE EXECUTION)
-    修復：背包清理不乾淨 (改用 Heartbeat 暴力刪除)
-    修復：技能無反應 (延長按鍵訊號時間)
-    防禦：全方位神盾 (Anti-Fling/Void)
+    珍奶腳本 (ZhenNai Hub) - v44.0 萬能輸入適配版 (UNIVERSAL INPUT)
+    修復：手機版按鍵無效問題
+    技術：三重觸發 (KeyPress + GUI Click + VIM)
+    功能：保留 VexonHub 風格 + 神盾防禦 + 背包淨化
 ]]
 
--- [1. 服務初始化]
+-- [1. 服務與變數]
 local VirtualInputManager = game:GetService("VirtualInputManager")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 local TweenService = game:GetService("TweenService")
 local Debris = game:GetService("Debris")
+local GuiService = game:GetService("GuiService")
 local LocalPlayer = Players.LocalPlayer
 
--- 清理殘留介面
+-- 清理介面
 local CoreGui = game:GetService("CoreGui")
 for _, gui in pairs(CoreGui:GetChildren()) do
     if gui.Name == "Fluent" then gui:Destroy() end
@@ -23,97 +24,105 @@ local Fluent = loadstring(game:HttpGet("https://github.com/dawid-scripts/Fluent/
 
 -- [2. 配置]
 local Config = {
-    Mode = "None", -- Gojo, Saitama, JinWoo
+    Mode = "None",
     AntiFling = true,
     AntiVoid = true,
 }
 
--- [3. 動畫 ID (最高優先級)]
 local Anims = {
-    Gojo = {
-        "rbxassetid://10479335397", -- 1: 蒼
-        "rbxassetid://10470104242", -- 2: 赫
-        "rbxassetid://33796059",    -- 3: 茈
-        "rbxassetid://10714347256"  -- 4: 領域
-    },
-    Saitama = {
-        "rbxassetid://10471336737", -- 1
-        "rbxassetid://10479335397", -- 2
-        "rbxassetid://10470104242", -- 3
-        "rbxassetid://33796059"     -- 4
-    },
-    JinWoo = {
-        "rbxassetid://5633641724", -- 1
-        "rbxassetid://260433746",  -- 2
-        "rbxassetid://3450654944", -- 3
-        "rbxassetid://1496738980"  -- 4
-    }
+    Gojo = {"rbxassetid://10479335397", "rbxassetid://10470104242", "rbxassetid://33796059", "rbxassetid://10714347256"},
+    Saitama = {"rbxassetid://10471336737", "rbxassetid://10479335397", "rbxassetid://10470104242", "rbxassetid://33796059"},
+    JinWoo = {"rbxassetid://5633641724", "rbxassetid://260433746", "rbxassetid://3450654944", "rbxassetid://1496738980"}
 }
 
 --------------------------------------------------------------------------------
--- 4. 核心修復：暴力清理與輸入
+-- 3. 核心：萬能輸入引擎 (Universal Input Engine)
 --------------------------------------------------------------------------------
 
--- [暴力背包淨化] (Heartbeat Loop)
--- 這會比遊戲發道具的速度更快，確保你只看得到腳本道具
-RunService.Heartbeat:Connect(function()
-    if Config.Mode == "None" then return end
+-- [方法 B: GUI 搜尋與點擊]
+-- 這是針對手機版最強大的修復，直接找遊戲按鈕點下去
+local function ClickMobileButton(name)
+    local PlayerGui = LocalPlayer:FindFirstChild("PlayerGui")
+    if not PlayerGui then return end
     
-    if LocalPlayer.Backpack then
-        for _, t in pairs(LocalPlayer.Backpack:GetChildren()) do
-            if not t:GetAttribute("ZN_Custom") then 
-                t:Destroy() -- 發現異物，立即銷毀
+    -- 遞迴搜尋所有 UI 尋找對應按鈕
+    for _, v in pairs(PlayerGui:GetDescendants()) do
+        if v:IsA("TextButton") or v:IsA("ImageButton") then
+            -- TSB 的按鈕通常名字就是 "1", "2" 或包含 Skill
+            if v.Name == tostring(name) or v.Name == "Skill"..tostring(name) then
+                if v.Visible and v.Parent.Visible then
+                    -- 強制觸發點擊事件
+                    for _, connection in pairs(getconnections(v.MouseButton1Click)) do
+                        connection:Fire()
+                    end
+                    for _, connection in pairs(getconnections(v.Activated)) do
+                        connection:Fire()
+                    end
+                    -- 備用：觸控事件
+                    for _, connection in pairs(getconnections(v.TouchTap)) do
+                        connection:Fire()
+                    end
+                    return true -- 找到並點擊了
+                end
             end
         end
     end
-end)
-
--- [輸入模擬修復]
-local function TriggerGameSkill(keyIndex)
-    local keyMap = { [1]=Enum.KeyCode.One, [2]=Enum.KeyCode.Two, [3]=Enum.KeyCode.Three, [4]=Enum.KeyCode.Four }
-    local k = keyMap[keyIndex]
-    
-    if k then
-        pcall(function()
-            -- 模擬按下
-            VirtualInputManager:SendKeyEvent(true, k, false, game)
-            -- 延長至 0.25 秒，確保爛線也能觸發
-            task.wait(0.25)
-            -- 模擬放開
-            VirtualInputManager:SendKeyEvent(false, k, false, game)
-        end)
-    end
+    return false
 end
 
--- [動作覆蓋]
+-- [綜合觸發函數]
+local function ForceTriggerSkill(index)
+    -- 1. 嘗試 Executor 專屬函數 (Delta/Fluxus)
+    pcall(function()
+        if keypress and keyrelease then
+            local k = (index==1 and 0x31) or (index==2 and 0x32) or (index==3 and 0x33) or (index==4 and 0x34)
+            keypress(k)
+            task.wait(0.1)
+            keyrelease(k)
+        end
+    end)
+    
+    -- 2. 嘗試 GUI 點擊 (最適合手機)
+    task.spawn(function()
+        ClickMobileButton(index)
+    end)
+
+    -- 3. 嘗試 Roblox VIM (標準鍵盤模擬)
+    task.spawn(function()
+        local k = (index==1 and Enum.KeyCode.One) or (index==2 and Enum.KeyCode.Two) or (index==3 and Enum.KeyCode.Three) or (index==4 and Enum.KeyCode.Four)
+        VirtualInputManager:SendKeyEvent(true, k, false, game)
+        task.wait(0.1)
+        VirtualInputManager:SendKeyEvent(false, k, false, game)
+    end)
+end
+
+--------------------------------------------------------------------------------
+-- 4. 動作與特效
+--------------------------------------------------------------------------------
 local function PlayCustomAnim(id)
     local Hum = LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid")
-    if Hum and Hum:FindFirstChild("Animator") then
-        -- 暴力停止所有舊動作
+    if Hum then
         for _, t in pairs(Hum.Animator:GetPlayingAnimationTracks()) do t:Stop(0) end
-        
         local a = Instance.new("Animation"); a.AnimationId = id
         local t = Hum.Animator:LoadAnimation(a)
-        t.Priority = Enum.AnimationPriority.Action4 -- Action4 是最高級別
-        t:Play(0) -- 0淡入時間，瞬間切換
+        t.Priority = Enum.AnimationPriority.Action4
+        t:Play(0)
     end
 end
 
--- [特效]
 local function CreateFX(root, color)
     local p = Instance.new("Part", workspace); p.Size=Vector3.new(1,1,1); p.Shape="Ball"; p.Material="Neon"; p.Color=color; p.Anchored=true; p.CanCollide=false; p.CFrame=root.CFrame
     TweenService:Create(p, TweenInfo.new(0.5), {Size=Vector3.new(25,25,25), Transparency=1}):Play(); Debris:AddItem(p, 0.5)
 end
 
--- [技能觸發主控]
 local function ActivateSkill(mode, index)
     local Char = LocalPlayer.Character
     if not Char then return end
     
-    -- 1. 觸發傷害 (後台模擬按鍵)
-    task.spawn(function() TriggerGameSkill(index) end)
+    -- 執行萬能輸入
+    ForceTriggerSkill(index)
     
-    -- 2. 播放特效 (前台覆蓋)
+    -- 播放特效
     local list = Anims[mode]
     if list and list[index] then
         PlayCustomAnim(list[index])
@@ -123,10 +132,19 @@ local function ActivateSkill(mode, index)
 end
 
 --------------------------------------------------------------------------------
--- 5. 道具發放系統
+-- 5. 道具與清理
 --------------------------------------------------------------------------------
+-- 暴力背包清理
+RunService.Heartbeat:Connect(function()
+    if Config.Mode == "None" then return end
+    if LocalPlayer.Backpack then
+        for _, t in pairs(LocalPlayer.Backpack:GetChildren()) do
+            if not t:GetAttribute("ZN_Custom") then t:Destroy() end
+        end
+    end
+end)
+
 local function GiveTools(mode)
-    -- 先清空一次
     for _, t in pairs(LocalPlayer.Backpack:GetChildren()) do t:Destroy() end
     
     local Skills = {}
@@ -136,10 +154,7 @@ local function GiveTools(mode)
     
     for i, name in ipairs(Skills) do
         local tool = Instance.new("Tool")
-        tool.Name = name
-        tool.RequiresHandle = false
-        tool:SetAttribute("ZN_Custom", true) -- 標記為自己人，免死金牌
-        tool.TextureId = "rbxassetid://0" -- 隱藏圖示，或是設為透明
+        tool.Name = name; tool.RequiresHandle = false; tool:SetAttribute("ZN_Custom", true); tool.TextureId = "rbxassetid://0"
         
         tool.Activated:Connect(function()
             ActivateSkill(mode, i)
@@ -150,37 +165,27 @@ local function GiveTools(mode)
 end
 
 --------------------------------------------------------------------------------
--- 6. 神盾防禦系統 (Anti-Exploit)
+-- 6. 防禦系統
 --------------------------------------------------------------------------------
 RunService.Heartbeat:Connect(function()
     local Char = LocalPlayer.Character
     if not Char or not Char:FindFirstChild("HumanoidRootPart") then return end
     local Root = Char.HumanoidRootPart
     
-    -- [反甩飛 Anti-Fling]
     if Config.AntiFling then
         for _, p in pairs(Players:GetPlayers()) do
             if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
                 local TRoot = p.Character.HumanoidRootPart
-                local Dist = (TRoot.Position - Root.Position).Magnitude
-                -- 檢測：距離極近 且 速度極快
-                if Dist < 10 and TRoot.Velocity.Magnitude > 150 then
-                    -- 對策：錨定自身 + 虛體化
-                    Root.Anchored = true
-                    Root.Velocity = Vector3.zero
+                if (TRoot.Position - Root.Position).Magnitude < 10 and TRoot.Velocity.Magnitude > 150 then
+                    Root.Anchored = true; Root.Velocity = Vector3.zero
                     for _, v in pairs(Char:GetChildren()) do if v:IsA("BasePart") then v.CanCollide=false end end
-                    
-                    -- 0.5秒後恢復
                     task.delay(0.5, function() if Root then Root.Anchored = false end end)
                 end
             end
         end
     end
-    
-    -- [反虛空 Anti-Void]
     if Config.AntiVoid and Root.Position.Y < -50 then
-        Root.CFrame = CFrame.new(Root.Position.X, 100, Root.Position.Z)
-        Root.Velocity = Vector3.zero
+        Root.CFrame = CFrame.new(Root.Position.X, 100, Root.Position.Z); Root.Velocity = Vector3.zero
     end
 end)
 
@@ -188,29 +193,25 @@ end)
 -- 7. UI 介面
 --------------------------------------------------------------------------------
 local Window = Fluent:CreateWindow({
-    Title = "SYSTEM: AEGIS v43", SubTitle = "Fix & Protect",
+    Title = "SYSTEM: UNIVERSAL v44", SubTitle = "Mobile Fix",
     TabWidth = 160, Size = UDim2.fromOffset(500, 380), Acrylic = true, Theme = "Dark", MinimizeKey = Enum.KeyCode.RightControl
 })
 
-local Main = Window:AddTab({ Title = "核心 (Core)", Icon = "swords" })
-local Def = Window:AddTab({ Title = "防禦 (Shield)", Icon = "shield" })
+local Main = Window:AddTab({ Title = "戰鬥", Icon = "swords" })
+local Def = Window:AddTab({ Title = "防禦", Icon = "shield" })
 
 Main:AddDropdown("Mode", {
-    Title = "選擇技能組 (Moveset)", Values = {"Gojo", "Saitama", "JinWoo"}, Default = "None",
+    Title = "選擇技能組", Values = {"Gojo", "Saitama", "JinWoo"}, Default = "None",
     Callback = function(v) 
         Config.Mode = v
         GiveTools(v)
-        Fluent:Notify({Title="系統就緒", Content=v.." 技能組已裝備\n原遊戲道具將被自動清除", Duration=3})
+        Fluent:Notify({Title="模式載入", Content="嘗試使用三重觸發機制...", Duration=3})
     end
 })
 
-Def:AddToggle("AF", {Title = "反甩飛 (Anti-Fling)", Default = true}):OnChanged(function(v) Config.AntiFling = v end)
-Def:AddToggle("AV", {Title = "反虛空 (Anti-Void)", Default = true}):OnChanged(function(v) Config.AntiVoid = v end)
+Def:AddToggle("AF", {Title = "反甩飛", Default = true}):OnChanged(function(v) Config.AntiFling = v end)
+Def:AddToggle("AV", {Title = "反虛空", Default = true}):OnChanged(function(v) Config.AntiVoid = v end)
 
--- 重生補發
-LocalPlayer.CharacterAdded:Connect(function()
-    task.wait(1)
-    if Config.Mode ~= "None" then GiveTools(Config.Mode) end
-end)
+LocalPlayer.CharacterAdded:Connect(function() task.wait(1); if Config.Mode ~= "None" then GiveTools(Config.Mode) end end)
 
-Fluent:Notify({Title = "SYSTEM: AEGIS", Content = "背包淨化與輸入修正已啟動。", Duration = 5})
+Fluent:Notify({Title = "SYSTEM: v44", Content = "GUI 點擊模擬已啟用。", Duration = 5})
