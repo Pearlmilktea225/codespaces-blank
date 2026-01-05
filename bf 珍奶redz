@@ -1,18 +1,18 @@
 --[[
-    SYSTEM: APEX // SENTINEL-LITE (KEY FEATURES ONLY)
+    SYSTEM: APEX // SENTINEL-SOVEREIGN (ULTIMATE MERGE)
     核心：哨兵監聽引擎 (穩定版)
-    詞庫：僅收錄「V4、狐狸島、海怪、練級、頂級裝備」等重點
+    內容：融合 V4 / 狐狸 / 練級 / 拳法 / 材料 / 果實 / 副本 / ESP
     作者：珍奶 (絕對統治)
 ]]
 
--- [1. 啟動 Teddy Hub (若已開可忽略)]
+-- [1. 啟動 Teddy Hub]
 task.spawn(function()
     pcall(function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Teddyseetink/Haidepzai/refs/heads/main/TeddyHub.lua"))()
     end)
 end)
 
--- [2. 重點辭海 (Key Points Dictionary)]
+-- [2. 君王級辭海 (The Sovereign Dictionary)]
 local Dictionary = {
     -- ================= [ 核心功能 Key Features ] =================
     ["Teddy Hub"] = "泰坦中心", ["Main"] = "主頁",
@@ -21,24 +21,10 @@ local Dictionary = {
     ["Items"] = "物品", ["Settings"] = "設置", ["Misc"] = "雜項",
     ["Enable"] = "啟用", ["Disable"] = "禁用", ["Status"] = "狀態",
     ["Active"] = "運行中", ["Waiting"] = "等待中...",
-    
-    -- ================= [ 狐狸島 & 海怪 Kitsune/Sea ] =================
-    ["Kitsune Island"] = "狐狸島",
-    ["Find Kitsune Island"] = "尋找狐狸島",
-    ["Azure Ember"] = "藍色餘燼",
-    ["Collect Azure Ember"] = "收集餘燼",
-    ["Exchange Azure Ember"] = "兌換餘燼 (換燈/面具)",
-    ["Sea Events"] = "海怪事件",
-    ["Terror Shark"] = "恐怖鯊魚",
-    ["Auto Terror Shark"] = "自動打恐怖鯊魚",
-    ["Terror Shark Magnet"] = "恐怖鯊魚磁鐵",
-    ["Shark Anchor"] = "鯊魚錨",
-    ["Monster Magnet"] = "怪物磁鐵",
-    ["Auto Sea Beast"] = "自動打海獸",
-    ["Auto Shipwright"] = "自動修船",
-    ["Leviathan"] = "利維坦",
-    
-    -- ================= [ 種族 V4 Race V4 ] =================
+    ["Select"] = "選擇", ["Refresh"] = "刷新", ["Close"] = "關閉",
+    ["Auto"] = "自動", ["Equip"] = "裝備", ["Click"] = "點擊",
+
+    -- ================= [ 種族 V4 (保留重要) ] =================
     ["Race V4"] = "種族 V4",
     ["Auto Trial"] = "自動試煉",
     ["Auto Gear"] = "撿齒輪",
@@ -51,8 +37,18 @@ local Dictionary = {
     ["Transform"] = "變身",
     ["Ancient One"] = "古老之人",
     ["Red Gear"] = "紅齒輪", ["Blue Gear"] = "藍齒輪", ["Green Gear"] = "綠齒輪",
-    
-    -- ================= [ 自動練級 Farming ] =================
+
+    -- ================= [ 狐狸島 & 海怪 (保留重要) ] =================
+    ["Kitsune Island"] = "狐狸島", ["Find Kitsune Island"] = "尋找狐狸島",
+    ["Azure Ember"] = "藍色餘燼", ["Collect Azure Ember"] = "收集餘燼",
+    ["Exchange Azure Ember"] = "兌換餘燼", ["Sea Events"] = "海怪事件",
+    ["Terror Shark"] = "恐怖鯊魚", ["Auto Terror Shark"] = "自動打恐鯊",
+    ["Terror Shark Magnet"] = "恐鯊磁鐵", ["Shark Anchor"] = "鯊魚錨",
+    ["Monster Magnet"] = "怪物磁鐵", ["Auto Sea Beast"] = "自動打海獸",
+    ["Auto Shipwright"] = "自動修船", ["Leviathan"] = "利維坦",
+    ["Auto Piranha"] = "打食人魚", ["Auto Shark"] = "打鯊魚",
+
+    -- ================= [ 練級 Farming ] =================
     ["Auto Farm Level"] = "自動練等級",
     ["Auto Farm Chest"] = "光速搜刮寶箱",
     ["Auto Farm Boss"] = "自動打王",
@@ -63,41 +59,73 @@ local Dictionary = {
     ["God Mode"] = "無敵模式",
     ["Auto Evo Race"] = "自動進化種族",
     ["Auto Bone"] = "刷骨頭",
-    ["Auto Cake"] = "刷蛋糕 (大媽)",
-    
-    -- ================= [ 副本 & 覺醒 Raid ] =================
-    ["Auto Raid"] = "自動打副本",
-    ["Select Raid"] = "選擇副本",
-    ["Kill Aura (Raid)"] = "副本殺戮",
-    ["Next Island"] = "下一關",
-    ["Buy Chip"] = "買晶片",
-    ["Start Raid"] = "開始副本",
-    ["Awakening"] = "覺醒",
-    ["Dough King"] = "糯米王 (卡塔)",
-    ["Law Raid"] = "羅的副本",
-    ["Rip Indra"] = "因陀羅",
-    
+    ["Auto Cake"] = "刷蛋糕",
+
+    -- ================= [ 拳法與格鬥 (新增) ] =================
+    ["Godhuman"] = "神人拳", ["Sanguine Art"] = "血吸藝術",
+    ["Superhuman"] = "超人拳", ["Death Step"] = "死步",
+    ["Sharkman Karate"] = "鯊魚人空手道", ["Electric Claw"] = "電爪",
+    ["Dragon Talon"] = "龍爪", ["Dragon Breath"] = "龍之吐息",
+    ["Dark Step"] = "暗黑步", ["Electro"] = "電擊", ["Water Kung Fu"] = "水像拳",
+    ["Auto Godhuman"] = "自動刷神人拳", ["Auto Superhuman"] = "自動刷超人拳",
+
+    -- ================= [ 材料 Materials (新增) ] =================
+    ["Material"] = "材料", ["Bone"] = "骨頭", ["Ectoplasm"] = "靈質",
+    ["Magma Ore"] = "岩漿礦", ["Dragon Scale"] = "龍鱗", ["Angel Wings"] = "天使翅膀",
+    ["Mini Tusk"] = "小獠牙", ["Scrap Metal"] = "廢金屬", ["Shark Tooth"] = "鯊魚牙",
+    ["Fool's Gold"] = "愚人金", ["Vampire Fang"] = "吸血鬼牙", ["Mystic Droplet"] = "神秘水滴",
+    ["Leather"] = "皮革", ["Gunpowder"] = "火藥", ["Conjured Cocoa"] = "魔法可可",
+    ["Electric Wing"] = "電擊翅膀", ["Mutated Tooth"] = "變異牙", ["Fish Tail"] = "魚尾",
+    ["Dark Fragment"] = "暗黑碎片", ["Leviathan Scale"] = "利維坦鱗", ["Leviathan Heart"] = "利維坦心",
+    ["Mirror Fractal"] = "鏡子碎片", ["Terror Eyes"] = "恐怖之眼",
+
+    -- ================= [ 副本 & Boss 任務 ] =================
+    ["Auto Raid"] = "自動打副本", ["Select Raid"] = "選擇副本",
+    ["Kill Aura (Raid)"] = "副本殺戮", ["Next Island"] = "下一關",
+    ["Buy Chip"] = "買晶片", ["Start Raid"] = "開始副本",
+    ["Awakening"] = "覺醒", 
+    ["Auto Dough King"] = "自動打糯米王 (完整流程)",
+    ["Dough King"] = "糯米王", ["Cake Prince"] = "蛋糕王子",
+    ["Auto Cake Prince"] = "自動打蛋糕王子",
+    ["Law Raid"] = "羅的副本", ["Rip Indra"] = "因陀羅",
+    ["Spawn Dough King"] = "生成糯米王", ["Kill 500 Enemies"] = "擊殺 500 敵人",
+
     -- ================= [ 頂級裝備 Items ] =================
-    ["Auto CDK"] = "刷詛咒雙刀 (CDK)",
-    ["Auto Soul Guitar"] = "刷靈魂吉他",
-    ["Auto Godhuman"] = "刷神人拳",
-    ["Auto Buy Fruit"] = "自動買果實",
-    ["Auto Store Fruit"] = "自動存果實",
-    ["Sniper"] = "狙擊",
-    ["Cursed Dual Katana"] = "詛咒雙刀",
-    ["Soul Guitar"] = "靈魂吉他",
-    ["Dark Dagger"] = "黑刀",
-    ["Hallow Scythe"] = "聖鐮",
-    ["Fox Lamp"] = "狐狸燈",
-    ["Kitsune Mask"] = "狐狸面具",
-    
-    -- ================= [ 常用按鈕 ] =================
-    ["Select Weapon"] = "選擇武器",
-    ["Refresh Weapon"] = "刷新",
-    ["Select Mob"] = "選擇怪物",
-    ["Select Mode"] = "選擇模式",
-    ["Equip"] = "裝備",
-    ["Auto"] = "自動"
+    ["Auto CDK"] = "刷詛咒雙刀 (CDK)", ["Auto Soul Guitar"] = "刷靈魂吉他",
+    ["Auto Buy Fruit"] = "自動買果實", ["Auto Store Fruit"] = "自動存果實",
+    ["Sniper"] = "狙擊", ["Cursed Dual Katana"] = "詛咒雙刀",
+    ["Soul Guitar"] = "靈魂吉他", ["Dark Dagger"] = "黑刀", ["Hallow Scythe"] = "聖鐮",
+    ["Fox Lamp"] = "狐狸燈", ["Kitsune Mask"] = "狐狸面具",
+
+    -- ================= [ 戰鬥 & 透視 ESP ] =================
+    ["Kill Aura"] = "殺戮光環", ["Aim Bot"] = "自瞄",
+    ["ESP Player"] = "透視玩家", ["ESP Chest"] = "透視寶箱",
+    ["ESP Fruit"] = "透視果實", ["ESP Island"] = "透視島嶼",
+    ["Distance"] = "距離", ["Name"] = "名字", ["Health"] = "血量",
+    ["WalkSpeed"] = "移速", ["JumpPower"] = "跳躍",
+    ["Infinite Jump"] = "無限跳", ["Noclip"] = "穿牆",
+
+    -- ================= [ 傳送 Teleport ] =================
+    ["Travel to Sea 1"] = "去一海", ["Travel to Sea 2"] = "去二海", ["Travel to Sea 3"] = "去三海",
+    ["Mansion"] = "豪宅", ["Castle"] = "城堡", ["Hydra Island"] = "九頭蛇",
+    ["Great Tree"] = "大樹", ["Floating Turtle"] = "浮龜", ["Haunted Castle"] = "鬧鬼城堡",
+    ["Tiki Outpost"] = "Tiki 前哨站",
+
+    -- ================= [ 商店 Shop ] =================
+    ["Race Reroll"] = "重洗種族", ["Bone Surprise"] = "骨頭抽獎",
+    ["Refund Stats"] = "重置點數", ["Buy"] = "購買", ["Sell"] = "出售",
+
+    -- ================= [ 果實 Fruits ] =================
+    ["Kitsune"] = "狐狸", ["Leopard"] = "豹", ["Dragon"] = "龍", ["Spirit"] = "靈魂",
+    ["Control"] = "控制", ["Venom"] = "毒", ["Shadow"] = "影", ["Dough"] = "糯米",
+    ["T-Rex"] = "暴龍", ["Mammoth"] = "猛瑪", ["Gravity"] = "重力", ["Blizzard"] = "雪",
+    ["Pain"] = "肉球", ["Rumble"] = "響雷", ["Portal"] = "傳送門", ["Phoenix"] = "不死鳥",
+    ["Sound"] = "音音", ["Spider"] = "線線", ["Love"] = "愛心", ["Buddha"] = "大佛",
+    ["Quake"] = "震震", ["Magma"] = "岩漿", ["Ghost"] = "幽靈", ["Barrier"] = "屏障",
+    ["Rubber"] = "橡膠", ["Light"] = "光", ["Diamond"] = "鑽石", ["Dark"] = "暗",
+    ["Sand"] = "沙", ["Ice"] = "冰", ["Falcon"] = "隼", ["Flame"] = "火",
+    ["Spike"] = "尖刺", ["Smoke"] = "煙", ["Bomb"] = "炸彈", ["Spring"] = "彈簧",
+    ["Chop"] = "斬斬", ["Spin"] = "旋轉", ["Rocket"] = "火箭"
 }
 
 -- [3. 哨兵監聽核心 (Sentinel Engine)]
@@ -113,10 +141,9 @@ local function Translate(obj)
     local text = obj.Text
     if not text or text == "" then return end
 
-    -- 1. 精確匹配 (優先)
+    -- 1. 精確匹配 (最穩)
     if Dictionary[text] then
         obj.Text = Dictionary[text]
-        -- 鎖定文字防止被改回
         if not obj:FindFirstChild("TLock") then
             local tag = Instance.new("BoolValue", obj)
             tag.Name = "TLock"
@@ -128,19 +155,23 @@ local function Translate(obj)
         return
     end
 
-    -- 2. 重點關鍵字匹配 (Partial Match)
-    -- 只針對重點詞彙進行模糊搜尋，保持介面整潔
+    -- 2. 關鍵字模糊匹配 (保留重要功能不被漏翻)
     local newText = text
     local changed = false
     
-    -- 優先順序：V4 > 狐狸島 > 練級
+    -- 重要關鍵字優先檢查
     if string.find(newText, "Kitsune Island") then newText = string.gsub(newText, "Kitsune Island", "狐狸島") changed = true
     elseif string.find(newText, "Race V4") then newText = string.gsub(newText, "Race V4", "種族 V4") changed = true
     elseif string.find(newText, "Mirage Island") then newText = string.gsub(newText, "Mirage Island", "海市蜃樓") changed = true
     elseif string.find(newText, "Full Moon") then newText = string.gsub(newText, "Full Moon", "滿月") changed = true
+    elseif string.find(newText, "Dough King") then newText = string.gsub(newText, "Dough King", "糯米王") changed = true
+    elseif string.find(newText, "Cake Prince") then newText = string.gsub(newText, "Cake Prince", "蛋糕王子") changed = true
     elseif string.find(newText, "Auto Farm") then newText = string.gsub(newText, "Auto Farm", "自動練") changed = true
-    elseif string.find(newText, "Level") then newText = string.gsub(newText, "Level", "等") changed = true
     elseif string.find(newText, "Select") then newText = string.gsub(newText, "Select", "選擇") changed = true
+    elseif string.find(newText, "Godhuman") then newText = string.gsub(newText, "Godhuman", "神人拳") changed = true
+    elseif string.find(newText, "Material") then newText = string.gsub(newText, "Material", "材料") changed = true
+    elseif string.find(newText, "Bone") then newText = string.gsub(newText, "Bone", "骨頭") changed = true
+    elseif string.find(newText, "Level") then newText = string.gsub(newText, "Level", "等") changed = true
     end
 
     if changed then
@@ -163,20 +194,17 @@ end
 task.spawn(function()
     game.StarterGui:SetCore("SendNotification", {
         Title = "SYSTEM: APEX",
-        Text = "哨兵重點漢化版已啟動 (V4/狐狸/練級)",
+        Text = "哨兵君王版已啟動 (V4/材料/拳法/副本)",
         Duration = 5
     })
     
-    -- 監聽 CoreGui (外掛層)
     RegisterSentinel(CoreGui)
     
-    -- 監聽 PlayerGui (備用)
     if Players.LocalPlayer then
         local pGui = Players.LocalPlayer:WaitForChild("PlayerGui", 10)
         if pGui then RegisterSentinel(pGui) end
     end
     
-    -- 雙重保險循環
     while true do
         task.wait(2)
         for _, gui in pairs(CoreGui:GetChildren()) do
