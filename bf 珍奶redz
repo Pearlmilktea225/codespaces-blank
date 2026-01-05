@@ -1,183 +1,252 @@
 --[[
-    SYSTEM: APEX // DEUS EX MACHINA V3 (FAILSAFE EDITION)
-    核心：BlueX Hub 雙重漢化 (本地辭海 + Google AI)
-    修復：解決 API 失效導致完全無翻譯的問題
+    SYSTEM: APEX // ZERO-LATENCY (OFFLINE ULTIMATE)
+    核心：BlueX Hub 100% 離線漢化
+    修復：徹底解決 HTTP 409/429 錯誤，秒翻無延遲
     作者：珍奶 (絕對統治)
 ]]
-
--- [0. 核心配置]
-local Config = {
-    API_KEY = "AIzaSyCTcFMVGtCsFUMORmNb3_RmIFrf9uI7eHg", -- 你的 Key
-    TargetLang = "zh-TW",
-    ShowDebug = true -- 開啟調試模式 (按 F9 查看錯誤)
-}
 
 -- [1. 啟動 BlueX Hub]
 task.spawn(function()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/Dev-BlueX/BlueX-Hub/refs/heads/main/Main.lua"))()
 end)
 
--- [2. 本地終極辭海 (保底翻譯 - 確保 95% 內容漢化)]
--- 就算 API 掛了，這些內容依然會變成中文
-local LocalDictionary = {
-    -- [系統]
-    ["Main"]="主頁", ["Settings"]="設置", ["Credit"]="作者", ["Discord"]="群組",
-    ["Close"]="關閉", ["Open"]="開啟", ["On"]="開", ["Off"]="關",
-    ["Enable"]="啟用", ["Disable"]="禁用", ["Select"]="選擇", ["Refresh"]="刷新",
-    ["Status"]="狀態", ["Active"]="運行中", ["Waiting"]="等待中", ["None"]="無",
-    ["Equip"]="裝備", ["Unequip"]="卸下", ["Buy"]="購買", ["Sell"]="出售",
+-- [2. 零延遲辭海 (預先編譯的翻譯庫)]
+local Dictionary = {
+    -- === [系統核心 System] ===
+    ["Main"] = "主頁", ["Settings"] = "設置", ["Credit"] = "製作群", ["Discord"] = "官方群",
+    ["Close"] = "關閉", ["Open"] = "開啟", ["On"] = "開", ["Off"] = "關",
+    ["Enable"] = "啟用", ["Disable"] = "禁用", ["Select"] = "選擇", ["Refresh"] = "刷新",
+    ["Status"] = "狀態", ["Active"] = "運行中", ["Waiting"] = "等待中", ["None"] = "無",
+    ["Equip"] = "裝備", ["Unequip"] = "卸下", ["Buy"] = "購買", ["Sell"] = "出售",
+    ["Unlock"] = "解鎖", ["Locked"] = "未解鎖", ["Quest"] = "任務", ["Completed"] = "已完成",
+    ["Delay"] = "延遲", ["Distance"] = "距離", ["Color"] = "顏色", ["Size"] = "大小",
+    ["Method"] = "方式", ["Mode"] = "模式", ["Priority"] = "優先級",
+    ["White Screen"] = "白屏 (省電)", ["FPS Boost"] = "FPS 優化",
+    ["Auto Execute"] = "自動執行", ["Rejoin"] = "重連", ["Server Hop"] = "換服",
+    ["Redeem All Codes"] = "兌換所有碼", ["Remove Effects"] = "移除特效",
+    ["General"] = "一般", ["Config"] = "配置", ["Save"] = "保存", ["Load"] = "讀取",
+    ["Reset"] = "重置", ["Stop"] = "停止", ["Start"] = "開始", ["Pause"] = "暫停",
+
+    -- === [自動練級 Auto Farm] ===
+    ["Auto Farm"] = "自動練級",
+    ["Auto Farm Level"] = "自動練等級 (推薦)",
+    ["Auto Farm Nearest"] = "刷最近怪",
+    ["Auto Farm Chest"] = "搜刮寶箱",
+    ["Auto Farm Boss"] = "自動打王",
+    ["Auto Farm All Bosses"] = "刷所有王",
+    ["Auto Farm Mastery"] = "刷精通",
+    ["Auto Quest"] = "自動接任務",
+    ["Select Weapon"] = "選擇武器",
+    ["Refresh Weapon"] = "刷新武器",
+    ["Select Mob"] = "選擇怪物",
+    ["Refresh Mob"] = "刷新怪物",
+    ["Mob Aura"] = "吸怪光環",
+    ["Bring Mob"] = "吸怪 (Bring)",
+    ["Fast Attack"] = "光速攻擊",
+    ["Attack Speed"] = "攻擊速度",
     
-    -- [自動練級]
-    ["Auto Farm"]="自動練級", ["Auto Farm Level"]="自動練等 (推薦)",
-    ["Auto Farm Nearest"]="刷最近怪", ["Auto Farm Chest"]="搜刮寶箱",
-    ["Auto Farm Boss"]="自動打王", ["Auto Farm All Bosses"]="刷所有王",
-    ["Auto Farm Mastery"]="刷精通", ["Auto Quest"]="接任務",
-    ["Select Weapon"]="選擇武器", ["Refresh Weapon"]="刷新武器",
-    ["Mob Aura"]="吸怪光環", ["Bring Mob"]="吸怪", ["Fast Attack"]="光速攻擊",
+    -- === [戰鬥 Combat] ===
+    ["Combat"] = "戰鬥",
+    ["Kill Aura"] = "殺戮光環",
+    ["Auto Haki"] = "自動霸氣",
+    ["Auto Ken"] = "自動見聞",
+    ["Auto Click"] = "自動點擊",
+    ["Aim Bot"] = "自瞄",
+    ["AimBot Skill"] = "技能自瞄",
+    ["Safe Mode"] = "安全模式",
+    ["Spectate"] = "觀戰",
+    ["Player"] = "玩家",
+    ["ESP Player"] = "透視玩家",
+    ["ESP Chest"] = "透視寶箱",
+    ["ESP Fruit"] = "透視果實",
+    ["WalkSpeed"] = "移速",
+    ["JumpPower"] = "跳躍",
+    ["Infinite Jump"] = "無限跳",
+    ["Noclip"] = "穿牆",
+    ["Fly"] = "飛行",
+
+    -- === [屬性 Stats] ===
+    ["Stats"] = "屬性",
+    ["Auto Stats"] = "自動加點",
+    ["Melee"] = "近戰 (拳)",
+    ["Defense"] = "防禦 (血)",
+    ["Sword"] = "劍術",
+    ["Gun"] = "槍術",
+    ["Demon Fruit"] = "惡魔果實",
+    ["Fruit"] = "果實",
+
+    -- === [種族 V4 Race] ===
+    ["Race V4"] = "種族 V4",
+    ["Auto Trial"] = "自動試煉",
+    ["Auto Gear"] = "撿齒輪",
+    ["Pull Lever"] = "拉拉桿",
+    ["Find Mirage"] = "找海市蜃樓",
+    ["Mirage Island"] = "海市蜃樓",
+    ["Full Moon"] = "滿月",
+    ["Teleport to Gear"] = "瞬移到齒輪",
+    ["Ancient One"] = "古老之人",
+    ["Awakening"] = "覺醒",
     
-    -- [戰鬥 & 玩家]
-    ["Combat"]="戰鬥", ["Kill Aura"]="殺戮光環", ["Auto Haki"]="自動霸氣",
-    ["Auto Ken"]="自動見聞", ["Auto Click"]="自動點擊", ["Aim Bot"]="自瞄",
-    ["Spectate"]="觀戰", ["Player"]="玩家", ["ESP Player"]="玩家透視",
-    ["WalkSpeed"]="移速", ["JumpPower"]="跳躍", ["Infinite Jump"]="無限跳",
-    ["Noclip"]="穿牆", ["Fly"]="飛行", ["Server Hop"]="換伺服器",
+    -- === [海戰 Sea] ===
+    ["Sea Events"] = "海怪事件",
+    ["Auto Sea Beast"] = "打海獸",
+    ["Auto Terror Shark"] = "打恐怖鯊魚",
+    ["Auto Shipwright"] = "自動修船",
+    ["Find Kitsune Island"] = "找狐狸島",
+    ["Auto Piranha"] = "打食人魚",
+    ["Auto Shark"] = "打鯊魚",
+    ["Boat"] = "船",
+    ["Kitsune Island"] = "狐狸島",
     
-    -- [物品 & 果實]
-    ["Items"]="物品", ["Stats"]="屬性", ["Melee"]="近戰", ["Defense"]="防禦",
-    ["Sword"]="劍", ["Gun"]="槍", ["Fruit"]="果實", ["Demon Fruit"]="惡魔果實",
-    ["Auto Buy Fruit"]="自動買果實", ["Auto Store Fruit"]="自動存果實",
-    ["Random Fruit"]="抽果實", ["Eat Fruit"]="吃果實", ["Sniper"]="狙擊",
+    -- === [副本 Raid] ===
+    ["Raid"] = "副本",
+    ["Auto Raid"] = "打副本",
+    ["Select Raid"] = "選擇副本",
+    ["Kill Aura (Raid)"] = "副本殺戮",
+    ["Next Island"] = "下一關",
+    ["Buy Chip"] = "買晶片",
+    ["Start Raid"] = "開始副本",
+    ["Law Raid"] = "羅的副本",
     
-    -- [果實名稱 - 強制覆蓋]
-    ["Rocket"]="火箭", ["Spin"]="旋轉", ["Chop"]="斬斬", ["Spring"]="彈簧",
-    ["Bomb"]="炸彈", ["Smoke"]="煙霧", ["Spike"]="尖刺", ["Flame"]="火焰",
-    ["Falcon"]="隼", ["Ice"]="冰凍", ["Sand"]="沙沙", ["Dark"]="暗暗",
-    ["Diamond"]="鑽石", ["Light"]="光", ["Rubber"]="橡膠", ["Barrier"]="屏障",
-    ["Ghost"]="幽靈", ["Magma"]="岩漿", ["Quake"]="震震", ["Buddha"]="大佛",
-    ["Love"]="愛心", ["Spider"]="線線", ["Sound"]="音音", ["Phoenix"]="不死鳥",
-    ["Portal"]="門門", ["Rumble"]="響雷", ["Pain"]="肉球", ["Blizzard"]="雪雪",
-    ["Gravity"]="重力", ["Mammoth"]="猛瑪", ["T-Rex"]="暴龍", ["Dough"]="糯米",
-    ["Shadow"]="影影", ["Venom"]="毒毒", ["Control"]="控制", ["Spirit"]="靈魂",
-    ["Dragon"]="龍", ["Leopard"]="豹", ["Kitsune"]="狐狸",
+    -- === [物品 Items] ===
+    ["Items"] = "物品",
+    ["Auto Bone"] = "刷骨頭",
+    ["Auto Cake"] = "刷蛋糕",
+    ["Auto Factory"] = "打工廠",
+    ["Auto Bartilo"] = "做Bartilo任務",
+    ["Auto CDK"] = "刷詛咒雙刀",
+    ["Auto Tushita"] = "刷杜希塔",
+    ["Auto Yama"] = "刷閻魔",
+    ["Auto Hallow Scythe"] = "刷聖鐮",
+    ["Auto Dark Dagger"] = "刷黑刀",
+    ["Auto Shark Anchor"] = "刷鯊魚錨",
+    ["Auto Soul Guitar"] = "刷吉他",
+    ["Material"] = "材料",
+    ["Bone"] = "骨頭", ["Ectoplasm"] = "靈質", ["Magma Ore"] = "岩漿礦",
+    ["Dragon Scale"] = "龍鱗", ["Angel Wings"] = "天使翅膀", ["Mini Tusk"] = "小獠牙",
     
-    -- [地點]
-    ["Sea 1"]="一海", ["Sea 2"]="二海", ["Sea 3"]="三海",
-    ["Mirage Island"]="海市蜃樓", ["Kitsune Island"]="狐狸島",
+    -- === [果實名稱 Fruits] ===
+    ["Kitsune"] = "狐狸", ["Leopard"] = "豹", ["Dragon"] = "龍", ["Spirit"] = "靈魂",
+    ["Control"] = "控制", ["Venom"] = "毒", ["Shadow"] = "影", ["Dough"] = "糯米",
+    ["T-Rex"] = "暴龍", ["Mammoth"] = "猛瑪", ["Gravity"] = "重力", ["Blizzard"] = "雪",
+    ["Pain"] = "肉球", ["Rumble"] = "響雷", ["Portal"] = "傳送門", ["Phoenix"] = "不死鳥",
+    ["Sound"] = "音音", ["Spider"] = "線線", ["Love"] = "愛心", ["Buddha"] = "大佛",
+    ["Quake"] = "震震", ["Magma"] = "岩漿", ["Ghost"] = "幽靈", ["Barrier"] = "屏障",
+    ["Rubber"] = "橡膠", ["Light"] = "光", ["Diamond"] = "鑽石", ["Dark"] = "暗",
+    ["Sand"] = "沙", ["Ice"] = "冰", ["Falcon"] = "隼", ["Flame"] = "火",
+    ["Spike"] = "尖刺", ["Smoke"] = "煙", ["Bomb"] = "炸彈", ["Spring"] = "彈簧",
+    ["Chop"] = "斬斬", ["Spin"] = "旋轉", ["Rocket"] = "火箭",
     
-    -- [特殊]
-    ["Race V4"]="種族 V4", ["Full Moon"]="滿月", ["Lever"]="拉桿",
-    ["Bone"]="骨頭", ["Fragments"]="碎片", ["Beli"]="貝里"
+    -- === [功能性果實操作] ===
+    ["Auto Buy Fruit"] = "自動買果實",
+    ["Auto Store Fruit"] = "自動存果實",
+    ["Random Fruit"] = "抽果實",
+    ["Eat Fruit"] = "吃果實",
+    ["Sniper"] = "狙擊",
+    
+    -- === [地點 Locations] ===
+    ["Sea 1"] = "一海", ["Sea 2"] = "二海", ["Sea 3"] = "三海",
+    ["Starter Pirate"] = "海賊島", ["Starter Marine"] = "海軍島", ["Jungle"] = "叢林",
+    ["Middle Town"] = "中城", ["Mansion"] = "豪宅", ["Castle"] = "城堡",
+    ["Port Town"] = "港口", ["Hydra Island"] = "九頭蛇", ["Great Tree"] = "大樹",
+    ["Floating Turtle"] = "浮龜", ["Haunted Castle"] = "鬧鬼城堡",
+    ["Cake Land"] = "蛋糕島", ["Chocolate Land"] = "巧克力島", ["Candy Land"] = "糖果島",
+    
+    -- === [顏色 Colors] ===
+    ["Red"] = "紅", ["Blue"] = "藍", ["Green"] = "綠", ["Yellow"] = "黃",
+    ["Purple"] = "紫", ["Black"] = "黑", ["White"] = "白", ["Rainbow"] = "彩虹"
 }
 
--- [3. AI 翻譯模組]
-local HttpService = game:GetService("HttpService")
-local request = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
-local TranslationCache = {}
+-- [3. 動態模式匹配 (Pattern Matching)]
+-- 處理 "Level: 100" 這種帶數字的文字
+local Patterns = {
+    ["Level"] = "等級",
+    ["Beli"] = "貝里",
+    ["Fragments"] = "碎片",
+    ["Health"] = "血量",
+    ["Energy"] = "體力",
+    ["Damage"] = "傷害",
+    ["Ping"] = "延遲",
+    ["FPS"] = "幀數",
+    ["Bounty"] = "賞金",
+    ["Honor"] = "榮譽",
+    ["Mastery"] = "精通"
+}
 
-local function GoogleTranslate(text)
-    -- 1. 緩存檢查
-    if TranslationCache[text] then return TranslationCache[text] end
-    
-    -- 2. 垃圾過濾 (數字/符號不翻譯)
-    if string.len(text) < 2 or string.match(text, "^[%d%p%s]+$") then return text end
-
-    -- 3. 發送請求
-    if not request then return text end -- 如果不支持請求，直接回傳原文
-    
-    local url = "https://translation.googleapis.com/language/translate/v2?key=" .. Config.API_KEY
-    local body = {q = text, target = Config.TargetLang, format = "text"}
-
-    local success, response = pcall(function()
-        return request({
-            Url = url,
-            Method = "POST",
-            Headers = {["Content-Type"] = "application/json"},
-            Body = HttpService:JSONEncode(body)
-        })
-    end)
-
-    if success and response.StatusCode == 200 then
-        local data = HttpService:JSONDecode(response.Body)
-        if data and data.data and data.data.translations then
-            local result = data.data.translations[1].translatedText
-            TranslationCache[text] = result
-            return result
-        end
-    else
-        if Config.ShowDebug then 
-            warn("[AI 失敗] 代碼: " .. tostring(response.StatusCode) .. " | 原因: " .. tostring(response.StatusMessage)) 
-        end
-    end
-    
-    -- 失敗時標記緩存，避免重複請求卡頓
-    TranslationCache[text] = text 
-    return text
-end
-
--- [4. UI 處理核心]
+-- [4. 漢化引擎 (無 API)]
 local CoreGui = game:GetService("CoreGui")
 
-local function ProcessObject(object)
+local function TranslateText(object)
     if not object or not object.Parent then return end
     
+    -- 只處理各類文本物件
     if object:IsA("TextLabel") or object:IsA("TextButton") or object:IsA("TextBox") then
         local originalText = object.Text
         if not originalText or originalText == "" then return end
         
-        -- [優先] 本地辭海匹配 (最快/最準)
-        -- 支援模糊匹配：例如 "Level: 100" -> "等級: 100"
-        local handled = false
-        for eng, chn in pairs(LocalDictionary) do
-            if string.find(originalText, eng) then
-                local newText = string.gsub(originalText, eng, chn)
-                if newText ~= originalText then
-                    object.Text = newText
-                    originalText = newText -- 更新文本供後續處理
-                    handled = true
+        -- A. 精確匹配 (最優先)
+        if Dictionary[originalText] then
+            object.Text = Dictionary[originalText]
+            return
+        end
+        
+        -- B. 動態數字處理 (例如: Level 1500 -> 等級 1500)
+        local newText = originalText
+        local hasChange = false
+        
+        for eng, chn in pairs(Patterns) do
+            -- 檢查是否包含關鍵字
+            if string.find(newText, eng) then
+                -- 執行替換
+                newText = string.gsub(newText, eng, chn)
+                hasChange = true
+            end
+        end
+        
+        -- C. 模糊匹配 (補漏)
+        if not hasChange then
+            for eng, chn in pairs(Dictionary) do
+                -- 只有當英文單詞夠長才替換，避免誤傷
+                if #eng >= 4 and string.find(newText, eng) then
+                    newText = string.gsub(newText, eng, chn)
+                    hasChange = true
                 end
             end
         end
         
-        -- [後備] 如果本地沒翻譯到，才嘗試 AI
-        if not handled and not TranslationCache[originalText] then
-            task.spawn(function()
-                local aiText = GoogleTranslate(originalText)
-                if aiText ~= originalText then
-                    object.Text = aiText
-                end
-            end)
+        if hasChange then
+            object.Text = newText
         end
     end
 end
 
--- [5. 啟動主循環]
+-- [5. 啟動監控循環]
 task.spawn(function()
     game.StarterGui:SetCore("SendNotification", {
-        Title = "SYSTEM: APEX V3",
-        Text = "雙重漢化啟動 (本地+AI)",
+        Title = "SYSTEM: APEX",
+        Text = "離線漢化引擎已啟動 (無延遲)",
         Duration = 5
     })
     
     while true do
-        task.wait(1) -- 每秒掃描一次
-        
+        task.wait(0.5) -- 保持 0.5 秒刷新頻率，確保不卡頓
         pcall(function()
-            -- 掃描所有可能的 UI 層
-            local targets = {CoreGui, game.Players.LocalPlayer.PlayerGui}
-            
-            for _, root in pairs(targets) do
-                for _, gui in pairs(root:GetChildren()) do
-                    -- 過濾系統 UI，只針對腳本 UI (通常 ScreenGui)
-                    if gui:IsA("ScreenGui") and 
-                       gui.Name ~= "RobloxGui" and 
-                       gui.Name ~= "TopBar" and 
-                       gui.Name ~= "CoreScripts" and 
-                       gui.Name ~= "Chat" then
-                        
-                        for _, element in pairs(gui:GetDescendants()) do
-                            ProcessObject(element)
-                        end
+            -- 掃描 CoreGui (主要目標)
+            for _, gui in pairs(CoreGui:GetDescendants()) do
+                if gui:IsA("ScreenGui") and 
+                   gui.Name ~= "RobloxGui" and 
+                   gui.Name ~= "TopBar" and
+                   gui.Name ~= "CoreScripts" then
+                    for _, element in pairs(gui:GetDescendants()) do
+                        TranslateText(element)
                     end
+                end
+            end
+            
+            -- 掃描 PlayerGui (次要目標)
+            for _, gui in pairs(game.Players.LocalPlayer.PlayerGui:GetChildren()) do
+                for _, element in pairs(gui:GetDescendants()) do
+                    TranslateText(element)
                 end
             end
         end)
