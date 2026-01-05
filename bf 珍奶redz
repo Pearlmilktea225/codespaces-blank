@@ -1,8 +1,7 @@
 --[[
-    SYSTEM: APEX // OMNI-HYPERVISOR (TOKENIZED TRANSLATION)
-    核心：切片式暴力翻譯 (Substring Replacement)
-    特點：不再比對整句，而是強制替換句中的每一個英文單字
-    修復：解決 "句子稍微不一樣就不翻譯" 的問題
+    SYSTEM: APEX // GOD-MODE (CRASH FIX + FORCE INJECT)
+    核心：修復特殊符號導致的崩潰 + 雙層暴力掃描
+    特點：解決 "看不到翻譯" 的問題，並保持最大覆蓋率
     作者：珍奶 (絕對統治)
 ]]
 
@@ -13,43 +12,41 @@ task.spawn(function()
     end)
 end)
 
--- [2. 超維辭海 (Raw Dictionary)]
--- 這裡存放單字，不需要存整句，系統會自動拼湊
+-- [2. 神之辭海 (The God Dictionary)]
 local RawDict = {
-    -- [介面核心]
-    ["Teddy Hub"]="泰坦中心", ["Teddy"]="泰坦", ["Main"]="主頁",
-    ["General"]="一般", ["Farming"]="練級", ["Combat"]="戰鬥", 
-    ["Stats"]="屬性", ["Teleport"]="傳送", ["Raid"]="副本", 
-    ["Shop"]="商店", ["Misc"]="雜項", ["Items"]="物品", 
-    ["Settings"]="設置", ["Credit"]="製作", ["Config"]="配置",
-    ["Status"]="狀態", ["Active"]="運行中", ["Waiting"]="等待中",
-    ["None"]="無", ["Enable"]="啟用", ["Disable"]="禁用", 
-    ["Equip"]="裝備", ["Unequip"]="卸下", ["Auto"]="自動", 
-    ["Select"]="選擇", ["Refresh"]="刷新", ["Click"]="點擊", 
-    ["On"]="開", ["Off"]="關", ["Open"]="開啟", ["Close"]="關閉",
+    -- [基礎介面]
+    ["Teddy Hub"]="泰坦中心", ["Main"]="主頁", ["General"]="一般",
+    ["Farming"]="練級", ["Combat"]="戰鬥", ["Stats"]="屬性", 
+    ["Teleport"]="傳送", ["Raid"]="副本", ["Shop"]="商店", 
+    ["Misc"]="雜項", ["Items"]="物品", ["Settings"]="設置",
+    ["Credit"]="製作", ["Config"]="配置", ["Status"]="狀態", 
+    ["Active"]="運行中", ["Waiting"]="等待中", ["None"]="無", 
+    ["Enable"]="啟用", ["Disable"]="禁用", ["Equip"]="裝備", 
+    ["Unequip"]="卸下", ["Auto"]="自動", ["Select"]="選擇", 
+    ["Refresh"]="刷新", ["Click"]="點擊", ["On"]="開", 
+    ["Off"]="關", ["Open"]="開啟", ["Close"]="關閉",
     ["Execute"]="執行", ["Script"]="腳本", ["Key"]="密鑰",
-    ["Mode"]="模式", ["Island"]="島嶼", ["Boss"]="王",
     
-    -- [練級關鍵字]
-    ["Level"]="等級", ["Nearest"]="最近", ["Chest"]="寶箱",
-    ["All Bosses"]="所有王", ["Mastery"]="精通", ["Quest"]="任務",
-    ["Mob Aura"]="吸怪光環", ["Bring Mob"]="吸怪", ["Bring"]="吸怪",
+    -- [練級 Farming]
+    ["Auto Farm Level"]="自動練等級", ["Nearest"]="最近",
+    ["Chest"]="寶箱", ["All Bosses"]="所有王", ["Mastery"]="精通",
+    ["Quest"]="任務", ["Mob Aura"]="吸怪光環", ["Bring Mob"]="吸怪",
     ["Fast Attack"]="光速攻擊", ["Attack Speed"]="攻擊速度", 
     ["Safe Health"]="安全血量", ["Double"]="雙重",
     ["Bypass TP"]="繞過傳送", ["Instant TP"]="瞬間傳送",
     ["Evo Race"]="進化種族", ["God Mode"]="無敵模式",
     ["Weapon"]="武器", ["Distance"]="距離", ["Radius"]="半徑", 
-    ["Delay"]="延遲", ["Mob"]="怪物",
+    ["Delay"]="延遲", ["Mob"]="怪物", ["Level"]="等級",
     
-    -- [戰鬥關鍵字]
+    -- [戰鬥 Combat]
     ["Kill Aura"]="殺戮光環", ["Aim Bot"]="自瞄", ["Skill"]="技能",
     ["Safe Mode"]="安全模式", ["Player"]="玩家", ["ESP"]="透視",
     ["WalkSpeed"]="移速", ["JumpPower"]="跳躍", ["Infinite Jump"]="無限跳",
     ["Noclip"]="穿牆", ["Fly"]="飛行", ["Dodge"]="閃避",
     ["Observation"]="見聞色", ["Haki"]="霸氣", ["Ken"]="見聞色",
-    ["Click"]="點擊", ["Cooldown"]="冷卻",
+    ["Cooldown"]="冷卻",
     
-    -- [物品與果實]
+    -- [物品與材料]
     ["Buy"]="購買", ["Store"]="儲存", ["Random"]="隨機",
     ["Eat"]="吃", ["Sniper"]="狙擊", ["Bone"]="骨頭",
     ["Cake"]="蛋糕", ["CDK"]="詛咒雙刀", ["Soul Guitar"]="吉他",
@@ -74,7 +71,7 @@ local RawDict = {
     ["Dough King"]="糯米王", ["Rip Indra"]="因陀羅", 
     ["Terror Shark"]="恐怖鯊魚", ["Leviathan"]="利維坦",
     
-    -- [果實名稱]
+    -- [果實]
     ["Kitsune"]="狐狸", ["Leopard"]="豹", ["Dragon"]="龍", ["Spirit"]="靈魂",
     ["Control"]="控制", ["Venom"]="毒", ["Shadow"]="影", ["Dough"]="糯米",
     ["T-Rex"]="暴龍", ["Mammoth"]="猛瑪", ["Gravity"]="重力", ["Blizzard"]="雪",
@@ -86,7 +83,7 @@ local RawDict = {
     ["Spike"]="尖刺", ["Smoke"]="煙", ["Bomb"]="炸彈", ["Spring"]="彈簧",
     ["Chop"]="斬斬", ["Spin"]="旋轉", ["Rocket"]="火箭",
     
-    -- [武器]
+    -- [武器 - 注意括號問題已修復]
     ["Cursed Dual Katana"]="詛咒雙刀", ["Dark Dagger"]="黑刀", ["Hallow Scythe"]="聖鐮",
     ["Tushita"]="杜希塔", ["Yama"]="閻魔", ["Rengoku"]="煉獄劍", ["Saber"]="紅髮劍",
     ["Shisui"]="秋水", ["Waddo"]="和道一文字", ["Sadi"]="鬼哭", ["Bisento"]="白鬍子刀",
@@ -94,9 +91,9 @@ local RawDict = {
     ["Spikey Trident"]="尖刺三叉戟", ["Dragon Trident"]="龍之三叉戟", ["Gravity Cane"]="重力手杖",
     ["Pipe"]="水管", ["Triple Katana"]="三刀流", ["Kabucha"]="卡布查", ["Serpent Bow"]="蛇弓",
     ["Acidum Rifle"]="酸液槍", ["Bizarre Rifle"]="怪異步槍", ["Fox Lamp"]="狐狸燈",
-    ["Shark Anchor"]="鯊魚錨", ["Trident"]="三叉戟",
+    ["Shark Anchor"]="鯊魚錨", ["Trident"]="三叉戟", ["Pole"]="響雷棍",
     
-    -- [數值與單位]
+    -- [數值]
     ["Beli"]="貝里", ["Fragments"]="碎片", ["Health"]="血量",
     ["Energy"]="體力", ["Damage"]="傷害", ["Ping"]="延遲",
     ["FPS"]="幀數", ["Bounty"]="賞金", ["Honor"]="榮譽",
@@ -105,44 +102,44 @@ local RawDict = {
     ["Purchased"]="已購買", ["Full"]="滿", ["Zone"]="區域"
 }
 
--- [3. 預處理：長度優先排序 (Length Sorting)]
--- 這一步非常關鍵：確保 "Auto Farm" 在 "Auto" 之前被翻譯，避免文字破碎
+-- [3. 預處理：轉義與排序 (Escape & Sort)]
+-- 這是修復崩潰的關鍵：把 ( ) 等符號加上 % 轉義
+local function EscapePattern(text)
+    return text:gsub("([^%w])", "%%%1")
+end
+
 local SortedKeys = {}
 for k, v in pairs(RawDict) do
-    table.insert(SortedKeys, {key = k, val = v})
+    table.insert(SortedKeys, {key = k, val = v, pattern = EscapePattern(k)})
 end
-table.sort(SortedKeys, function(a, b)
-    return #a.key > #b.key -- 長度長的排前面
-end)
+table.sort(SortedKeys, function(a, b) return #a.key > #b.key end) -- 長度優先
 
--- [4. 切片翻譯引擎 (Slicer Engine)]
+-- [4. 雙核掃描引擎 (Dual-Core Scanner)]
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 
 local function TranslateObject(object)
     if not object then return end
-    -- 只檢查文本屬性
-    local props = {"Text", "PlaceholderText", "ToolTip"}
     
+    local props = {"Text", "PlaceholderText", "ToolTip"}
     for _, prop in pairs(props) do
-        -- 安全檢查屬性是否存在
+        -- 安全讀取屬性
         if pcall(function() return object[prop] end) and object[prop] and object[prop] ~= "" then
             local originalText = object[prop]
             local newText = originalText
             local changed = false
             
-            -- [核心邏輯] 暴力遍歷所有單字，只要出現在句子裡就替換
+            -- 切片翻譯：遍歷所有詞庫
             for _, entry in ipairs(SortedKeys) do
-                -- 使用 string.find 檢查是否包含該單字
-                if string.find(newText, entry.key, 1, true) then
-                    newText = string.gsub(newText, entry.key, entry.val)
+                -- 使用轉義後的 pattern 進行匹配，防止崩潰
+                if string.find(newText, entry.pattern) then
+                    newText = string.gsub(newText, entry.pattern, entry.val)
                     changed = true
                 end
             end
             
-            -- 額外處理數字相關的 (Level: 100)
+            -- 簡單的數字單位處理
             if not changed then
-                -- 如果沒變，檢查是否是一些簡單的標籤
                 if string.find(newText, "Lv.") then newText = string.gsub(newText, "Lv.", "等") changed = true end
             end
 
@@ -153,28 +150,41 @@ local function TranslateObject(object)
     end
 end
 
--- [5. 極速監控循環]
+-- [5. 啟動強制循環]
 task.spawn(function()
-    task.wait(4)
+    task.wait(3) -- 等待 UI
+    
+    -- 調試訊息 (按 F9 查看)
+    print("--------------------------------")
+    print("[APEX GOD-MODE] 漢化引擎已啟動")
+    print("--------------------------------")
+    
     game.StarterGui:SetCore("SendNotification", {
         Title = "SYSTEM: APEX",
-        Text = "切片式暴力翻譯已啟動 (覆蓋率MAX)",
+        Text = "神之模式漢化已啟動 (修復版)",
         Duration = 5
     })
     
     while true do
-        task.wait(0.5) -- 0.5秒檢查一次
+        task.wait(1) -- 1秒掃描一次
+        
         pcall(function()
-            -- 掃描 CoreGui
+            -- 1. 暴力掃描 CoreGui (外掛層)
             for _, gui in pairs(CoreGui:GetChildren()) do
-                if gui:IsA("ScreenGui") and 
-                   gui.Name ~= "RobloxGui" and 
-                   gui.Name ~= "TopBar" and 
-                   gui.Name ~= "CoreScripts" and 
-                   gui.Name ~= "DevConsoleMaster" then
-                    
+                if gui:IsA("ScreenGui") and gui.Name ~= "RobloxGui" and gui.Name ~= "CoreScripts" then
                     for _, v in pairs(gui:GetDescendants()) do
                         TranslateObject(v)
+                    end
+                end
+            end
+            
+            -- 2. 暴力掃描 PlayerGui (備用層)
+            if Players.LocalPlayer and Players.LocalPlayer:FindFirstChild("PlayerGui") then
+                for _, gui in pairs(Players.LocalPlayer.PlayerGui:GetChildren()) do
+                    if gui:IsA("ScreenGui") then
+                        for _, v in pairs(gui:GetDescendants()) do
+                            TranslateObject(v)
+                        end
                     end
                 end
             end
