@@ -1,0 +1,215 @@
+--[[
+    SYSTEM: APEX // ZENITH (COMMERCIAL EDITION)
+    用途：Blox Fruits 代練專用 (滿等/全物品/自動過海)
+    核心：Redz UI 外殼 + W-Azure/Hoho 雙引擎切換
+    作者：珍奶 (絕對統治)
+]]
+
+-- [0. 代練安全防護]
+if not game:IsLoaded() then game.Loaded:Wait() end
+local Players = game:GetService("Players")
+local LP = Players.LocalPlayer
+local CoreGui = game:GetService("CoreGui")
+
+-- 防止閒置斷線
+for i,v in pairs(getconnections(LP.Idled)) do v:Disable() end
+
+-- [1. 清理舊介面]
+for _, g in pairs(CoreGui:GetChildren()) do
+    if g.Name == "Redz_Zenith" then g:Destroy() end
+end
+
+-- [2. Redz UI 引擎 (完美復刻)]
+local Library = {}
+function Library:Window()
+    local ScreenGui = Instance.new("ScreenGui", CoreGui)
+    ScreenGui.Name = "Redz_Zenith"
+    ScreenGui.IgnoreGuiInset = true
+    
+    local Main = Instance.new("Frame", ScreenGui)
+    Main.Size = UDim2.new(0, 550, 0, 350)
+    Main.Position = UDim2.new(0.5, -275, 0.5, -175)
+    Main.BackgroundColor3 = Color3.fromRGB(15, 15, 15)
+    Instance.new("UICorner", Main).CornerRadius = UDim.new(0, 6)
+    
+    -- 紅色頂條
+    local Top = Instance.new("Frame", Main)
+    Top.Size = UDim2.new(1, 0, 0, 45)
+    Top.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+    Instance.new("UICorner", Top).CornerRadius = UDim.new(0, 6)
+    
+    local Title = Instance.new("TextLabel", Top)
+    Title.Text = "REDZ HUB | 代練商用版 (ZENITH)"
+    Title.Size = UDim2.new(1, -20, 1, 0)
+    Title.Position = UDim2.new(0, 15, 0, 0)
+    Title.TextColor3 = Color3.new(1,1,1)
+    Title.Font = Enum.Font.GothamBlack
+    Title.TextSize = 18
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.BackgroundTransparency = 1
+    
+    -- 內容區
+    local Content = Instance.new("ScrollingFrame", Main)
+    Content.Size = UDim2.new(0.95, 0, 0.82, 0)
+    Content.Position = UDim2.new(0.025, 0, 0.15, 0)
+    Content.BackgroundTransparency = 1
+    Content.ScrollBarThickness = 2
+    local List = Instance.new("UIListLayout", Content)
+    List.Padding = UDim.new(0, 8)
+    List.SortOrder = Enum.SortOrder.LayoutOrder
+    
+    Content.AutomaticCanvasSize = Enum.AutomaticSize.Y
+
+    -- 拖曳
+    local dragging, dragStart, startPos
+    Top.InputBegan:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+            dragging = true; dragStart = input.Position; startPos = Main.Position
+        end
+    end)
+    game:GetService("UserInputService").InputChanged:Connect(function(input)
+        if dragging and (input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch) then
+            local delta = input.Position - dragStart
+            Main.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+    game:GetService("UserInputService").InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
+    end)
+    
+    -- 懸浮球
+    local Toggle = Instance.new("ImageButton", ScreenGui)
+    Toggle.Size = UDim2.new(0, 50, 0, 50)
+    Toggle.Position = UDim2.new(0.1, 0, 0.2, 0)
+    Toggle.Image = "rbxassetid://13465637257"
+    Toggle.BackgroundColor3 = Color3.fromRGB(180, 0, 0)
+    Instance.new("UICorner", Toggle).CornerRadius = UDim.new(1,0)
+    Toggle.MouseButton1Click:Connect(function() Main.Visible = not Main.Visible end)
+
+    return Content
+end
+
+local UI = Library:Window()
+
+-- [3. 功能生成函數]
+local function CreateSection(text)
+    local Label = Instance.new("TextLabel", UI)
+    Label.Size = UDim2.new(1, 0, 0, 25)
+    Label.Text = "  " .. text
+    Label.TextColor3 = Color3.fromRGB(255, 50, 50)
+    Label.Font = Enum.Font.GothamBold
+    Label.TextSize = 14
+    Label.TextXAlignment = Enum.TextXAlignment.Left
+    Label.BackgroundTransparency = 1
+end
+
+local function CreateButton(text, desc, callback)
+    local Btn = Instance.new("TextButton", UI)
+    Btn.Size = UDim2.new(1, 0, 0, 50)
+    Btn.BackgroundColor3 = Color3.fromRGB(30, 30, 30)
+    Btn.Text = ""
+    Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 6)
+    
+    local Title = Instance.new("TextLabel", Btn)
+    Title.Text = text
+    Title.Size = UDim2.new(1, 0, 0.6, 0)
+    Title.Position = UDim2.new(0.03, 0, 0, 0)
+    Title.TextColor3 = Color3.new(1,1,1)
+    Title.Font = Enum.Font.GothamBold
+    Title.TextSize = 14
+    Title.TextXAlignment = Enum.TextXAlignment.Left
+    Title.BackgroundTransparency = 1
+    
+    local Desc = Instance.new("TextLabel", Btn)
+    Desc.Text = desc
+    Desc.Size = UDim2.new(1, 0, 0.4, 0)
+    Desc.Position = UDim2.new(0.03, 0, 0.55, 0)
+    Desc.TextColor3 = Color3.fromRGB(150, 150, 150)
+    Desc.Font = Enum.Font.Gotham
+    Desc.TextSize = 11
+    Desc.TextXAlignment = Enum.TextXAlignment.Left
+    Desc.BackgroundTransparency = 1
+    
+    local Icon = Instance.new("ImageLabel", Btn)
+    Icon.Size = UDim2.new(0, 20, 0, 20)
+    Icon.Position = UDim2.new(0.92, 0, 0.3, 0)
+    Icon.Image = "rbxassetid://7072706620" -- Play Icon
+    Icon.BackgroundTransparency = 1
+    
+    Btn.MouseButton1Click:Connect(callback)
+end
+
+-- [4. 智能邏輯核心]
+
+-- 4.1 練級與過海 (W-Azure 內核)
+local function StartAutoFarm()
+    game.StarterGui:SetCore("SendNotification", {Title="商用代練", Text="正在啟動練級引擎 (W-Azure)...", Duration=3})
+    -- 這裡調用 W-Azure，因為它是目前唯一能穩定自動過海域 (Sea 1->2->3) 的腳本
+    loadstring(game:HttpGet("https://api.luarmor.net/files/v3/loaders/3b2169cf53bc6104dabe8e19562e5cc2.lua"))()
+end
+
+-- 4.2 全物品與種族 (Hoho 內核)
+local function StartAllItems()
+    game.StarterGui:SetCore("SendNotification", {Title="商用代練", Text="正在啟動物品引擎 (Hoho)...", Duration=3})
+    -- Hoho Hub 是目前刷 CDK、吉他、種族 V4 最強的腳本
+    loadstring(game:HttpGet("https://raw.githubusercontent.com/acsu123/HOHO_H/main/Loading_UI"))()
+end
+
+-- 4.3 快速精通 (Fast Mastery)
+local function StartMastery()
+    -- 這裡提供一個輕量化的刷精通配置
+    game.StarterGui:SetCore("SendNotification", {Title="提示", Text="請在引擎中選擇 'Auto Farm Mastery'", Duration=5})
+    StartAutoFarm() -- 依然推薦用 Azure 刷精通，因為最快
+end
+
+-- [5. 介面內容填充]
+
+CreateSection("代練核心 (Service Core)")
+
+CreateButton("一鍵滿等 (Auto Level Max)", "自動接任務 / 自動打怪 / 自動過海 (1-3海)", function()
+    StartAutoFarm()
+end)
+
+CreateButton("全物品收集 (All Items)", "自動刷 CDK / 吉他 / 拳套 / 飾品", function()
+    StartAllItems()
+end)
+
+CreateSection("進階服務 (Advanced)")
+
+CreateButton("種族 V4 全覺醒 (Race V4)", "自動拉桿 / 自動試煉 / 自動找島", function()
+    StartAllItems() -- Hoho 的 V4 功能最強
+end)
+
+CreateButton("自動刷精通 (Auto Mastery)", "刷果實 / 刷劍 / 刷槍 (至600)", function()
+    StartAutoFarm()
+end)
+
+CreateButton("自動海戰 (Sea Events)", "刷海怪 / 刷恐怖鯊魚 / 刷磁鐵", function()
+    StartAllItems() -- Hoho 的海戰功能最強
+end)
+
+CreateSection("輔助工具 (Tools)")
+
+CreateButton("自動加上百屬性 (Auto Stats)", "原生極速加點 (不卡頓)", function()
+    local args = {[1] = "AddPoint", [2] = "Melee", [3] = 1}
+    _G.AutoStats = not _G.AutoStats
+    game.StarterGui:SetCore("SendNotification", {Title="加點", Text=_G.AutoStats and "開始加點 (Melee)" or "已停止", Duration=2})
+    while _G.AutoStats do
+        game:GetService("ReplicatedStorage").Remotes.CommF_:InvokeServer(unpack(args))
+        task.wait()
+    end
+end)
+
+CreateButton("重置腳本 (Reset)", "如果卡住請點擊此處", function()
+    game.StarterGui:SetCore("SendNotification", {Title="系統", Text="介面已重置", Duration=2})
+    for _, g in pairs(CoreGui:GetChildren()) do
+        if g.Name == "Redz_Zenith" then g:Destroy() end
+    end
+end)
+
+-- [6. 啟動完成]
+game.StarterGui:SetCore("SendNotification", {
+    Title = "SYSTEM: APEX",
+    Text = "商用代練系統 (ZENITH) 已就緒",
+    Duration = 5
+})
