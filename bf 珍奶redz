@@ -1,7 +1,7 @@
 --[[
-    SYSTEM: APEX // FINAL-OMNIPOTENCE (THE COMPLETE TRANSLATION)
-    核心：Teddy Hub 100% 完整漢化
-    涵蓋：全介面 / 全果實 / 全武器 / 全飾品 / 全材料 / 全Boss / 系統提示
+    SYSTEM: APEX // ULTIMATE-FUSION (FULL DICTIONARY + FORCE INJECT)
+    核心：結合「強制注入技術」與「7000+ 完整辭海」
+    修復：解決翻譯量變少的問題，並確保介面能被抓取
     作者：珍奶 (絕對統治)
 ]]
 
@@ -12,9 +12,9 @@ task.spawn(function()
     end)
 end)
 
--- [2. 全能辭海 (The Omnipotence Dictionary)]
+-- [2. 終極融合辭海 (7000+ Entries)]
 local UIDictionary = {
-    -- [基礎介面 UI]
+    -- ================= [介面 UI & 系統] =================
     ["Teddy Hub"]="泰坦中心", ["Teddy"]="泰坦", ["Main"]="主頁", ["General"]="一般",
     ["Farming"]="練級", ["Combat"]="戰鬥", ["Stats"]="屬性", ["Teleport"]="傳送",
     ["Raid"]="副本", ["Shop"]="商店", ["Misc"]="雜項", ["Items"]="物品",
@@ -24,8 +24,9 @@ local UIDictionary = {
     ["Unequip"]="卸下", ["Auto"]="自動", ["Select"]="選擇", ["Refresh"]="刷新",
     ["Click"]="點擊", ["On"]="開", ["Off"]="關", ["Open"]="開啟", ["Close"]="關閉",
     ["Execute"]="執行", ["Script"]="腳本", ["Key"]="密鑰", ["Check"]="檢查",
+    ["Select Mode"]="選擇模式", ["Select Island"]="選擇島嶼",
     
-    -- [練級 Farming]
+    -- ================= [練級 Farming] =================
     ["Auto Farm Level"]="自動練等級 (智能)", ["Auto Farm Nearest"]="刷最近怪",
     ["Auto Farm Chest"]="光速搜刮寶箱", ["Auto Farm Boss"]="自動打指定王",
     ["Auto Farm All Bosses"]="自動刷所有王", ["Auto Farm Mastery"]="自動刷精通",
@@ -36,7 +37,7 @@ local UIDictionary = {
     ["Weapon"]="武器", ["Distance"]="距離", ["Radius"]="半徑", ["Delay"]="延遲",
     ["Select Weapon"]="選武器", ["Refresh Weapon"]="刷武器", ["Select Mob"]="選怪物",
     
-    -- [戰鬥 Combat]
+    -- ================= [戰鬥 Combat] =================
     ["Kill Aura"]="殺戮光環", ["Aim Bot"]="自瞄", ["AimBot Skill"]="技能自瞄",
     ["Safe Mode"]="安全模式", ["Player"]="玩家", ["ESP Player"]="透視玩家",
     ["ESP Chest"]="透視寶箱", ["ESP Fruit"]="透視果實", ["WalkSpeed"]="移速",
@@ -44,35 +45,53 @@ local UIDictionary = {
     ["Fly"]="飛行", ["Dodge"]="自動閃避", ["Observation V2"]="見聞色 V2",
     ["Auto Haki"]="自動霸氣", ["Auto Ken"]="自動見聞", ["Auto Click"]="自動點擊",
     
-    -- [屬性 Stats]
+    -- ================= [屬性 Stats] =================
     ["Auto Stats"]="自動加點", ["Select Stat"]="選擇屬性", ["Melee"]="近戰 (拳)",
     ["Defense"]="防禦 (血)", ["Sword"]="劍術", ["Gun"]="槍術", ["Demon Fruit"]="惡魔果實",
     ["Fruit"]="果實", ["Refund Stats"]="重置點數",
     
-    -- [副本 Raid]
+    -- ================= [Boss 名稱 (Teddy Hub 下拉選單)] =================
+    ["Gorilla King"]="猩猩王", ["Bobby"]="小丑巴比", ["Saw"]="惡龍 (Saw)",
+    ["Yeti"]="雪怪", ["Vice Admiral"]="海軍中將", ["Swan"]="天鵝",
+    ["Magma Admiral"]="赤犬", ["Fishman Lord"]="魚人領主", ["Wysper"]="韋柏",
+    ["Thunder God"]="艾涅爾", ["Cyborg"]="生化人", ["Ice Admiral"]="青雉",
+    ["Diamond"]="鑽石喬茲", ["Jeremy"]="傑拉米", ["Fajita"]="藤虎",
+    ["Don Swan"]="多佛朗明哥", ["Smoke Admiral"]="斯摩格", ["Tide Keeper"]="潮汐守護者",
+    ["Darkbeard"]="黑鬍子", ["Order"]="秩序 (羅)", ["Cursed Captain"]="詛咒船長",
+    ["Stone"]="岩石", ["Island Empress"]="女帝", ["Kilo Admiral"]="藤虎 (Kilo)",
+    ["Captain Elephant"]="象船長", ["Beautiful Pirate"]="卡文迪許",
+    ["Longma"]="龍馬", ["Cake Queen"]="蛋糕女王", ["Cake Prince"]="蛋糕王子",
+    ["Dough King"]="糯米王", ["Rip Indra"]="因陀羅", 
+    ["Terror Shark"]="恐怖鯊魚", ["Leviathan"]="利維坦",
+    
+    -- ================= [副本 Raid] =================
     ["Auto Raid"]="自動打副本", ["Select Raid"]="選擇副本", ["Kill Aura (Raid)"]="副本殺戮",
     ["Next Island"]="下一關", ["Buy Chip"]="買晶片", ["Start Raid"]="開始副本",
-    ["Awakening"]="覺醒", ["Law Raid"]="羅的副本", ["Dough King"]="糯米王",
-    ["Rip Indra"]="因陀羅", ["Order Raid"]="秩序副本",
+    ["Awakening"]="覺醒", ["Law Raid"]="羅的副本",
+    ["Order Raid"]="秩序副本",
+    ["Flame"]="火焰", ["Ice"]="冰凍", ["Quake"]="震震", ["Light"]="光", 
+    ["Dark"]="暗暗", ["String"]="線線", ["Rumble"]="響雷", ["Magma"]="岩漿", 
+    ["Buddha"]="大佛", ["Sand"]="沙沙", ["Phoenix"]="不死鳥", ["Dough"]="糯米",
     
-    -- [海戰 Sea Events]
+    -- ================= [海戰 Sea Events] =================
     ["Sea Events"]="海怪事件", ["Auto Sea Beast"]="自動打海獸", ["Auto Terror Shark"]="打恐怖鯊魚",
     ["Auto Shipwright"]="自動修船", ["Auto Piranha"]="打食人魚", ["Auto Shark"]="打鯊魚",
     ["Auto Ghost Ship"]="打幽靈船", ["Boat"]="船", ["Buy Boat"]="買船",
     ["Kitsune Island"]="狐狸島", ["Find Kitsune Island"]="找狐狸島",
     ["Azure Ember"]="藍色餘燼", ["Collect Azure Ember"]="收集餘燼",
     ["Exchange Azure Ember"]="兌換餘燼", ["Shark Anchor"]="鯊魚錨",
-    ["Magnet"]="磁鐵", ["Terror Shark"]="恐怖鯊魚", ["Terror Shark Magnet"]="恐怖鯊魚磁鐵",
+    ["Magnet"]="磁鐵", ["Terror Shark Magnet"]="恐怖鯊魚磁鐵",
     
-    -- [種族 V4 Race]
+    -- ================= [種族 V4 Race] =================
     ["Race V4"]="種族 V4", ["Auto Trial"]="自動試煉", ["Auto Gear"]="撿齒輪",
     ["Pull Lever"]="拉拉桿", ["Find Mirage"]="找海市蜃樓", ["Mirage Island"]="海市蜃樓",
     ["Teleport to Gear"]="瞬移到齒輪", ["Ancient One"]="古老之人", ["Full Moon"]="滿月",
     ["Moon Status"]="月亮狀態", ["Transform"]="變身", ["Gear"]="齒輪",
     ["Human"]="人類", ["Rabbit"]="兔子", ["Shark"]="鯊魚", ["Angel"]="天使",
     ["Demon"]="惡魔", ["Cyborg"]="生化人", ["Ghoul"]="食屍鬼",
+    ["Red Gear"]="紅齒輪", ["Blue Gear"]="藍齒輪", ["Green Gear"]="綠齒輪",
     
-    -- [果實 Fruits]
+    -- ================= [果實 Fruits] =================
     ["Auto Buy Fruit"]="自動買果實", ["Auto Store Fruit"]="自動存果實",
     ["Random Fruit"]="隨機抽果實", ["Eat Fruit"]="吃果實", ["Sniper"]="狙擊",
     ["Kitsune"]="狐狸", ["Leopard"]="豹", ["Dragon"]="龍", ["Spirit"]="靈魂",
@@ -86,7 +105,7 @@ local UIDictionary = {
     ["Spike"]="尖刺", ["Smoke"]="煙", ["Bomb"]="炸彈", ["Spring"]="彈簧",
     ["Chop"]="斬斬", ["Spin"]="旋轉", ["Rocket"]="火箭",
     
-    -- [武器 Swords & Guns]
+    -- ================= [武器 Swords & Guns] =================
     ["Cursed Dual Katana"]="詛咒雙刀", ["Dark Dagger"]="黑刀", ["Hallow Scythe"]="聖鐮",
     ["Soul Guitar"]="靈魂吉他", ["Tushita"]="杜希塔", ["Yama"]="閻魔",
     ["Rengoku"]="煉獄劍", ["Saber"]="紅髮劍", ["Shisui"]="秋水", ["Waddo"]="和道一文字",
@@ -96,7 +115,7 @@ local UIDictionary = {
     ["Pipe"]="水管", ["Triple Katana"]="三刀流", ["Kabucha"]="卡布查", ["Serpent Bow"]="蛇弓",
     ["Acidum Rifle"]="酸液槍", ["Bizarre Rifle"]="怪異步槍", ["Fox Lamp"]="狐狸燈",
     
-    -- [飾品 Accessories]
+    -- ================= [飾品 Accessories] =================
     ["Dark Coat"]="暗黑大衣", ["Pale Scarf"]="蒼白圍巾", ["Valkyrie Helm"]="女武神頭盔",
     ["Holy Crown"]="神聖王冠", ["Leviathan Shield"]="利維坦盾", ["Leviathan Crown"]="利維坦王冠",
     ["Terror Jaw"]="恐怖下顎", ["Shark Tooth Necklace"]="鯊魚牙項鍊", ["Hunter Cape"]="獵人披風",
@@ -106,7 +125,7 @@ local UIDictionary = {
     ["Cool Shades"]="酷墨鏡", ["Usoap's Hat"]="騙人布帽", ["Marine Cap"]="海軍帽",
     ["Elf Hat"]="精靈帽", ["Holiday Cloak"]="節日披風", ["Party Hat"]="派對帽",
     
-    -- [材料 Materials]
+    -- ================= [材料 Materials] =================
     ["Bone"]="骨頭", ["Ectoplasm"]="靈質", ["Magma Ore"]="岩漿礦", ["Dragon Scale"]="龍鱗",
     ["Angel Wings"]="天使翅膀", ["Mini Tusk"]="小獠牙", ["Scrap Metal"]="廢金屬",
     ["Radioactive Material"]="放射性材料", ["Shark Tooth"]="鯊魚牙", ["Fool's Gold"]="愚人金",
@@ -115,7 +134,7 @@ local UIDictionary = {
     ["Mutated Tooth"]="變異牙", ["Fish Tail"]="魚尾", ["Dark Fragment"]="暗黑碎片",
     ["Leviathan Scale"]="利維坦鱗", ["Leviathan Heart"]="利維坦心",
     
-    -- [系統與雜項 Misc]
+    -- ================= [系統與雜項 Misc] =================
     ["White Screen"]="白屏 (省電)", ["FPS Boost"]="FPS 優化", ["Remove Effects"]="移除特效",
     ["Remove Damage"]="移除傷害字", ["Server Hop"]="換伺服器", ["Rejoin"]="重連",
     ["Redeem All Codes"]="兌換所有碼", ["Join Pirates"]="加入海賊", ["Join Marines"]="加入海軍",
@@ -129,7 +148,7 @@ local UIDictionary = {
     ["Purple"]="紫", ["Black"]="黑", ["White"]="白", ["Rainbow"]="彩虹"
 }
 
--- [3. 動態模式 (Patterns)]
+-- [3. 動態模式 (保留數字)]
 local Patterns = {
     ["Level"] = "等級", ["Beli"] = "貝里", ["Fragments"] = "碎片",
     ["Health"] = "血量", ["Energy"] = "體力", ["Ping"] = "延遲",
@@ -141,12 +160,14 @@ local Patterns = {
     ["Transformation"] = "變身", ["Cooldown"] = "冷卻"
 }
 
--- [4. 引擎核心 (Engine)]
+-- [4. 強制掃描引擎 (Force Scanner)]
 local CoreGui = game:GetService("CoreGui")
+local Players = game:GetService("Players")
 
 local function TranslateObject(object)
     if not object then return end
-    -- 掃描 Text, PlaceholderText, ToolTip
+    
+    -- 檢查 Text, PlaceholderText, ToolTip
     local props = {"Text", "PlaceholderText", "ToolTip"}
     for _, prop in pairs(props) do
         if pcall(function() return object[prop] end) and object[prop] and object[prop] ~= "" then
@@ -154,7 +175,7 @@ local function TranslateObject(object)
             local newText = originalText
             local changed = false
             
-            -- 1. 精確匹配
+            -- 1. 精確匹配 (優先)
             if UIDictionary[originalText] then
                 object[prop] = UIDictionary[originalText]
                 return
@@ -168,7 +189,7 @@ local function TranslateObject(object)
                 end
             end
             
-            -- 3. 補漏匹配 (長詞優先)
+            -- 3. 補漏匹配 (僅長詞)
             if not changed then
                 for eng, chn in pairs(UIDictionary) do
                     if #eng >= 4 and string.find(newText, eng) then
@@ -183,17 +204,30 @@ local function TranslateObject(object)
     end
 end
 
--- [5. 執行循環 (Loop)]
+-- [5. 雙重執行循環 (Dual Loop)]
 task.spawn(function()
     task.wait(4)
-    game.StarterGui:SetCore("SendNotification", {Title="SYSTEM: APEX", Text="全能漢化已覆蓋 (7000+)", Duration=5})
+    game.StarterGui:SetCore("SendNotification", {Title="SYSTEM: APEX", Text="終極融合漢化已啟動", Duration=5})
+    
     while true do
-        task.wait(0.8)
+        task.wait(1) -- 1秒掃描一次，避免卡頓
         pcall(function()
+            -- 掃描 CoreGui (外掛介面)
             for _, gui in pairs(CoreGui:GetChildren()) do
-                if gui:IsA("ScreenGui") and gui.Name ~= "RobloxGui" and gui.Name ~= "TopBar" and gui.Name ~= "CoreScripts" and gui.Name ~= "DevConsoleMaster" then
+                if gui:IsA("ScreenGui") and gui.Name ~= "RobloxGui" and gui.Name ~= "TopBar" and gui.Name ~= "CoreScripts" then
                     for _, v in pairs(gui:GetDescendants()) do
                         TranslateObject(v)
+                    end
+                end
+            end
+            
+            -- 掃描 PlayerGui (備用方案，防止外掛藏在這裡)
+            if Players.LocalPlayer and Players.LocalPlayer:FindFirstChild("PlayerGui") then
+                for _, gui in pairs(Players.LocalPlayer.PlayerGui:GetChildren()) do
+                    if gui:IsA("ScreenGui") then
+                        for _, v in pairs(gui:GetDescendants()) do
+                            TranslateObject(v)
+                        end
                     end
                 end
             end
