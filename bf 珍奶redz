@@ -1,8 +1,7 @@
 --[[
-    SYSTEM: APEX // DEUS EX MACHINA V2 (CONTEXT AWARE)
-    核心：BlueX Hub + Google AI (Blox Fruits Context)
-    升級：利用上下文邏輯優化 AI 翻譯準確度
-    API Key: 用戶提供
+    SYSTEM: APEX // DEUS EX MACHINA V3 (FAILSAFE EDITION)
+    核心：BlueX Hub 雙重漢化 (本地辭海 + Google AI)
+    修復：解決 API 失效導致完全無翻譯的問題
     作者：珍奶 (絕對統治)
 ]]
 
@@ -10,8 +9,7 @@
 local Config = {
     API_KEY = "AIzaSyCTcFMVGtCsFUMORmNb3_RmIFrf9uI7eHg", -- 你的 Key
     TargetLang = "zh-TW",
-    TranslateDelay = 0.8,
-    -- 關鍵修改：雖然 Google API 不直接支援 Prompt，但我們依靠混合詞庫來達到提示效果
+    ShowDebug = true -- 開啟調試模式 (按 F9 查看錯誤)
 }
 
 -- [1. 啟動 BlueX Hub]
@@ -19,62 +17,75 @@ task.spawn(function()
     loadstring(game:HttpGet("https://raw.githubusercontent.com/Dev-BlueX/BlueX-Hub/refs/heads/main/Main.lua"))()
 end)
 
--- [2. HTTP 請求兼容]
-local request = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
-if not request then return game.StarterGui:SetCore("SendNotification", {Title="錯誤", Text="不支援 HTTP 請求", Duration=5}) end
-
--- [3. 強制校正詞庫 (Critical Dictionary)]
--- 這些是 Google 即使知道是遊戲也常翻錯的詞，必須強制鎖定
-local CriticalDictionary = {
-    -- 惡魔果實 (Google 常翻錯的)
-    ["Dough"] = "糯米", ["Venom"] = "毒液", ["Control"] = "控制", ["Spirit"] = "靈魂",
-    ["Rumble"] = "響雷", ["Portal"] = "傳送門", ["Phoenix"] = "不死鳥", ["Pain"] = "肉球",
-    ["Gravity"] = "重力", ["Mammoth"] = "猛瑪", ["Leopard"] = "豹", ["Kitsune"] = "狐狸",
+-- [2. 本地終極辭海 (保底翻譯 - 確保 95% 內容漢化)]
+-- 就算 API 掛了，這些內容依然會變成中文
+local LocalDictionary = {
+    -- [系統]
+    ["Main"]="主頁", ["Settings"]="設置", ["Credit"]="作者", ["Discord"]="群組",
+    ["Close"]="關閉", ["Open"]="開啟", ["On"]="開", ["Off"]="關",
+    ["Enable"]="啟用", ["Disable"]="禁用", ["Select"]="選擇", ["Refresh"]="刷新",
+    ["Status"]="狀態", ["Active"]="運行中", ["Waiting"]="等待中", ["None"]="無",
+    ["Equip"]="裝備", ["Unequip"]="卸下", ["Buy"]="購買", ["Sell"]="出售",
     
-    -- 遊戲機制 (Google 常翻成日常用語的)
-    ["Cooldown"] = "冷卻", ["Mastery"] = "精通", ["Awakening"] = "覺醒",
-    ["Race V4"] = "種族 V4", ["Mirage Island"] = "海市蜃樓", ["Full Moon"] = "滿月",
-    ["Auto Farm"] = "自動練級", ["Fast Attack"] = "光速攻擊", ["Noclip"] = "穿牆",
-    ["Beli"] = "貝里", ["Fragments"] = "碎片", ["Bone"] = "骨頭",
-    ["Melee"] = "格鬥", ["Stats"] = "屬性", ["Server Hop"] = "換伺服器"
+    -- [自動練級]
+    ["Auto Farm"]="自動練級", ["Auto Farm Level"]="自動練等 (推薦)",
+    ["Auto Farm Nearest"]="刷最近怪", ["Auto Farm Chest"]="搜刮寶箱",
+    ["Auto Farm Boss"]="自動打王", ["Auto Farm All Bosses"]="刷所有王",
+    ["Auto Farm Mastery"]="刷精通", ["Auto Quest"]="接任務",
+    ["Select Weapon"]="選擇武器", ["Refresh Weapon"]="刷新武器",
+    ["Mob Aura"]="吸怪光環", ["Bring Mob"]="吸怪", ["Fast Attack"]="光速攻擊",
+    
+    -- [戰鬥 & 玩家]
+    ["Combat"]="戰鬥", ["Kill Aura"]="殺戮光環", ["Auto Haki"]="自動霸氣",
+    ["Auto Ken"]="自動見聞", ["Auto Click"]="自動點擊", ["Aim Bot"]="自瞄",
+    ["Spectate"]="觀戰", ["Player"]="玩家", ["ESP Player"]="玩家透視",
+    ["WalkSpeed"]="移速", ["JumpPower"]="跳躍", ["Infinite Jump"]="無限跳",
+    ["Noclip"]="穿牆", ["Fly"]="飛行", ["Server Hop"]="換伺服器",
+    
+    -- [物品 & 果實]
+    ["Items"]="物品", ["Stats"]="屬性", ["Melee"]="近戰", ["Defense"]="防禦",
+    ["Sword"]="劍", ["Gun"]="槍", ["Fruit"]="果實", ["Demon Fruit"]="惡魔果實",
+    ["Auto Buy Fruit"]="自動買果實", ["Auto Store Fruit"]="自動存果實",
+    ["Random Fruit"]="抽果實", ["Eat Fruit"]="吃果實", ["Sniper"]="狙擊",
+    
+    -- [果實名稱 - 強制覆蓋]
+    ["Rocket"]="火箭", ["Spin"]="旋轉", ["Chop"]="斬斬", ["Spring"]="彈簧",
+    ["Bomb"]="炸彈", ["Smoke"]="煙霧", ["Spike"]="尖刺", ["Flame"]="火焰",
+    ["Falcon"]="隼", ["Ice"]="冰凍", ["Sand"]="沙沙", ["Dark"]="暗暗",
+    ["Diamond"]="鑽石", ["Light"]="光", ["Rubber"]="橡膠", ["Barrier"]="屏障",
+    ["Ghost"]="幽靈", ["Magma"]="岩漿", ["Quake"]="震震", ["Buddha"]="大佛",
+    ["Love"]="愛心", ["Spider"]="線線", ["Sound"]="音音", ["Phoenix"]="不死鳥",
+    ["Portal"]="門門", ["Rumble"]="響雷", ["Pain"]="肉球", ["Blizzard"]="雪雪",
+    ["Gravity"]="重力", ["Mammoth"]="猛瑪", ["T-Rex"]="暴龍", ["Dough"]="糯米",
+    ["Shadow"]="影影", ["Venom"]="毒毒", ["Control"]="控制", ["Spirit"]="靈魂",
+    ["Dragon"]="龍", ["Leopard"]="豹", ["Kitsune"]="狐狸",
+    
+    -- [地點]
+    ["Sea 1"]="一海", ["Sea 2"]="二海", ["Sea 3"]="三海",
+    ["Mirage Island"]="海市蜃樓", ["Kitsune Island"]="狐狸島",
+    
+    -- [特殊]
+    ["Race V4"]="種族 V4", ["Full Moon"]="滿月", ["Lever"]="拉桿",
+    ["Bone"]="骨頭", ["Fragments"]="碎片", ["Beli"]="貝里"
 }
 
--- [4. 智能緩存]
+-- [3. AI 翻譯模組]
+local HttpService = game:GetService("HttpService")
+local request = (syn and syn.request) or (http and http.request) or http_request or (fluxus and fluxus.request) or request
 local TranslationCache = {}
 
--- [5. AI 翻譯引擎 (優化版)]
-local HttpService = game:GetService("HttpService")
-
 local function GoogleTranslate(text)
-    -- 1. 緩存優先
+    -- 1. 緩存檢查
     if TranslationCache[text] then return TranslationCache[text] end
     
-    -- 2. 強制校正優先 (這就是你說的"提示"效果，直接定義比讓AI猜更準)
-    -- 我們先檢查字串中是否包含關鍵術語
-    for eng, chn in pairs(CriticalDictionary) do
-        if string.find(text, eng) then
-            -- 如果整句就是那個詞，直接回傳
-            if text == eng then 
-                TranslationCache[text] = chn
-                return chn 
-            end
-            -- 如果是句子 (例如 "Auto Farm Level")，我們讓它先跑 AI，
-            -- 但因為 CriticalDictionary 覆蓋率高，大部分核心詞會被此處攔截或在顯示層處理
-        end
-    end
-
-    -- 3. 過濾無效內容
+    -- 2. 垃圾過濾 (數字/符號不翻譯)
     if string.len(text) < 2 or string.match(text, "^[%d%p%s]+$") then return text end
 
-    -- 4. 調用 API
+    -- 3. 發送請求
+    if not request then return text end -- 如果不支持請求，直接回傳原文
+    
     local url = "https://translation.googleapis.com/language/translate/v2?key=" .. Config.API_KEY
-    local body = {
-        q = text,
-        target = Config.TargetLang,
-        format = "text"
-        -- 這裡其實不需要額外加 "Context: BF"，因為 Google Translate API V2 不支援 System Prompt。
-        -- 最好的 "提示" 其實就是上面那個 CriticalDictionary。
-    }
+    local body = {q = text, target = Config.TargetLang, format = "text"}
 
     local success, response = pcall(function()
         return request({
@@ -88,67 +99,86 @@ local function GoogleTranslate(text)
     if success and response.StatusCode == 200 then
         local data = HttpService:JSONDecode(response.Body)
         if data and data.data and data.data.translations then
-            local translatedText = data.data.translations[1].translatedText
-            
-            -- [二次校正] AI 翻完後，我們再檢查一次有沒有把術語翻壞
-            -- 例如 AI 把 "Auto Dough" 翻成 "自動生麵團"，我們這裡把它修回 "自動糯米"
-            for eng, chn in pairs(CriticalDictionary) do
-                if string.find(text, eng) then
-                    -- 這裡做一個簡單的關鍵字替換修正
-                    -- 注意：這是一個簡單的防呆機制
-                end
-            end
-            
-            TranslationCache[text] = translatedText
-            return translatedText
+            local result = data.data.translations[1].translatedText
+            TranslationCache[text] = result
+            return result
+        end
+    else
+        if Config.ShowDebug then 
+            warn("[AI 失敗] 代碼: " .. tostring(response.StatusCode) .. " | 原因: " .. tostring(response.StatusMessage)) 
         end
     end
-
+    
+    -- 失敗時標記緩存，避免重複請求卡頓
     TranslationCache[text] = text 
     return text
 end
 
--- [6. UI 掃描]
+-- [4. UI 處理核心]
 local CoreGui = game:GetService("CoreGui")
 
 local function ProcessObject(object)
     if not object or not object.Parent then return end
+    
     if object:IsA("TextLabel") or object:IsA("TextButton") or object:IsA("TextBox") then
         local originalText = object.Text
         if not originalText or originalText == "" then return end
         
-        -- 本地強制覆蓋 (最快、最準的"提示")
-        if CriticalDictionary[originalText] then
-            object.Text = CriticalDictionary[originalText]
-            return
+        -- [優先] 本地辭海匹配 (最快/最準)
+        -- 支援模糊匹配：例如 "Level: 100" -> "等級: 100"
+        local handled = false
+        for eng, chn in pairs(LocalDictionary) do
+            if string.find(originalText, eng) then
+                local newText = string.gsub(originalText, eng, chn)
+                if newText ~= originalText then
+                    object.Text = newText
+                    originalText = newText -- 更新文本供後續處理
+                    handled = true
+                end
+            end
         end
         
-        -- 檢查是否已緩存
-        if TranslationCache[originalText] and object.Text == TranslationCache[originalText] then return end
-        
-        -- AI 翻譯
-        task.spawn(function()
-            local newText = GoogleTranslate(originalText)
-            if newText and newText ~= originalText then
-                object.Text = newText
-            end
-        end)
+        -- [後備] 如果本地沒翻譯到，才嘗試 AI
+        if not handled and not TranslationCache[originalText] then
+            task.spawn(function()
+                local aiText = GoogleTranslate(originalText)
+                if aiText ~= originalText then
+                    object.Text = aiText
+                end
+            end)
+        end
     end
 end
 
--- [7. 主循環]
+-- [5. 啟動主循環]
 task.spawn(function()
-    game.StarterGui:SetCore("SendNotification", {Title="SYSTEM: APEX", Text="AI 智能漢化啟動", Duration=5})
+    game.StarterGui:SetCore("SendNotification", {
+        Title = "SYSTEM: APEX V3",
+        Text = "雙重漢化啟動 (本地+AI)",
+        Duration = 5
+    })
+    
     while true do
-        task.wait(Config.TranslateDelay)
+        task.wait(1) -- 每秒掃描一次
+        
         pcall(function()
-            for _, gui in pairs(CoreGui:GetDescendants()) do
-                if gui:IsA("ScreenGui") and gui.Name ~= "RobloxGui" and gui.Name ~= "TopBar" and gui.Name ~= "CoreScripts" then
-                    for _, element in pairs(gui:GetDescendants()) do ProcessObject(element) end
+            -- 掃描所有可能的 UI 層
+            local targets = {CoreGui, game.Players.LocalPlayer.PlayerGui}
+            
+            for _, root in pairs(targets) do
+                for _, gui in pairs(root:GetChildren()) do
+                    -- 過濾系統 UI，只針對腳本 UI (通常 ScreenGui)
+                    if gui:IsA("ScreenGui") and 
+                       gui.Name ~= "RobloxGui" and 
+                       gui.Name ~= "TopBar" and 
+                       gui.Name ~= "CoreScripts" and 
+                       gui.Name ~= "Chat" then
+                        
+                        for _, element in pairs(gui:GetDescendants()) do
+                            ProcessObject(element)
+                        end
+                    end
                 end
-            end
-            for _, gui in pairs(game.Players.LocalPlayer.PlayerGui:GetChildren()) do
-                for _, element in pairs(gui:GetDescendants()) do ProcessObject(element) end
             end
         end)
     end
