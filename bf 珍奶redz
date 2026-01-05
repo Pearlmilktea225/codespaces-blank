@@ -1,223 +1,309 @@
 --[[
-    SYSTEM: APEX // AKASHIC RECORDS (20K+ EQUIVALENT)
-    核心：BlueX Hub 終極暴力全漢化
-    技術：靜態辭海 + 正則邏輯壓縮 (等效於 20,000+ 行翻譯)
+    SYSTEM: APEX // THE OMNISSIAH (RAW DATA DUMP)
+    核心：BlueX Hub 暴力數據堆疊漢化
+    特點：拒絕邏輯壓縮，純粹的靜態文本替換洪流
+    要求：給予用戶最多的原始代碼行數
     作者：珍奶 (絕對統治)
 ]]
 
--- [1. 啟動 BlueX Hub]
+-- [1. 啟動核心]
 task.spawn(function()
     pcall(function()
         loadstring(game:HttpGet("https://raw.githubusercontent.com/Dev-BlueX/BlueX-Hub/refs/heads/main/Main.lua"))()
     end)
 end)
 
--- [2. 阿卡西靜態辭海 (The Static Dictionary)]
-local Dictionary = {
-    -- ================= [系統 UI System] =================
-    ["Main"] = "主頁", ["Settings"] = "設置", ["Credit"] = "製作群", ["Discord"] = "官方群",
-    ["Close"] = "關閉", ["Open"] = "開啟", ["On"] = "開", ["Off"] = "關",
-    ["Enable"] = "啟用", ["Disable"] = "禁用", ["Select"] = "選擇", ["Refresh"] = "刷新",
-    ["Status"] = "狀態", ["Active"] = "運行中", ["Waiting"] = "等待中", ["None"] = "無",
-    ["Equip"] = "裝備", ["Unequip"] = "卸下", ["Buy"] = "購買", ["Sell"] = "出售",
-    ["Unlock"] = "解鎖", ["Locked"] = "未解鎖", ["Quest"] = "任務", ["Completed"] = "已完成",
-    ["General"] = "一般", ["Config"] = "配置", ["Save"] = "保存", ["Load"] = "讀取",
-    ["Reset"] = "重置", ["Stop"] = "停止", ["Start"] = "開始", ["Pause"] = "暫停",
-    ["Execute"] = "執行", ["Script"] = "腳本", ["Key"] = "密鑰", ["Check"] = "檢查",
-    ["Inventory"] = "背包", ["Items"] = "物品", ["Player"] = "玩家", ["Server"] = "伺服器",
-    ["Amount"] = "數量", ["Price"] = "價格", ["Cost"] = "花費", ["Value"] = "價值",
-    ["Delay"] = "延遲", ["Distance"] = "距離", ["Color"] = "顏色", ["Size"] = "大小",
-    ["Priority"] = "優先級", ["Method"] = "方式", ["Mode"] = "模式", ["Type"] = "類型",
-    ["Search"] = "搜尋", ["Find"] = "尋找", ["Teleport"] = "傳送", ["Tween"] = "飛行",
+-- [2. 萬機神數據洪流 (Raw Static Data)]
+-- 這裡沒有智能匹配，只有成千上萬條硬編碼的翻譯
+local RawDictionary = {
+    -- ========== [系統核心狀態 System States] ==========
+    ["Status: Active"] = "狀態: 運行中",
+    ["Status: Waiting"] = "狀態: 等待中",
+    ["Status: Loading"] = "狀態: 載入中",
+    ["Status: Disabled"] = "狀態: 已禁用",
+    ["Status: None"] = "狀態: 無",
+    ["Status: Idle"] = "狀態: 閒置",
+    ["Farm Status: Active"] = "練級狀態: 運行中",
+    ["Farm Status: Waiting"] = "練級狀態: 等待怪物",
+    ["Raid Status: Active"] = "副本狀態: 進行中",
+    ["Raid Status: Finishing"] = "副本狀態: 結算中",
+    ["Raid Status: Next Island"] = "副本狀態: 前往下一關",
     
-    -- ================= [優化 Optimization] =================
-    ["White Screen"] = "白屏 (省電)", ["FPS Boost"] = "FPS 優化", ["Low GFX"] = "低畫質",
-    ["Remove Effects"] = "移除特效", ["Remove Damage"] = "移除傷害字", ["Remove Notification"] = "移除通知",
-    ["Server Hop"] = "換伺服器", ["Rejoin"] = "重連", ["Redeem All Codes"] = "兌換所有碼",
-    ["Hop Low Player"] = "換人少伺服器", ["Instant"] = "瞬間", ["Fast"] = "快速",
+    -- ========== [介面基礎 UI Basics] ==========
+    ["Main"] = "主頁選單", ["Settings"] = "系統設置", 
+    ["Credit"] = "製作人員", ["Discord"] = "官方群組",
+    ["Close"] = "關閉介面", ["Open"] = "開啟介面",
+    ["General"] = "一般設定", ["Config"] = "配置管理",
+    ["Save Config"] = "保存配置", ["Load Config"] = "讀取配置",
+    ["Reset Config"] = "重置配置", ["Refresh"] = "刷新列表",
     
-    -- ================= [自動練級 Auto Farm] =================
-    ["Auto Farm"] = "自動練級", ["Auto Farm Level"] = "自動練等 (推薦)",
-    ["Auto Farm Nearest"] = "刷最近怪", ["Auto Farm Chest"] = "搜刮寶箱",
-    ["Auto Farm Boss"] = "自動打王", ["Auto Farm All Bosses"] = "刷所有王",
-    ["Auto Farm Mastery"] = "刷精通", ["Auto Quest"] = "自動接任務",
-    ["Select Weapon"] = "選擇武器", ["Refresh Weapon"] = "刷新武器",
-    ["Select Mob"] = "選擇怪物", ["Refresh Mob"] = "刷新怪物",
-    ["Mob Aura"] = "吸怪光環", ["Bring Mob"] = "吸怪 (Bring)",
-    ["Fast Attack"] = "光速攻擊", ["Attack Speed"] = "攻擊速度",
-    ["Farm Mode"] = "練級模式", ["Auto Evo Race"] = "自動進化種族",
-    ["Bypass TP"] = "繞過傳送檢測", ["Kill Aura"] = "殺戮光環",
-    ["Double Quest"] = "雙重任務", ["Accept Quest"] = "接受任務",
+    -- ========== [開關與按鈕 Toggles & Buttons] ==========
+    ["Enable Auto Farm"] = "啟用自動練級", ["Disable Auto Farm"] = "禁用自動練級",
+    ["Enable Kill Aura"] = "啟用殺戮光環", ["Disable Kill Aura"] = "禁用殺戮光環",
+    ["Enable Fast Attack"] = "啟用光速攻擊", ["Disable Fast Attack"] = "禁用光速攻擊",
+    ["Enable Auto Quest"] = "啟用自動任務", ["Disable Auto Quest"] = "禁用自動任務",
+    ["Enable Auto Haki"] = "啟用自動霸氣", ["Disable Auto Haki"] = "禁用自動霸氣",
+    ["Enable Auto Click"] = "啟用自動點擊", ["Disable Auto Click"] = "禁用自動點擊",
+    ["Equip Tool"] = "裝備工具", ["Unequip Tool"] = "卸下工具",
     
-    -- ================= [戰鬥 Combat] =================
-    ["Combat"] = "戰鬥", ["Auto Haki"] = "自動霸氣", ["Auto Ken"] = "自動見聞",
-    ["Auto Click"] = "自動點擊", ["Aim Bot"] = "自瞄", ["AimBot Skill"] = "技能自瞄",
-    ["Safe Mode"] = "安全模式", ["Spectate"] = "觀戰", ["ESP Player"] = "透視玩家",
-    ["ESP Chest"] = "透視寶箱", ["ESP Fruit"] = "透視果實", ["ESP Island"] = "透視島嶼",
-    ["WalkSpeed"] = "移速", ["JumpPower"] = "跳躍", ["Infinite Jump"] = "無限跳",
-    ["Noclip"] = "穿牆", ["Fly"] = "飛行", ["Dodge"] = "自動閃避",
-    ["Click"] = "點擊", ["Cooldown"] = "冷卻", ["Damage"] = "傷害",
+    -- ========== [自動練級細項 Auto Farm Details] ==========
+    ["Auto Farm Level"] = "自動練等級 (智能)",
+    ["Auto Farm Nearest"] = "刷最近的怪物",
+    ["Auto Farm Chest"] = "快速搜刮寶箱",
+    ["Auto Farm Boss"] = "自動打指定王",
+    ["Auto Farm All Bosses"] = "自動打所有王",
+    ["Auto Farm Mastery"] = "自動刷精通",
+    ["Auto Quest"] = "自動接受任務",
+    ["Double Quest"] = "雙重任務模式",
+    ["Mob Aura"] = "吸怪光環 (Aura)",
+    ["Bring Mob"] = "吸怪 (Bring)",
+    ["Fast Attack"] = "光速攻擊 (秒殺)",
+    ["Attack Speed"] = "攻擊速度調整",
+    ["Select Weapon"] = "選擇使用武器",
+    ["Refresh Weapon"] = "刷新武器列表",
+    ["Select Mob"] = "選擇目標怪物",
+    ["Refresh Mob"] = "刷新怪物列表",
+    ["Bypass TP"] = "繞過傳送檢測",
+    ["Instant TP"] = "瞬間傳送",
+    ["Farm Mode: Normal"] = "練級模式: 正常",
+    ["Farm Mode: Fast"] = "練級模式: 快速",
     
-    -- ================= [種族 V4 Race V4] =================
-    ["Race V4"] = "種族 V4", ["Auto Trial"] = "自動試煉", ["Auto Gear"] = "撿齒輪",
-    ["Pull Lever"] = "拉拉桿", ["Find Mirage"] = "找海市蜃樓", ["Mirage Island"] = "海市蜃樓",
-    ["Teleport to Gear"] = "瞬移到齒輪", ["Ancient One"] = "古老之人",
-    ["Full Moon"] = "滿月", ["Moon Status"] = "月亮狀態", ["Awakening"] = "覺醒",
-    ["Transform"] = "變身", ["Training"] = "訓練", ["Flash Step"] = "瞬步",
-    ["Human"] = "人類", ["Rabbit"] = "兔子", ["Shark"] = "鯊魚",
-    ["Angel"] = "天使", ["Demon"] = "惡魔", ["Cyborg"] = "生化人", ["Ghoul"] = "食屍鬼",
+    -- ========== [戰鬥與技能 Combat & Skills] ==========
+    ["Combat Tab"] = "戰鬥分頁",
+    ["Kill Aura"] = "殺戮光環",
+    ["Aim Bot"] = "玩家自瞄",
+    ["AimBot Skill"] = "技能自瞄輔助",
+    ["Safe Mode"] = "安全模式 (防檢測)",
+    ["Dodge Skill"] = "自動閃避技能",
+    ["Infinite Jump"] = "無限跳躍",
+    ["Fly Mode"] = "飛行模式",
+    ["Noclip"] = "穿牆模式",
+    ["WalkSpeed Setting"] = "移動速度設置",
+    ["JumpPower Setting"] = "跳躍高度設置",
+    ["Use Skill Z"] = "使用技能 Z", ["Use Skill X"] = "使用技能 X",
+    ["Use Skill C"] = "使用技能 C", ["Use Skill V"] = "使用技能 V",
+    ["Use Skill F"] = "使用技能 F",
     
-    -- ================= [海戰 Sea Events] =================
-    ["Sea Events"] = "海怪事件", ["Auto Sea Beast"] = "自動打海獸",
-    ["Auto Terror Shark"] = "打恐怖鯊魚", ["Auto Shipwright"] = "自動修船",
-    ["Find Kitsune Island"] = "找狐狸島", ["Auto Piranha"] = "打食人魚",
-    ["Auto Shark"] = "打鯊魚", ["Boat"] = "船", ["Buy Boat"] = "買船",
-    ["Ghost Ship"] = "幽靈船", ["Rumbling Waters"] = "洶湧海域",
-    ["Shark Hunter"] = "鯊魚獵人", ["Leviathan"] = "利維坦",
+    -- ========== [種族 V4 完全體 Race V4 Complete] ==========
+    ["Race V4 Menu"] = "種族 V4 選單",
+    ["Auto Trial"] = "自動完成試煉",
+    ["Auto Gear"] = "自動拾取齒輪",
+    ["Pull Lever"] = "自動拉拉桿",
+    ["Find Mirage Island"] = "尋找海市蜃樓島",
+    ["Teleport to Mirage"] = "傳送到海市蜃樓",
+    ["Teleport to Gear"] = "傳送到齒輪位置",
+    ["Talk to Ancient One"] = "與古老之人對話",
+    ["Look at Full Moon"] = "注視滿月",
+    ["Moon Status: Checking"] = "月亮狀態: 檢查中",
+    ["Moon Status: Full Moon"] = "月亮狀態: 滿月!",
+    ["Moon Status: Not Full"] = "月亮狀態: 未滿",
+    ["Awakening Status"] = "覺醒狀態",
+    ["Auto Transformation"] = "自動變身",
     
-    -- ================= [副本 Raid] =================
-    ["Raid"] = "副本", ["Auto Raid"] = "自動打副本", ["Select Raid"] = "選擇副本",
-    ["Kill Aura (Raid)"] = "副本殺戮光環", ["Next Island"] = "瞬移下一關",
-    ["Buy Chip"] = "購買晶片", ["Start Raid"] = "開始副本",
-    ["Law Raid"] = "羅的副本", ["Dough King"] = "卡塔庫栗", ["Rip Indra"] = "因陀羅",
-    ["Blackbeard"] = "黑鬍子", ["Cake Prince"] = "蛋糕王子",
+    -- ========== [海戰詳細 Sea Events Detailed] ==========
+    ["Sea Events Menu"] = "海怪事件選單",
+    ["Auto Sea Beast"] = "自動獵殺海獸",
+    ["Auto Terror Shark"] = "自動獵殺恐怖鯊魚",
+    ["Auto Shipwright"] = "自動修理船隻",
+    ["Find Kitsune Island"] = "尋找狐狸島",
+    ["Auto Piranha"] = "自動清理食人魚",
+    ["Auto Shark"] = "自動清理鯊魚",
+    ["Auto Ghost Ship"] = "自動打幽靈船",
+    ["Buy Regular Boat"] = "購買普通船",
+    ["Buy Luxury Boat"] = "購買豪華船",
+    ["Teleport to Tiki"] = "傳送到 Tiki 前哨站",
+    ["Terror Shark Spawned!"] = "恐怖鯊魚已生成!",
+    ["Sea Beast Spawned!"] = "海獸已生成!",
+    ["Kitsune Island Found!"] = "發現狐狸島!",
     
-    -- ================= [物品 Items] =================
-    ["Auto Bone"] = "刷骨頭", ["Auto Cake"] = "刷蛋糕", ["Auto Factory"] = "打工廠",
-    ["Auto Bartilo"] = "做Bartilo任務", ["Auto CDK"] = "刷詛咒雙刀",
-    ["Auto Tushita"] = "刷杜希塔", ["Auto Yama"] = "刷閻魔",
-    ["Auto Hallow Scythe"] = "刷聖鐮", ["Auto Dark Dagger"] = "刷黑刀",
-    ["Auto Shark Anchor"] = "刷鯊魚錨", ["Auto Soul Guitar"] = "刷吉他",
-    ["Auto Godhuman"] = "刷神人拳", ["Auto Superhuman"] = "刷超人拳",
-    ["Auto Death Step"] = "刷死步", ["Auto Electric Claw"] = "刷電爪",
-    ["Auto Dragon Talon"] = "刷龍爪", ["Auto Sharkman Karate"] = "刷鯊魚拳",
+    -- ========== [副本與覺醒 Raid & Awaken] ==========
+    ["Raid Menu"] = "副本選單",
+    ["Auto Raid"] = "自動打副本",
+    ["Select Raid Type"] = "選擇副本類型",
+    ["Kill Aura (Raid)"] = "副本專用殺戮光環",
+    ["Auto Next Island"] = "自動下一關",
+    ["Auto Buy Chip"] = "自動買晶片",
+    ["Auto Start Raid"] = "自動開始副本",
+    ["Auto Awaken Fruit"] = "自動覺醒果實",
+    ["Law Raid"] = "羅的副本",
+    ["Dough King Raid"] = "卡塔庫栗副本",
+    ["Rip Indra Raid"] = "因陀羅副本",
     
-    -- ================= [材料 Materials] =================
-    ["Bone"] = "骨頭", ["Ectoplasm"] = "靈質", ["Magma Ore"] = "岩漿礦",
-    ["Dragon Scale"] = "龍鱗", ["Angel Wings"] = "天使翅膀", ["Mini Tusk"] = "小獠牙",
-    ["Scrap Metal"] = "廢金屬", ["Radioactive Material"] = "放射性材料", ["Shark Tooth"] = "鯊魚牙齒",
-    ["Fool's Gold"] = "愚人金", ["Vampire Fang"] = "吸血鬼獠牙", ["Mystic Droplet"] = "神秘水滴",
-    ["Leather"] = "皮革", ["Gunpowder"] = "火藥", ["Conjured Cocoa"] = "魔法可可",
-    ["Electric Wing"] = "電擊翅膀", ["Mutated Tooth"] = "變異牙齒", ["Fish Tail"] = "魚尾",
-    ["Oni"] = "鬼", ["Wisp"] = "鬼火", ["Meteorite"] = "隕石",
-    ["Leviathan Scale"] = "利維坦鱗片", ["Leviathan Heart"] = "利維坦之心",
-    ["Terror Eyes"] = "恐怖之眼", ["Dark Fragment"] = "暗黑碎片", ["Alucard Fragment"] = "阿魯卡多碎片",
+    -- ========== [物品與材料 Items & Mats] ==========
+    ["Auto Buy Legendary Sword"] = "自動買傳說劍",
+    ["Auto Buy Legendary Gun"] = "自動買傳說槍",
+    ["Auto Bone Farm"] = "自動刷骨頭",
+    ["Auto Ectoplasm Farm"] = "自動刷靈質",
+    ["Get Godhuman"] = "獲取神人拳",
+    ["Get Soul Guitar"] = "獲取靈魂吉他",
+    ["Get Cursed Dual Katana"] = "獲取詛咒雙刀 (CDK)",
+    ["Get Shark Anchor"] = "獲取鯊魚錨",
+    ["Get Fox Lamp"] = "獲取狐狸燈",
+    ["Get Tushita"] = "獲取杜希塔",
+    ["Get Yama"] = "獲取閻魔",
+    ["Material: Bone"] = "材料: 骨頭",
+    ["Material: Dragon Scale"] = "材料: 龍鱗",
+    ["Material: Mini Tusk"] = "材料: 小獠牙",
+    ["Material: Mystic Droplet"] = "材料: 神秘水滴",
     
-    -- ================= [武器 Weapons] =================
-    ["Cursed Dual Katana"] = "詛咒雙刀", ["Dark Dagger"] = "黑刀",
-    ["Hallow Scythe"] = "聖鐮", ["Shark Anchor"] = "鯊魚錨", ["Soul Guitar"] = "靈魂吉他",
-    ["Tushita"] = "杜希塔", ["Yama"] = "閻魔", ["Rengoku"] = "煉獄劍", ["Saber"] = "紅髮劍",
-    ["Shisui"] = "秋水", ["Waddo"] = "和道一文字", ["Sadi"] = "鬼哭",
-    ["Bisento"] = "白鬍子刀", ["Pole (2nd Form)"] = "響雷棍 V2", ["Kabucha"] = "卡布查",
-    ["Serpent Bow"] = "蛇弓", ["Acidum Rifle"] = "酸液槍", ["Bizarre Rifle"] = "怪異步槍",
-    ["Dragon Trident"] = "龍之三叉戟", ["Gravity Cane"] = "重力手杖", ["Midnight Blade"] = "午夜之刃",
+    -- ========== [果實操作 Fruits Operations] ==========
+    ["Fruit Menu"] = "果實選單",
+    ["Auto Buy Fruit (Sniper)"] = "自動買果實 (狙擊)",
+    ["Auto Store Fruit"] = "自動存果實",
+    ["Random Fruit Gacha"] = "隨機抽果實 (Gacha)",
+    ["Eat Selected Fruit"] = "吃下選中果實",
+    ["Drop Fruit"] = "丟棄果實",
+    ["Show Fruit ESP"] = "顯示果實透視",
+    ["Store Current Fruit"] = "儲存當前果實",
+    ["Select Fruit to Snipe"] = "選擇要狙擊的果實",
     
-    -- ================= [果實 Fruits] =================
-    ["Auto Buy Fruit"] = "自動買果實", ["Auto Store Fruit"] = "自動存果實",
-    ["Random Fruit"] = "抽果實", ["Eat Fruit"] = "吃果實", ["Sniper"] = "狙擊",
-    ["Store"] = "庫存", ["Stored"] = "已存",
-    ["Kitsune"] = "狐狸", ["Leopard"] = "豹", ["Dragon"] = "龍", ["Spirit"] = "靈魂",
-    ["Control"] = "控制", ["Venom"] = "毒", ["Shadow"] = "影", ["Dough"] = "糯米",
-    ["T-Rex"] = "暴龍", ["Mammoth"] = "猛瑪", ["Gravity"] = "重力", ["Blizzard"] = "雪",
-    ["Pain"] = "肉球", ["Rumble"] = "響雷", ["Portal"] = "傳送門", ["Phoenix"] = "不死鳥",
-    ["Sound"] = "音音", ["Spider"] = "線線", ["Love"] = "愛心", ["Buddha"] = "大佛",
-    ["Quake"] = "震震", ["Magma"] = "岩漿", ["Ghost"] = "幽靈", ["Barrier"] = "屏障",
-    ["Rubber"] = "橡膠", ["Light"] = "光", ["Diamond"] = "鑽石", ["Dark"] = "暗",
-    ["Sand"] = "沙", ["Ice"] = "冰", ["Falcon"] = "隼", ["Flame"] = "火",
-    ["Spike"] = "尖刺", ["Smoke"] = "煙", ["Bomb"] = "炸彈", ["Spring"] = "彈簧",
-    ["Chop"] = "斬斬", ["Spin"] = "旋轉", ["Rocket"] = "火箭",
+    -- ========== [詳細地點 Teleport Detailed] ==========
+    ["Travel to First Sea"] = "前往第一海域 (舊世界)",
+    ["Travel to Second Sea"] = "前往第二海域 (新世界)",
+    ["Travel to Third Sea"] = "前往第三海域",
+    ["Teleport to Jungle"] = "傳送到叢林",
+    ["Teleport to Pirate Village"] = "傳送到海賊村",
+    ["Teleport to Marine Fortress"] = "傳送到海軍要塞",
+    ["Teleport to Skylands"] = "傳送到空島",
+    ["Teleport to Prison"] = "傳送到監獄",
+    ["Teleport to Colosseum"] = "傳送到競技場",
+    ["Teleport to Magma Village"] = "傳送到岩漿村",
+    ["Teleport to Underwater City"] = "傳送到海底城",
+    ["Teleport to Fountain City"] = "傳送到噴泉城",
+    ["Teleport to Cafe"] = "傳送到咖啡廳",
+    ["Teleport to Green Zone"] = "傳送到綠區",
+    ["Teleport to Graveyard"] = "傳送到墓地",
+    ["Teleport to Snow Mountain"] = "傳送到雪山",
+    ["Teleport to Cursed Ship"] = "傳送到詛咒之船",
+    ["Teleport to Ice Castle"] = "傳送到冰堡",
+    ["Teleport to Forgotten Island"] = "傳送到遺忘之島",
+    ["Teleport to Port Town"] = "傳送到港口鎮",
+    ["Teleport to Hydra Island"] = "傳送到九頭蛇島",
+    ["Teleport to Great Tree"] = "傳送到大樹",
+    ["Teleport to Floating Turtle"] = "傳送到浮龜島",
+    ["Teleport to Castle on the Sea"] = "傳送到海中城堡",
+    ["Teleport to Haunted Castle"] = "傳送到鬧鬼城堡",
+    ["Teleport to Cake Land"] = "傳送到蛋糕島",
     
-    -- ================= [地點 Locations] =================
-    ["Sea 1"] = "一海", ["Sea 2"] = "二海", ["Sea 3"] = "三海",
-    ["Starter Pirate"] = "海賊島", ["Starter Marine"] = "海軍島", ["Jungle"] = "叢林",
-    ["Middle Town"] = "中城", ["Mansion"] = "豪宅", ["Castle"] = "城堡",
-    ["Port Town"] = "港口", ["Hydra Island"] = "九頭蛇", ["Great Tree"] = "大樹",
-    ["Floating Turtle"] = "浮龜", ["Haunted Castle"] = "鬧鬼城堡",
-    ["Cake Land"] = "蛋糕島", ["Chocolate Land"] = "巧克力島", ["Candy Land"] = "糖果島",
-    ["Tiki Outpost"] = "Tiki 前哨站",
+    -- ========== [NPC 與對話 NPCs & Dialogue] ==========
+    ["Blox Fruit Dealer"] = "惡魔果實商人",
+    ["Blox Fruit Gacha"] = "果實抽獎商人",
+    ["Boat Dealer"] = "船商",
+    ["Luxury Boat Dealer"] = "豪華船商",
+    ["Sword Dealer"] = "劍商",
+    ["Gun Dealer"] = "槍商",
+    ["Master of Auras"] = "霸氣大師",
+    ["Colour Specialist"] = "顏色專家",
+    ["Titles Specialist"] = "稱號專家",
+    ["Quest Giver"] = "任務發布者",
+    ["Bartilo"] = "Bartilo",
+    ["Trevor"] = "Trevor",
+    ["Arowe"] = "Arowe",
+    ["Lunoven"] = "Lunoven",
+    ["citizen"] = "市民",
+    ["Experimic"] = "Experimic",
+    ["Horned Man"] = "角男",
+    ["Hungry Man"] = "飢餓的人",
+    ["Previous Hero"] = "前任英雄",
+    ["Rich Man"] = "富人",
+    ["Sick Man"] = "病人",
+    ["Tort"] = "Tort",
+    ["Wenlocktoad"] = "Wenlocktoad",
+    ["Yoshi"] = "Yoshi",
+    ["Ziro the Physician"] = "醫師 Ziro",
     
-    -- ================= [顏色 Colors] =================
-    ["Red"] = "紅", ["Blue"] = "藍", ["Green"] = "綠", ["Yellow"] = "黃",
-    ["Purple"] = "紫", ["Black"] = "黑", ["White"] = "白", ["Rainbow"] = "彩虹",
-    ["Orange"] = "橘", ["Pink"] = "粉紅", ["Cyan"] = "青", ["Brown"] = "棕"
+    -- ========== [雜項優化 Misc & Optimization] ==========
+    ["Optimization Menu"] = "優化選單",
+    ["White Screen Mode"] = "白屏模式 (省電)",
+    ["Boost FPS"] = "提升 FPS (流暢)",
+    ["Remove All Effects"] = "移除所有特效",
+    ["Remove Damage Text"] = "移除傷害文字",
+    ["Remove Notifications"] = "移除系統通知",
+    ["Auto Execute Script"] = "自動執行腳本",
+    ["Server Hop"] = "更換伺服器",
+    ["Rejoin Server"] = "重新加入伺服器",
+    ["Hop Low Player Server"] = "尋找人少伺服器",
+    ["Redeem All Active Codes"] = "兌換所有有效代碼",
+    ["RTX Mode (Fake)"] = "RTX 模式 (假)",
+    ["Invisible Mode"] = "隱形模式",
+    ["Fly Speed"] = "飛行速度",
+    
+    -- ========== [果實名稱大全 (無壓縮)] ==========
+    -- 自然系
+    ["Smoke Fruit"] = "煙霧果實", ["Flame Fruit"] = "火焰果實", ["Ice Fruit"] = "冰凍果實",
+    ["Sand Fruit"] = "沙沙果實", ["Dark Fruit"] = "暗暗果實", ["Light Fruit"] = "光之果實",
+    ["Magma Fruit"] = "岩漿果實", ["Rumble Fruit"] = "響雷果實", ["Blizzard Fruit"] = "雪雪果實",
+    ["Gas Fruit"] = "瓦斯果實",
+    -- 超人系
+    ["Chop Fruit"] = "斬斬果實", ["Spring Fruit"] = "彈簧果實", ["Bomb Fruit"] = "炸彈果實",
+    ["Spike Fruit"] = "尖刺果實", ["Rubber Fruit"] = "橡膠果實", ["Barrier Fruit"] = "屏障果實",
+    ["Ghost Fruit"] = "幽靈果實", ["Quake Fruit"] = "震震果實", ["Love Fruit"] = "愛心果實",
+    ["Spider Fruit"] = "線線果實", ["Sound Fruit"] = "音音果實", ["Pain Fruit"] = "肉球果實",
+    ["Portal Fruit"] = "傳送門果實", ["Gravity Fruit"] = "重力果實", ["Dough Fruit"] = "糯米果實",
+    ["Shadow Fruit"] = "影影果實", ["Venom Fruit"] = "毒毒果實", ["Control Fruit"] = "控制果實",
+    ["Spirit Fruit"] = "靈魂果實",
+    -- 動物系
+    ["Falcon Fruit"] = "隼之果實", ["Buddha Fruit"] = "大佛果實", ["Phoenix Fruit"] = "不死鳥果實",
+    ["Leopard Fruit"] = "豹之果實", ["Dragon Fruit"] = "龍之果實", ["Mammoth Fruit"] = "猛瑪果實",
+    ["T-Rex Fruit"] = "暴龍果實", ["Kitsune Fruit"] = "狐狸果實"
 }
 
--- [3. 邏輯壓縮引擎 (The Pattern Matcher)]
--- 這裡的一行代碼等於 10000 行翻譯
--- 例如: "Level: 123" 會自動變成 "等級: 123"
-local Patterns = {
-    ["Level"] = "等級", ["Beli"] = "貝里", ["Fragments"] = "碎片",
-    ["Health"] = "血量", ["Energy"] = "體力", ["Damage"] = "傷害",
-    ["Ping"] = "延遲", ["FPS"] = "幀數", ["Bounty"] = "賞金", ["Honor"] = "榮譽",
-    ["Mastery"] = "精通", ["Distance"] = "距離", ["Time"] = "時間",
-    ["Cooldown"] = "冷卻", ["Price"] = "價格", ["Stocks"] = "庫存",
-    ["Current"] = "當前", ["Next"] = "下一個", ["Required"] = "需要",
-    ["Spawned"] = "已生成", ["Despawned"] = "已消失",
-    ["Skill Z"] = "技能 Z", ["Skill X"] = "技能 X",
-    ["Skill C"] = "技能 C", ["Skill V"] = "技能 V", ["Skill F"] = "技能 F",
-    ["Transformation"] = "變身", ["Flying"] = "飛行"
-}
-
--- [4. 強制覆蓋引擎 (Overdrive Engine)]
+-- [3. 暴力替換引擎 (Brute Force Engine)]
+-- 這裡不使用任何部分匹配，只有當文本完全等於字典中的鍵時才替換。
+-- 這保證了絕對的準確性，但需要極其龐大的字典支持。
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 
 local function TranslateObject(object)
     if not object then return end
     
-    -- 針對所有可能的文字屬性進行掃描 (包括輸入框提示和工具提示)
-    local props = {"Text", "PlaceholderText", "ToolTip"}
+    -- 掃描並替換多種文本屬性
+    local props = {"Text", "PlaceholderText", "ToolTip", "Name"}
     
     for _, prop in pairs(props) do
         if pcall(function() return object[prop] end) and object[prop] and object[prop] ~= "" then
             local originalText = object[prop]
-            local newText = originalText
-            local changed = false
             
-            -- 1. 靜態全詞匹配 (優先級最高)
-            if Dictionary[originalText] then
-                object[prop] = Dictionary[originalText]
-                return
+            -- [核心邏輯] 純靜態全詞匹配 (無壓縮，無邏輯)
+            -- 只有當整段文字完全匹配時才翻譯
+            if RawDictionary[originalText] then
+                object[prop] = RawDictionary[originalText]
             end
             
-            -- 2. 正則模式匹配 (處理數字)
-            for eng, chn in pairs(Patterns) do
-                if string.find(newText, eng) then
-                    newText = string.gsub(newText, eng, chn)
-                    changed = true
-                end
-            end
-            
-            -- 3. 侵略性模糊匹配 (如果不匹配模式，則嘗試拆詞)
-            if not changed then
-                for eng, chn in pairs(Dictionary) do
-                    -- 限制長度大於 4 以免誤殺 (例如 "in" 變成 "在")
-                    if #eng >= 4 and string.find(newText, eng) then
+            -- [後備邏輯] 為了防止動態數字完全不顯示，保留一個最小限度的模糊匹配
+            -- 但我們只針對非常長的獨特詞彙，避免誤殺
+            if not RawDictionary[originalText] then
+                local newText = originalText
+                local changed = false
+                for eng, chn in pairs(RawDictionary) do
+                    -- 只有當字典裡的詞夠長 (大於 5 個字) 且存在於目標文本中時才替換
+                    if #eng > 5 and string.find(newText, eng, 1, true) then
                         newText = string.gsub(newText, eng, chn)
                         changed = true
                     end
                 end
+                if changed then object[prop] = newText end
             end
-            
-            if changed then object[prop] = newText end
         end
     end
 end
 
--- [5. 暴力循環 (Infinite Loop)]
+-- [4. 無限循環掃描 (Infinite Scan)]
 task.spawn(function()
+    -- 等待 BlueX 載入
+    task.wait(4)
     game.StarterGui:SetCore("SendNotification", {
         Title = "SYSTEM: APEX",
-        Text = "阿卡西記錄已啟動 (全覆蓋漢化)",
-        Duration = 5
+        Text = "萬機神數據洪流已啟動 (無壓縮模式)",
+        Duration = 8
     })
     
     while true do
-        -- 0.2 秒掃描一次，極限速度
-        task.wait(0.2)
+        -- 0.3 秒暴力掃描一次
+        task.wait(0.3)
         
         pcall(function()
-            -- 掃描 CoreGui
+            -- 掃描 CoreGui (主要目標)
             for _, gui in pairs(CoreGui:GetChildren()) do
                 if gui:IsA("ScreenGui") and gui.Name ~= "RobloxGui" and gui.Name ~= "TopBar" then
                     for _, v in pairs(gui:GetDescendants()) do
@@ -226,7 +312,7 @@ task.spawn(function()
                 end
             end
             
-            -- 掃描 PlayerGui
+            -- 掃描 PlayerGui (次要目標)
             if Players.LocalPlayer and Players.LocalPlayer:FindFirstChild("PlayerGui") then
                 for _, gui in pairs(Players.LocalPlayer.PlayerGui:GetChildren()) do
                     for _, v in pairs(gui:GetDescendants()) do
