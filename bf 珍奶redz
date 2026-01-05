@@ -1,7 +1,7 @@
 --[[
-    SYSTEM: APEX // OMEGA-SINGULARITY (TOTAL TRANSLATION)
-    核心：無視效能的暴力全域替換
-    警告：此腳本極度消耗資源，可能導致 FPS 下降，但翻譯覆蓋率為 100%
+    SYSTEM: APEX // BABEL (TOTAL LINGUISTIC RECONSTRUCTION)
+    核心：地毯式單字替換
+    特點：連 'of', 'the', 'is' 都翻，確保畫面無英文
     作者：珍奶 (絕對統治)
 ]]
 
@@ -12,224 +12,160 @@ task.spawn(function()
     end)
 end)
 
--- [2. 終極奇點辭海 (The Singularity Dictionary)]
--- 這裡包含了 Blox Fruits 所有的專有名詞、動詞、介面用語
-local RawDict = {
-    -- ================= [介面與系統 UI/System] =================
-    ["Teddy Hub"]="泰坦中心", ["Teddy"]="泰坦", ["Main"]="主頁", ["General"]="一般",
-    ["Farming"]="練級", ["Combat"]="戰鬥", ["Stats"]="屬性", ["Teleport"]="傳送",
-    ["Raid"]="副本", ["Shop"]="商店", ["Misc"]="雜項", ["Items"]="物品",
-    ["Dungeon"]="地牢", ["Settings"]="設置", ["Credit"]="製作", ["Dev"]="開發",
-    ["Config"]="配置", ["Status"]="狀態", ["Active"]="運行中", ["Waiting"]="等待中",
-    ["None"]="無", ["Enable"]="啟用", ["Disable"]="禁用", ["Equip"]="裝備",
-    ["Unequip"]="卸下", ["Auto"]="自動", ["Select"]="選擇", ["Refresh"]="刷新",
-    ["Click"]="點擊", ["On"]="開", ["Off"]="關", ["Open"]="開啟", ["Close"]="關閉",
-    ["Execute"]="執行", ["Script"]="腳本", ["Key"]="密鑰", ["Check"]="檢查",
-    ["Mode"]="模式", ["Island"]="島嶼", ["Boss"]="王", ["Radius"]="半徑",
-    ["Distance"]="距離", ["Delay"]="延遲", ["Time"]="時間", ["Success"]="成功",
-    ["Failed"]="失敗", ["Error"]="錯誤", ["Purchased"]="已購買", ["Full"]="滿",
-    ["Safe Zone"]="安全區", ["PVP"]="對戰", ["Enabled"]="已啟用", ["Disabled"]="已禁用",
-    ["Server"]="伺服器", ["Hop"]="更換", ["Rejoin"]="重連", ["Code"]="代碼",
+-- [2. 巴別塔辭海 (The Babel Dictionary)]
+local BabelDict = {
+    -- [1. 核心名詞 - Core Nouns]
+    ["Teddy Hub"]="泰坦中心", ["Teddy"]="泰坦", ["Hub"]="中心",
+    ["Main"]="主頁", ["General"]="一般", ["Settings"]="設置", ["Config"]="配置",
+    ["Credits"]="製作", ["Discord"]="群組", ["Version"]="版本", ["Key"]="密鑰",
+    ["Script"]="腳本", ["Mode"]="模式", ["Status"]="狀態", ["Method"]="方式",
+    ["Distance"]="距離", ["Radius"]="半徑", ["Delay"]="延遲", ["Cooldown"]="冷卻",
+    ["Color"]="顏色", ["Theme"]="主題", ["UI"]="介面", ["Size"]="大小",
     
-    -- ================= [動作與動詞 Verbs] =================
-    ["Buy"]="購買", ["Sell"]="出售", ["Store"]="儲存", ["Eat"]="吃",
-    ["Get"]="獲取", ["Find"]="尋找", ["Collect"]="收集", ["Exchange"]="兌換",
-    ["Redeem"]="兌換", ["Start"]="開始", ["Stop"]="停止", ["Pause"]="暫停",
-    ["Resume"]="繼續", ["Load"]="讀取", ["Save"]="保存", ["Reset"]="重置",
-    ["Spawn"]="生成", ["Despawn"]="消失", ["Teleport to"]="傳送到",
-    ["Tween to"]="飛往", ["Bypass"]="繞過", ["Remove"]="移除", ["Boost"]="提升",
-    ["Join"]="加入", ["Leave"]="離開", ["Watch"]="觀看", ["Spectate"]="觀戰",
+    -- [2. 動作動詞 - Verbs]
+    ["Auto"]="自動", ["Farm"]="練級", ["Select"]="選擇", ["Refresh"]="刷新",
+    ["Start"]="開始", ["Stop"]="停止", ["Pause"]="暫停", ["Resume"]="繼續",
+    ["Enable"]="啟用", ["Disable"]="禁用", ["Equip"]="裝備", ["Unequip"]="卸下",
+    ["Buy"]="購買", ["Sell"]="出售", ["Store"]="存庫", ["Redeem"]="兌換",
+    ["Click"]="點擊", ["Teleport"]="傳送", ["Tween"]="飛往", ["Bypass"]="繞過",
+    ["Bring"]="吸過來", ["Kill"]="殺", ["Attack"]="攻擊", ["Dodge"]="閃避",
+    ["Aim"]="瞄準", ["Walk"]="走", ["Jump"]="跳", ["Fly"]="飛",
+    ["Hop"]="跳服", ["Join"]="加入", ["Leave"]="離開", ["Rejoin"]="重連",
+    ["Copy"]="複製", ["Execute"]="執行", ["Check"]="檢查", ["Verify"]="驗證",
+    ["Eat"]="吃", ["Drop"]="丟棄", ["Spawn"]="生成", ["Despawn"]="消失",
+    ["Collect"]="收集", ["Find"]="尋找", ["Exchange"]="交換", ["Stats"]="加點",
+    ["Refund"]="重置", ["Reset"]="重置", ["Boost"]="加速", ["Remove"]="移除",
+    ["Show"]="顯示", ["Hide"]="隱藏", ["Open"]="開", ["Close"]="關",
     
-    -- ================= [練級與自動化 Farming] =================
-    ["Auto Farm Level"]="自動練等級", ["Auto Farm Nearest"]="刷最近怪",
-    ["Auto Farm Chest"]="光速搜刮寶箱", ["Auto Farm Boss"]="自動打指定王",
-    ["Auto Farm All Bosses"]="自動刷所有王", ["Auto Farm Mastery"]="自動刷精通",
-    ["Auto Quest"]="自動接任務", ["Mob Aura"]="吸怪光環", ["Bring Mob"]="吸怪",
-    ["Fast Attack"]="光速攻擊", ["Attack Speed"]="攻擊速度", ["Safe Health"]="安全血量",
-    ["Double Quest"]="雙重任務", ["Bypass TP"]="繞過傳送檢測", ["Instant TP"]="瞬間傳送",
-    ["Auto Evo Race"]="自動進化種族", ["God Mode"]="無敵模式", ["Farm Mode"]="練級模式",
-    ["Select Weapon"]="選武器", ["Refresh Weapon"]="刷武器", ["Select Mob"]="選怪物",
-    ["Level"]="等級", ["Nearest"]="最近", ["Chest"]="寶箱", ["All Bosses"]="所有王",
-    ["Mastery"]="精通", ["Quest"]="任務", ["Mob"]="怪物", ["Weapon"]="武器",
+    -- [3. 遊戲術語 - Game Terms]
+    ["Level"]="等級", ["Quest"]="任務", ["Boss"]="王", ["Mob"]="怪",
+    ["Enemy"]="敵人", ["Player"]="玩家", ["Character"]="角色", ["Team"]="隊伍",
+    ["Server"]="伺服器", ["Time"]="時間", ["Ping"]="延遲", ["FPS"]="幀數",
+    ["Health"]="血量", ["Energy"]="體力", ["Beli"]="貝里", ["Fragments"]="碎片",
+    ["Bounty"]="賞金", ["Honor"]="榮譽", ["Damage"]="傷害", ["Mastery"]="精通",
+    ["Inventory"]="背包", ["Material"]="材料", ["Item"]="物品", ["Accessory"]="飾品",
+    ["Fruit"]="果實", ["Weapon"]="武器", ["Sword"]="劍", ["Gun"]="槍",
+    ["Melee"]="近戰", ["Defense"]="防禦", ["Blox Fruit"]="惡魔果實",
+    ["Fighting Style"]="格鬥流派", ["Race"]="種族", ["Haki"]="霸氣",
+    ["Observation"]="見聞色", ["Armament"]="武裝色", ["Conqueror"]="霸王色",
+    ["Awakening"]="覺醒", ["Raid"]="副本", ["Dungeon"]="地牢", ["Chip"]="晶片",
+    ["Law"]="羅", ["Order"]="秩序", ["Kitsune"]="狐狸", ["T-Rex"]="暴龍",
+    ["Mammoth"]="猛瑪", ["Sound"]="音音", ["Portal"]="傳送門", ["Buddha"]="大佛",
+    ["Magma"]="岩漿", ["Dough"]="糯米", ["Leopard"]="豹", ["Dragon"]="龍",
+    ["Spirit"]="靈魂", ["Venom"]="毒", ["Shadow"]="影", ["Gravity"]="重力",
+    ["Blizzard"]="雪", ["Pain"]="肉球", ["Rumble"]="響雷", ["Phoenix"]="不死鳥",
+    ["Spider"]="線線", ["Love"]="愛心", ["Quake"]="震震", ["Ghost"]="幽靈",
+    ["Barrier"]="屏障", ["Rubber"]="橡膠", ["Light"]="光", ["Diamond"]="鑽石",
+    ["Dark"]="暗", ["Sand"]="沙", ["Ice"]="冰", ["Falcon"]="隼",
+    ["Flame"]="火", ["Spike"]="尖刺", ["Smoke"]="煙", ["Bomb"]="炸彈",
+    ["Spring"]="彈簧", ["Chop"]="斬斬", ["Spin"]="旋轉", ["Rocket"]="火箭",
     
-    -- ================= [戰鬥 Combat] =================
-    ["Kill Aura"]="殺戮光環", ["Aim Bot"]="自瞄", ["AimBot Skill"]="技能自瞄",
-    ["Safe Mode"]="安全模式", ["Player"]="玩家", ["ESP Player"]="透視玩家",
-    ["ESP Chest"]="透視寶箱", ["ESP Fruit"]="透視果實", ["WalkSpeed"]="移速",
-    ["JumpPower"]="跳躍", ["Infinite Jump"]="無限跳", ["Noclip"]="穿牆",
-    ["Fly"]="飛行", ["Dodge"]="自動閃避", ["Observation V2"]="見聞色 V2",
-    ["Auto Haki"]="自動霸氣", ["Auto Ken"]="自動見聞", ["Auto Click"]="自動點擊",
-    ["Skill Z"]="技能 Z", ["Skill X"]="技能 X", ["Skill C"]="技能 C",
-    ["Skill V"]="技能 V", ["Skill F"]="技能 F", ["Cooldown"]="冷卻",
-    ["Damage"]="傷害", ["Health"]="血量", ["Energy"]="體力",
+    -- [4. 介係詞與形容詞 (強制中文化) - Adjectives/Prepositions]
+    ["Nearest"]="最近的", ["All"]="所有", ["Full"]="滿", ["Empty"]="空",
+    ["Safe"]="安全", ["Fast"]="快速", ["Slow"]="慢速", ["Infinite"]="無限",
+    ["Active"]="運行中", ["Waiting"]="等待中", ["None"]="無",
+    ["On"]="開", ["Off"]="關", ["True"]="是", ["False"]="否",
+    ["Success"]="成功", ["Failed"]="失敗", ["Error"]="錯誤",
+    ["To"]="到", ["For"]="為了", ["In"]="在", ["At"]="於",
+    ["By"]="被", ["With"]="用", ["From"]="從", ["And"]="和",
+    ["The"]="這", ["Is"]="是", ["Of"]="的", ["Your"]="你的",
+    ["My"]="我的", ["New"]="新", ["Old"]="舊", ["Next"]="下一個",
+    ["Current"]="當前", ["Required"]="需要", ["Available"]="可用",
+    ["Random"]="隨機", ["Specific"]="指定", ["Custom"]="自訂",
     
-    -- ================= [海戰 Sea Events] =================
-    ["Sea Events"]="海怪事件", ["Auto Sea Beast"]="自動打海獸", ["Auto Terror Shark"]="打恐怖鯊魚",
-    ["Auto Shipwright"]="自動修船", ["Auto Piranha"]="打食人魚", ["Auto Shark"]="打鯊魚",
-    ["Auto Ghost Ship"]="打幽靈船", ["Boat"]="船", ["Buy Boat"]="買船",
-    ["Kitsune Island"]="狐狸島", ["Find Kitsune Island"]="找狐狸島",
-    ["Azure Ember"]="藍色餘燼", ["Collect Azure Ember"]="收集餘燼",
-    ["Exchange Azure Ember"]="兌換餘燼", ["Shark Anchor"]="鯊魚錨",
-    ["Magnet"]="磁鐵", ["Terror Shark Magnet"]="恐怖鯊魚磁鐵",
-    ["Terror Shark"]="恐怖鯊魚", ["Leviathan"]="利維坦", ["Sea Beast"]="海獸",
-    ["Piranha"]="食人魚", ["Shark"]="鯊魚", ["Ghost Ship"]="幽靈船",
+    -- [5. 物品與其他名詞 - Misc Items]
+    ["Bone"]="骨頭", ["Ectoplasm"]="靈質", ["Ore"]="礦石", ["Scale"]="鱗片",
+    ["Wings"]="翅膀", ["Tusk"]="獠牙", ["Scrap"]="廢料", ["Metal"]="金屬",
+    ["Tooth"]="牙齒", ["Gold"]="金", ["Fang"]="尖牙", ["Droplet"]="水滴",
+    ["Leather"]="皮革", ["Gunpowder"]="火藥", ["Cocoa"]="可可", ["Tail"]="尾巴",
+    ["Fragment"]="碎片", ["Heart"]="心臟", ["Mirror"]="鏡子", ["Fractal"]="碎片",
+    ["Helm"]="頭盔", ["Coat"]="大衣", ["Cape"]="披風", ["Scarf"]="圍巾",
+    ["Ring"]="戒指", ["Glasses"]="眼鏡", ["Hat"]="帽子", ["Mask"]="面具",
+    ["Ribbon"]="絲帶", ["Lamp"]="燈", ["Anchor"]="錨", ["Magnet"]="磁鐵",
+    ["Guitar"]="吉他", ["Scythe"]="鐮刀", ["Dagger"]="匕首", ["Katana"]="武士刀",
+    ["Trident"]="三叉戟", ["Cane"]="手杖", ["Pipe"]="水管", ["Bow"]="弓",
+    ["Rifle"]="步槍", ["Cannon"]="加農砲", ["Slingshot"]="彈弓", ["Musket"]="火槍",
+    ["Boat"]="船", ["Ship"]="船", ["Sea"]="海", ["Ocean"]="海洋",
+    ["Island"]="島嶼", ["Zone"]="區域", ["Spot"]="點", ["Point"]="點",
     
-    -- ================= [副本 Raid] =================
-    ["Auto Raid"]="自動打副本", ["Select Raid"]="選擇副本", ["Kill Aura (Raid)"]="副本殺戮",
-    ["Next Island"]="下一關", ["Buy Chip"]="買晶片", ["Start Raid"]="開始副本",
-    ["Awakening"]="覺醒", ["Law Raid"]="羅的副本", ["Order Raid"]="秩序副本",
-    ["Dough King"]="糯米王", ["Rip Indra"]="因陀羅", ["Cake Prince"]="蛋糕王子",
-    ["Flame"]="火焰", ["Ice"]="冰凍", ["Quake"]="震震", ["Light"]="光", 
-    ["Dark"]="暗暗", ["String"]="線線", ["Rumble"]="響雷", ["Magma"]="岩漿", 
-    ["Buddha"]="大佛", ["Sand"]="沙沙", ["Phoenix"]="不死鳥", ["Dough"]="糯米",
-    
-    -- ================= [種族 V4 Race] =================
-    ["Race V4"]="種族 V4", ["Auto Trial"]="自動試煉", ["Auto Gear"]="撿齒輪",
-    ["Pull Lever"]="拉拉桿", ["Find Mirage"]="找海市蜃樓", ["Mirage Island"]="海市蜃樓",
-    ["Teleport to Gear"]="瞬移到齒輪", ["Ancient One"]="古老之人", ["Full Moon"]="滿月",
-    ["Moon Status"]="月亮狀態", ["Transform"]="變身", ["Gear"]="齒輪",
-    ["Red Gear"]="紅齒輪", ["Blue Gear"]="藍齒輪", ["Green Gear"]="綠齒輪",
-    ["Human"]="人類", ["Rabbit"]="兔子", ["Shark"]="鯊魚", ["Angel"]="天使",
-    ["Demon"]="惡魔", ["Cyborg"]="生化人", ["Ghoul"]="食屍鬼",
-    
-    -- ================= [果實 Fruits] =================
-    ["Auto Buy Fruit"]="自動買果實", ["Auto Store Fruit"]="自動存果實",
-    ["Random Fruit"]="隨機抽果實", ["Eat Fruit"]="吃果實", ["Sniper"]="狙擊",
-    ["Kitsune"]="狐狸", ["Leopard"]="豹", ["Dragon"]="龍", ["Spirit"]="靈魂",
-    ["Control"]="控制", ["Venom"]="毒", ["Shadow"]="影", ["Dough"]="糯米",
-    ["T-Rex"]="暴龍", ["Mammoth"]="猛瑪", ["Gravity"]="重力", ["Blizzard"]="雪",
-    ["Pain"]="肉球", ["Rumble"]="響雷", ["Portal"]="傳送門", ["Phoenix"]="不死鳥",
-    ["Sound"]="音音", ["Spider"]="線線", ["Love"]="愛心", ["Buddha"]="大佛",
-    ["Quake"]="震震", ["Magma"]="岩漿", ["Ghost"]="幽靈", ["Barrier"]="屏障",
-    ["Rubber"]="橡膠", ["Light"]="光", ["Diamond"]="鑽石", ["Dark"]="暗",
-    ["Sand"]="沙", ["Ice"]="冰", ["Falcon"]="隼", ["Flame"]="火",
-    ["Spike"]="尖刺", ["Smoke"]="煙", ["Bomb"]="炸彈", ["Spring"]="彈簧",
-    ["Chop"]="斬斬", ["Spin"]="旋轉", ["Rocket"]="火箭",
-    
-    -- ================= [武器 Swords & Guns] =================
-    ["Cursed Dual Katana"]="詛咒雙刀", ["Dark Dagger"]="黑刀", ["Hallow Scythe"]="聖鐮",
-    ["Soul Guitar"]="靈魂吉他", ["Tushita"]="杜希塔", ["Yama"]="閻魔",
-    ["Rengoku"]="煉獄劍", ["Saber"]="紅髮劍", ["Shisui"]="秋水", ["Waddo"]="和道一文字",
-    ["Sadi"]="鬼哭", ["Bisento"]="白鬍子刀", ["Pole (2nd Form)"]="響雷棍 V2",
-    ["Midnight Blade"]="午夜之刃", ["Buddy Sword"]="夥伴劍", ["Canvander"]="白劍",
-    ["Spikey Trident"]="尖刺三叉戟", ["Dragon Trident"]="龍之三叉戟", ["Gravity Cane"]="重力手杖",
-    ["Pipe"]="水管", ["Triple Katana"]="三刀流", ["Kabucha"]="卡布查", ["Serpent Bow"]="蛇弓",
-    ["Acidum Rifle"]="酸液槍", ["Bizarre Rifle"]="怪異步槍", ["Fox Lamp"]="狐狸燈",
-    ["Shark Anchor"]="鯊魚錨", ["Trident"]="三叉戟", ["Pole"]="響雷棍",
-    ["Iron Mace"]="鐵棒", ["Dual Katana"]="雙刀", ["Katana"]="武士刀",
-    ["Cutlass"]="彎刀", ["Slingshot"]="彈弓", ["Musket"]="火槍",
-    
-    -- ================= [物品與材料 Materials] =================
-    ["Auto Bone"]="刷骨頭", ["Auto Cake"]="刷蛋糕", ["Auto CDK"]="刷詛咒雙刀",
-    ["Auto Godhuman"]="刷神人拳", ["Material"]="材料", ["Bone"]="骨頭",
-    ["Ectoplasm"]="靈質", ["Magma Ore"]="岩漿礦", ["Dragon Scale"]="龍鱗",
-    ["Angel Wings"]="天使翅膀", ["Mini Tusk"]="小獠牙", ["Scrap Metal"]="廢金屬",
-    ["Shark Tooth"]="鯊魚牙", ["Fool's Gold"]="愚人金", ["Vampire Fang"]="吸血鬼牙",
-    ["Mystic Droplet"]="神秘水滴", ["Leather"]="皮革", ["Gunpowder"]="火藥",
-    ["Electric Wing"]="電擊翅膀", ["Fish Tail"]="魚尾", ["Dark Fragment"]="暗黑碎片",
-    ["Leviathan Scale"]="利維坦鱗", ["Leviathan Heart"]="利維坦心",
-    ["Mirror Fractal"]="鏡子碎片", ["Valkyrie Helm"]="女武神頭盔",
-    
-    -- ================= [Boss 名稱] =================
-    ["Gorilla King"]="猩猩王", ["Bobby"]="小丑巴比", ["Saw"]="惡龍",
-    ["Yeti"]="雪怪", ["Vice Admiral"]="海軍中將", ["Swan"]="天鵝",
-    ["Magma Admiral"]="赤犬", ["Fishman Lord"]="魚人領主", ["Wysper"]="韋柏",
-    ["Thunder God"]="艾涅爾", ["Cyborg"]="生化人", ["Ice Admiral"]="青雉",
-    ["Diamond"]="鑽石喬茲", ["Jeremy"]="傑拉米", ["Fajita"]="藤虎",
-    ["Don Swan"]="多佛朗明哥", ["Smoke Admiral"]="斯摩格", ["Tide Keeper"]="潮汐守護者",
-    ["Darkbeard"]="黑鬍子", ["Order"]="秩序", ["Cursed Captain"]="詛咒船長",
-    ["Stone"]="岩石", ["Island Empress"]="女帝", ["Kilo Admiral"]="藤虎",
-    ["Captain Elephant"]="象船長", ["Beautiful Pirate"]="卡文迪許",
-    ["Longma"]="龍馬", ["Cake Queen"]="蛋糕女王", ["Cake Prince"]="蛋糕王子",
-    
-    -- ================= [地點 Locations] =================
-    ["Sea 1"]="一海", ["Sea 2"]="二海", ["Sea 3"]="三海",
-    ["Travel to Sea 1"]="去一海", ["Travel to Sea 2"]="去二海", ["Travel to Sea 3"]="去三海",
-    ["Jungle"]="叢林", ["Pirate Village"]="海賊村", ["Desert"]="沙漠",
-    ["Middle Town"]="中城", ["Frozen Village"]="冰凍村", ["Marine Fortress"]="海軍要塞",
-    ["Skylands"]="空島", ["Prison"]="監獄", ["Colosseum"]="競技場",
-    ["Magma Village"]="岩漿村", ["Underwater City"]="海底城", ["Fountain City"]="噴泉城",
-    ["Kingdom of Rose"]="玫瑰王國", ["Cafe"]="咖啡廳", ["Green Zone"]="綠區",
-    ["Graveyard"]="墓地", ["Snow Mountain"]="雪山", ["Hot and Cold"]="冰火島",
-    ["Cursed Ship"]="詛咒之船", ["Ice Castle"]="冰堡", ["Forgotten Island"]="遺忘之島",
-    ["Port Town"]="港口鎮", ["Hydra Island"]="九頭蛇島", ["Great Tree"]="大樹",
-    ["Floating Turtle"]="浮龜島", ["Castle on the Sea"]="海中城堡", ["Haunted Castle"]="鬧鬼城堡",
-    ["Peanut Land"]="花生島", ["Ice Cream Land"]="冰淇淋島", ["Cake Land"]="蛋糕島",
-    ["Chocolate Land"]="巧克力島", ["Candy Land"]="糖果島", ["Tiki Outpost"]="Tiki 前哨站",
-    
-    -- ================= [顏色 Colors] =================
-    ["Red"]="紅", ["Blue"]="藍", ["Green"]="綠", ["Yellow"]="黃",
-    ["Purple"]="紫", ["Black"]="黑", ["White"]="白", ["Rainbow"]="彩虹",
-    ["Orange"]="橘", ["Pink"]="粉紅", ["Cyan"]="青", ["Brown"]="棕",
-    
-    -- ================= [貨幣與數值] =================
-    ["Beli"]="貝里", ["Fragments"]="碎片", ["Ping"]="延遲", ["FPS"]="幀數",
-    ["Bounty"]="賞金", ["Honor"]="榮譽", ["Price"]="價格", ["Stocks"]="庫存",
-    ["Required"]="需要", ["Zone"]="區域", ["Lv."]="等", ["Level"]="等級"
+    -- [6. Teddy Hub 特有]
+    ["God Mode"]="無敵模式", ["Mob Aura"]="吸怪光環", ["Bring Mob"]="吸怪",
+    ["Fast Attack"]="光速攻擊", ["Attack Speed"]="攻擊速度", ["White Screen"]="白屏",
+    ["Black Screen"]="黑屏", ["Server Hop"]="換伺服器", ["Low GFX"]="低畫質",
+    ["Remove Effects"]="除特效", ["Remove Damage"]="除傷害字", ["Redeem Code"]="兌換碼",
+    ["Unlock"]="解鎖", ["Lock"]="鎖定", ["Save"]="保存", ["Load"]="讀取"
 }
 
--- [3. 轉義與排序 (崩潰防護)]
--- 確保括號、點號不會導致腳本報錯，並按長度排序以確保翻譯準確
-local function EscapePattern(text)
+-- [3. 構建優先級 (Priority Sorting)]
+-- 必須把長單字排前面，防止 "Auto Farm" 被拆成 "自動" 和 "練級" 導致語序混亂
+-- 雖然這次是強制單字替換，但排序能稍微讓結果好讀一點
+local function Escape(text)
     return text:gsub("([^%w])", "%%%1")
 end
 
 local SortedKeys = {}
-for k, v in pairs(RawDict) do
-    table.insert(SortedKeys, {key = k, val = v, pattern = EscapePattern(k)})
+for k, v in pairs(BabelDict) do
+    table.insert(SortedKeys, {key = k, val = v, pattern = Escape(k)})
 end
--- 長度優先排序：確保 "Auto Farm" 在 "Auto" 之前被翻譯
 table.sort(SortedKeys, function(a, b) return #a.key > #b.key end)
 
--- [4. 哨兵+暴力替換引擎]
+-- [4. 巴別塔引擎 (The Babel Engine)]
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
-local function TranslateObject(object)
-    if not object then return end
+-- 這是核心翻譯函數
+local function TranslateText(text)
+    if not text or text == "" or tonumber(text) then return text end
     
-    -- 掃描常見文字屬性
-    local props = {"Text", "PlaceholderText", "ToolTip"}
+    local newText = text
+    local changed = false
+
+    -- [暴力循環]
+    -- 對這句話進行幾百次的手術，把每一個認識的單字都挖出來
+    for _, entry in ipairs(SortedKeys) do
+        -- 使用不區分大小寫的查找會更慢但更準，這裡為了效能還是用區分大小寫
+        -- 但因為我們在字典裡加了很多常見詞，所以覆蓋率會很高
+        if string.find(newText, entry.pattern) then
+            newText = string.gsub(newText, entry.pattern, entry.val)
+            changed = true
+        end
+    end
+    
+    -- [最後補強] 處理數字單位
+    if string.find(newText, "Lv%.") then newText = string.gsub(newText, "Lv%.", "等") changed = true end
+    
+    return newText, changed
+end
+
+local function ProcessObject(obj)
+    if not obj then return end
+    
+    -- 掃描所有文字屬性
+    local props = {"Text", "PlaceholderText", "ToolTip", "Message"} -- 連 Message 都翻
+    
     for _, prop in pairs(props) do
-        -- 安全讀取
-        if pcall(function() return object[prop] end) and object[prop] and object[prop] ~= "" then
-            local originalText = object[prop]
-            local newText = originalText
-            local changed = false
-            
-            -- [核心] 暴力循環匹配
-            -- 即使文本是 "[Status: Waiting]", 也能翻譯出 "Status" 和 "Waiting"
-            for _, entry in ipairs(SortedKeys) do
-                if string.find(newText, entry.pattern) then
-                    newText = string.gsub(newText, entry.pattern, entry.val)
-                    changed = true
-                end
-            end
+        if pcall(function() return obj[prop] end) and obj[prop] and obj[prop] ~= "" then
+            local original = obj[prop]
+            local translated, changed = TranslateText(original)
             
             if changed then
-                object[prop] = newText
+                obj[prop] = translated
                 
-                -- [文字鎖定]
-                -- 防止 Teddy Hub 的動態更新把文字改回英文
-                -- 這會消耗效能，但能保證翻譯不消失
-                if not object:FindFirstChild("APEX_Lock") then
-                    local tag = Instance.new("BoolValue", object)
-                    tag.Name = "APEX_Lock"
+                -- [死鎖機制]
+                -- 防止 Teddy Hub 每秒刷新文字把中文洗掉
+                if not obj:FindFirstChild("BabelLock") then
+                    local lock = Instance.new("BoolValue", obj)
+                    lock.Name = "BabelLock"
                     
-                    -- 連接屬性變化信號
-                    object:GetPropertyChangedSignal(prop):Connect(function()
-                        -- 如果腳本把字改掉了，且不是我們改的中文
-                        if object[prop] ~= newText then
-                            -- 再執行一次翻譯
-                            local retryText = object[prop]
-                            for _, entry in ipairs(SortedKeys) do
-                                if string.find(retryText, entry.pattern) then
-                                    retryText = string.gsub(retryText, entry.pattern, entry.val)
-                                end
+                    obj:GetPropertyChangedSignal(prop):Connect(function()
+                        if obj[prop] ~= translated then
+                            -- 如果字變了，再翻一次
+                            local reTranslated, reChanged = TranslateText(obj[prop])
+                            if reChanged then
+                                obj[prop] = reTranslated
+                                translated = reTranslated -- 更新鎖定目標
                             end
-                            object[prop] = retryText
-                            newText = retryText -- 更新鎖定目標
                         end
                     end)
                 end
@@ -238,38 +174,43 @@ local function TranslateObject(object)
     end
 end
 
--- [5. 註冊與執行]
-local function Register(gui)
-    for _, v in pairs(gui:GetDescendants()) do
-        TranslateObject(v)
-    end
-    gui.DescendantAdded:Connect(function(v)
-        RunService.RenderStepped:Wait()
-        TranslateObject(v)
-    end)
-end
-
+-- [5. 啟動轟炸]
 task.spawn(function()
-    task.wait(4)
-    game.StarterGui:SetCore("SendNotification", {Title="SYSTEM: APEX", Text="終極奇點漢化已覆蓋 (暴力模式)", Duration=5})
+    task.wait(4) -- 給 UI 一點時間
+    game.StarterGui:SetCore("SendNotification", {
+        Title = "SYSTEM: APEX",
+        Text = "巴別塔模式啟動 (全單字替換)",
+        Duration = 5
+    })
     
-    -- 監聽 CoreGui (外掛層)
-    Register(CoreGui)
+    local function ScanTree(parent)
+        for _, v in pairs(parent:GetDescendants()) do
+            ProcessObject(v)
+        end
+        parent.DescendantAdded:Connect(function(v)
+            RunService.RenderStepped:Wait()
+            ProcessObject(v)
+        end)
+    end
     
-    -- 監聽 PlayerGui (備用)
+    -- 掃描 CoreGui
+    ScanTree(CoreGui)
+    
+    -- 掃描 PlayerGui
     if Players.LocalPlayer then
         local pGui = Players.LocalPlayer:WaitForChild("PlayerGui", 10)
-        if pGui then Register(pGui) end
+        if pGui then ScanTree(pGui) end
     end
     
-    -- 雙重保險：每 3 秒全域掃描一次，防止漏網之魚
+    -- 無限迴圈補漏 (每 2 秒掃一次全屏，確保沒漏網之魚)
     while true do
-        task.wait(3)
+        task.wait(2)
+        -- 只掃描外掛相關的 UI
         for _, gui in pairs(CoreGui:GetChildren()) do
             if gui:IsA("ScreenGui") and gui.Name ~= "RobloxGui" then
                 for _, v in pairs(gui:GetDescendants()) do
-                    if not v:FindFirstChild("APEX_Lock") then
-                        TranslateObject(v)
+                    if not v:FindFirstChild("BabelLock") then
+                        ProcessObject(v)
                     end
                 end
             end
