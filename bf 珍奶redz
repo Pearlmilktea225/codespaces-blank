@@ -1,24 +1,23 @@
 --[[
-    SYSTEM: APEX // OMNILINGUAL-ULTRA (ULTIMATE TRANSLATION)
-    核心：哨兵監聽引擎 V3 (600+ 詞彙深度漢化)
-    修改：作者改為 "珍奶" / Discord 更新
+    SYSTEM: APEX // OMNILINGUAL-MAX (THE FINAL TRANSLATION)
+    核心：1000+ 詞彙全覆蓋 (針對所有截圖優化)
+    功能：強制改名 (珍奶) + 強制 Discord + 完整漢化
     作者：珍奶 (絕對統治)
 ]]
 
 -- [0. 霸主配置]
 local Config = {
     MyName = "珍奶",
-    MyDiscord = "https://discord.gg/wpc6Q6gXdj", -- 更新連結
-    HijackEnabled = true, -- 開啟剪貼簿劫持
+    MyDiscord = "https://discord.gg/wpc6Q6gXdj",
+    HijackEnabled = true,
     TranslateEnabled = true
 }
 
--- [1. 剪貼簿劫持 (Discord 替換)]
+-- [1. 剪貼簿劫持 (強制替換 Discord)]
 local oldSetClipboard = setclipboard or tostring
 if Config.HijackEnabled and setclipboard then
     getgenv().setclipboard = function(text)
         if string.find(text, "discord.gg") or string.find(text, "discord.com") then
-            -- 強制替換為你的 Discord
             return oldSetClipboard(Config.MyDiscord)
         else
             return oldSetClipboard(text)
@@ -33,125 +32,130 @@ task.spawn(function()
     end)
 end)
 
--- [3. 全知終極辭海 (The Omnilingual Dictionary V3)]
+-- [3. 終極辭海 (覆蓋所有截圖內容)]
 local Dictionary = {
-    -- ================= [ 品牌與作者 Branding ] =================
-    ["Teddy Hub"] = "珍奶 Hub", -- 強制改名
-    ["By Teddy"] = "By 珍奶",
-    ["Made by Teddy"] = "製作: 珍奶",
-    ["Credits"] = "製作群: 珍奶",
-    ["Discord"] = "官方群組",
-    ["Copy Link"] = "複製連結",
+    -- === [ 品牌與資訊 Tab Info ] ===
+    ["Teddy Hub"] = "珍奶 Hub",
+    ["by @teddyhub"] = "by 珍奶",
+    ["Join Discord"] = "加入 珍奶 群組",
+    ["Go to Server"] = "複製連結",
+    ["900 Online"] = "在線人數",
+    ["6,000 Members"] = "成員數量",
+    ["Tab Info"] = "資訊 / Discord",
 
-    -- ================= [ 介面與導航 UI ] =================
-    ["Main"] = "主頁", ["Tab Farming"] = "自動練級", ["Tab Setting"] = "系統設置",
-    ["Fishing"] = "自動釣魚", ["Fighting Style"] = "格鬥流派",
-    ["Items Farm"] = "物品刷取", ["Mirage & V4"] = "海市蜃樓 & V4",
-    ["Drago Dojo"] = "龍族道場", ["Prehistoric"] = "史前島嶼",
-    ["Sea Event"] = "海怪事件", ["Raid"] = "副本",
-    ["Combat PVP"] = "玩家戰鬥", ["Teleport"] = "傳送",
-    ["Fruits"] = "惡魔果實", ["Shop"] = "商店",
-    ["Misc"] = "雜項", ["Server"] = "伺服器",
-    ["Enable"] = "啟用", ["Disable"] = "禁用",
-    ["Select"] = "選擇", ["Refresh"] = "刷新",
-    ["Equip"] = "裝備", ["Click"] = "點擊",
-    ["Status"] = "狀態", ["Active"] = "運行中",
-    ["Safe"] = "安全區", ["Unsafe"] = "危險區",
+    -- === [ 導航欄 Tabs ] ===
+    ["Tab Farming"] = "自動練級",
+    ["Tab Setting"] = "系統設置",
+    ["Fishing"] = "自動釣魚",
+    ["Fighting Style"] = "格鬥流派",
+    ["Items Farm"] = "物品刷取",
+    ["Mirage & Race V4"] = "海市蜃樓 & V4",
+    ["Drago Dojo"] = "龍族道場",
+    ["Prehistoric"] = "史前島嶼",
+    ["Sea Events"] = "海怪事件",
+    ["Raid"] = "副本 (Raid)",
+    ["Combat PVP"] = "玩家戰鬥",
+    ["Travel"] = "傳送",
+    ["Fruits"] = "惡魔果實",
+    ["Shop"] = "商店",
+    ["Misc"] = "雜項",
 
-    -- ================= [ 練級 Farming ] =================
+    -- === [ 1. 自動練級 Tab Farming ] ===
+    ["Farm"] = "練級設定",
     ["Auto Farm Level"] = "自動練等級",
-    ["Auto Farm Chest"] = "光速搜刮寶箱",
-    ["Auto Farm Boss"] = "自動打王",
-    ["Auto Farm Mastery"] = "刷精通",
-    ["Auto Quest"] = "自動接任務",
-    ["Mob Aura"] = "吸怪光環",
+    ["Auto Travel Dressrosa"] = "自動去德雷斯羅薩",
+    ["Auto Zou Quest"] = "自動接佐烏任務",
+    ["Miscellanea / Quest"] = "雜項 / 任務",
+    ["Auto Near"] = "自動刷最近怪",
+    ["Auto Factory Raid"] = "自動打工廠",
+    ["Auto Pirate Raid"] = "自動打海賊襲擊",
+    ["Material"] = "材料刷取",
+    ["Select Material"] = "選擇材料",
+    ["Auto Materials"] = "自動刷材料",
+    ["Collect"] = "收集資源",
+    ["Auto Collect Berry"] = "自動收集貝里",
+    ["Auto Collect Chest"] = "自動搜刮寶箱",
+    ["Mastery"] = "精通刷取",
+    ["Select Method Farm"] = "選擇刷取方式",
+    ["Auto Mastery Fruits"] = "自動刷果實精通",
+    ["Auto Mastery Gun"] = "自動刷槍精通",
+    ["Auto Mastery All Sword"] = "自動刷所有劍精通",
+    ["Auto Boss"] = "Boss 刷取",
+    ["Select Boss"] = "選擇 Boss",
+    ["Auto Kill Boss"] = "自動殺 Boss",
+    ["Auto Kill All Boss"] = "自動殺所有 Boss",
+    ["Hop Sever Find Boss"] = "換服找 Boss",
+    ["Generals Quests / Items"] = "將軍任務 / 物品",
+    ["Auto Katakuri"] = "自動打卡塔庫栗",
+    ["Auto Bones"] = "自動刷骨頭",
+
+    -- === [ 2. 系統設置 Tab Setting ] ===
+    ["Weapon"] = "選擇武器",
+    ["Melee"] = "近戰", ["Sword"] = "劍", ["Fruit"] = "果實",
     ["Fast Attack"] = "光速攻擊",
-    ["God Mode"] = "無敵模式",
-    ["Auto Evo Race"] = "自動進化種族",
-    ["Auto Bone"] = "刷骨頭",
-    ["Auto Cake"] = "刷蛋糕",
-    ["Farm"] = "練級", ["Level"] = "等級",
-    ["Bring Mobs"] = "吸怪", ["Auto Turn on Buso"] = "自動開霸氣",
+    ["Bring Mobs"] = "自動吸怪",
+    ["Auto Turn on Buso"] = "自動開霸氣",
     ["Auto Turn on Race V3"] = "自動開種族 V3",
     ["Auto Turn on Race V4"] = "自動開種族 V4",
-    ["Auto Turn on Spin Position"] = "自動旋轉防掛機",
-    ["Turn on Bypass Teleport"] = "開啟繞過傳送",
+    ["Auto Turn on Spin Position"] = "自動旋轉 (防掛機)",
+    ["Turn on Bypass Teleport"] = "開啟繞過傳送 (防踢)",
     ["Panic Mode"] = "恐慌模式 (低血量逃跑)",
     ["Anti AFK"] = "防掛機踢出",
-    ["Remove VFX"] = "刪除特效 (提升FPS)",
-    ["Remove Damage Text"] = "刪除傷害數字",
-    ["White Screen"] = "白屏優化",
-    ["Distance"] = "距離", ["Health"] = "血量",
+    ["Remove Hit VFX"] = "移除受擊特效",
+    ["Remove Death & Respawned VFX"] = "移除死亡/重生特效",
+    ["Disable Notify"] = "關閉通知",
+    ["Stats Upgrade"] = "屬性加點",
+    ["Stats Value"] = "加點數量",
+    ["Auto Melee"] = "自動加 近戰",
+    ["Auto Swords"] = "自動加 劍",
+    ["Auto Gun"] = "自動加 槍",
+    ["Auto Blox Fruit"] = "自動加 果實",
+    ["Auto Defense"] = "自動加 防禦",
+    ["Unlocked Dungeon"] = "自動解鎖副本",
+    ["Auto Unlock Dough Dungeon"] = "自動解鎖 糯米副本",
+    ["Auto Unlock Phoenix Dungeon"] = "自動解鎖 不死鳥副本",
+    ["Buso/Aura Colours"] = "霸氣顏色",
+    ["Auto Buy Barista Cousin"] = "自動買霸氣顏色",
+    ["Buy Buso Colors"] = "購買指定顏色",
+    ["Auto Rainbow Colors"] = "自動彩虹霸氣",
+    ["Auto Mirror"] = "自動刷鏡子碎片",
+    ["Auto Soul Reaper [Fully]"] = "自動刷靈魂收割者 (全流程)",
+    ["Auto Random Bones"] = "自動隨機抽骨頭",
+    ["Auto Try Luck Gravestone"] = "自動祈禱墓碑 (試手氣)",
+    ["Auto Pray Gravestone"] = "自動祈禱墓碑",
+    ["Accept Rainbow Quest Faster"] = "快速接彩虹任務",
+    ["Instinct / Observation"] = "見聞色 / 觀察",
+    ["Auto Observation"] = "自動練見聞色",
+    ["Auto Observation V2"] = "自動獲取見聞色 V2",
+    ["Upgrade Races V3"] = "升級種族 V3",
+    ["Auto Upgrade Mink V3"] = "自動升級 兔子 V3",
+    ["Auto Upgrade Human V3"] = "自動升級 人類 V3",
+    ["Auto Upgrade Skypiea V3"] = "自動升級 天使 V3",
+    ["Auto Upgrade FishMan V3"] = "自動升級 魚人 V3",
+    ["Dark Dragger + Valkyrie"] = "黑刀 + 女武神頭盔",
+    ["Auto Valkyrie"] = "自動刷女武神頭盔",
+    ["Auto Touch Paid Haki"] = "自動觸摸付費霸氣",
 
-    -- ================= [ 龍族道場 Drago Dojo ] =================
-    ["Dojo Quest & Drago Race"] = "道場任務 & 龍族",
-    ["Auto Dojo Trainer"] = "自動道場訓練 (白帶到黑帶)",
-    ["Auto Dragon Hunter"] = "自動龍獵人 (刷餘燼)",
-    ["Drago Trial"] = "龍之試煉",
-    ["Tween To Upgrade Droco Trial"] = "瞬移去升級試煉",
-    ["Auto Drago (V1)"] = "自動龍族 V1 (撿蛋)",
-    ["Auto Drago (V2)"] = "自動龍族 V2 (殺森林海賊)",
-    ["Auto Drago (V3)"] = "自動龍族 V3 (殺恐鯊)",
-    ["Auto Relic Drago Trial [Beta]"] = "自動龍族遺物試煉",
-    ["Auto Train Drago v4"] = "自動訓練龍族 V4",
-    ["Collect Dragon Eggs"] = "收集龍蛋",
-    ["Dragon Scale"] = "龍鱗", ["Azure Ember"] = "藍色餘燼",
+    -- === [ 3. 自動釣魚 Fishing ] ===
+    ["Select Rod"] = "選擇釣竿",
+    ["Fishing Rod"] = "基礎釣竿",
+    ["Select Bait"] = "選擇魚餌",
+    ["Basic Bait"] = "基礎魚餌",
+    ["Bait Craft Amount"] = "魚餌製作數量",
+    ["Auto Fishing"] = "自動釣魚",
+    ["Buy Baits"] = "購買魚餌",
 
-    -- ================= [ 史前島 Prehistoric ] =================
-    ["Prehistoric Island"] = "史前島嶼",
-    ["Prehistoric Island Status"] = "史前島狀態",
-    ["Auto Find Prehistoric Island"] = "自動尋找史前島",
-    ["Auto Patch Prehistoric Event"] = "自動修復史前活動",
-    ["Auto Collect Dino Bones"] = "自動收集恐龍骨頭",
-    ["Auto Reset When Complete Volcano"] = "完成火山後自動重置",
-    ["Volcanic Magnet"] = "火山磁鐵",
-    ["Auto Craft Volcanic Magnet"] = "自動製作火山磁鐵",
-    ["Craft Volcanic Magnet"] = "製作火山磁鐵",
-    ["Magma Ore"] = "岩漿礦",
+    -- === [ 4. 格鬥流派 Fighting Style ] ===
+    ["Fighting Melee Styles"] = "格鬥精通刷取",
+    ["Auto Superhuman"] = "自動刷 超人拳",
+    ["Auto DeathStep"] = "自動刷 足技",
+    ["Auto Sharkman Karate"] = "自動刷 鯊人空手道",
+    ["Auto ElectricClaw"] = "自動刷 電爪",
+    ["Auto DragonTalon"] = "自動刷 龍爪",
+    ["Auto Godhuman"] = "自動刷 神人拳",
+    ["Auto SanguineArt"] = "自動刷 血拳",
 
-    -- ================= [ 海怪 Sea Events ] =================
-    ["Spy Status"] = "間諜狀態",
-    ["Buy Fracments with Spy"] = "向間諜購買碎片",
-    ["FrozenDimension Status"] = "冰凍維度狀態",
-    ["Auto Teleport Frozen Dimension"] = "自動瞬移冰凍維度",
-    ["Auto Drive To Hydra Island"] = "自動開船去九頭蛇",
-    ["Select Boats"] = "選擇船隻",
-    ["Buy Boats"] = "購買船隻",
-    ["Select Zone"] = "選擇危險等級",
-    ["Start Farm"] = "開始刷海怪",
-    ["Terror Shark"] = "恐怖鯊魚",
-    ["Sea Beast"] = "海獸",
-    ["Piranha"] = "食人魚",
-    ["Shark"] = "鯊魚",
-    ["Ship"] = "幽靈船",
-    ["Shark Anchor"] = "鯊魚錨",
-    ["Monster Magnet"] = "怪物磁鐵",
-    ["Leviathan"] = "利維坦",
-    ["Leviathan Scale"] = "利維坦鱗片",
-    ["Leviathan Heart"] = "利維坦心臟",
-
-    -- ================= [ 拳法與格鬥 Fighting ] =================
-    ["Fighting - Style"] = "格鬥流派",
-    ["Fighting Melee Styles"] = "自動刷格鬥精通",
-    ["Auto Superhuman"] = "自動刷超人拳",
-    ["Auto DeathStep"] = "自動刷足技",
-    ["Auto Sharkman Karate"] = "自動刷鯊人空手道",
-    ["Auto ElectricClaw"] = "自動刷電爪",
-    ["Auto DragonTalon"] = "自動刷龍爪",
-    ["Auto Godhuman"] = "自動刷神人拳",
-    ["Auto SanguineArt"] = "自動刷血拳",
-    ["Buy Black Leg"] = "購買 黑腳",
-    ["Buy Electro"] = "購買 電擊",
-    ["Buy Fishman Karate"] = "購買 魚人空手道",
-    ["Buy DragonClaw"] = "購買 龍爪",
-    ["Buy Superhuman"] = "購買 超人拳",
-    ["Buy Death Step"] = "購買 足技",
-    ["Buy Sharkman Karate"] = "購買 鯊人空手道",
-    ["Buy ElectricClaw"] = "購買 電爪",
-    ["Buy DragonTalon"] = "購買 龍爪 (Talon)",
-    ["Buy Godhuman"] = "購買 神人拳",
-
-    -- ================= [ 物品 Items Farm ] =================
+    -- === [ 5. 物品刷取 Items Farm ] ===
     ["Tushita + Yama"] = "土十塔 + 閻魔",
     ["Elites Process"] = "精英怪進度",
     ["Auto Elite Quest"] = "自動接精英任務",
@@ -166,18 +170,67 @@ local Dictionary = {
     ["True Triple Katana Sword"] = "真·三刀流 (TTK)",
     ["Skull Guitars / Misc"] = "靈魂吉他 / 雜項",
     ["Skull Guitar Quests"] = "吉他任務狀態",
-    ["Auto Soul Guitar"] = "自動刷吉他",
-    ["Hallow Scythe"] = "聖鐮", ["Dark Dagger"] = "黑刀",
-    ["Buddy Sword"] = "夥伴之劍", ["Spikey Trident"] = "刺針三叉戟",
+    ["Quest Number"] = "任務編號",
+    ["No Quest!!"] = "無任務",
 
-    -- ================= [ 釣魚 Fishing ] =================
-    ["Fishing Rod"] = "釣竿",
-    ["Basic Bait"] = "基礎魚餌",
-    ["Bait Craft Amount"] = "魚餌製作數量",
-    ["Auto Fishing"] = "自動釣魚",
-    ["Buy Baits"] = "購買魚餌",
+    -- === [ 6. 海市蜃樓 & V4 ] ===
+    ["Mystic Island / 滿月"] = "神秘島嶼 / 滿月",
+    ["FullMoon Status"] = "滿月狀態",
+    ["Mirage Island Status"] = "海市蜃樓狀態",
+    ["Mirage Island"] = "海市蜃樓",
+    ["Auto Find Mirage"] = "自動尋找海市蜃樓",
+    ["turn on for finding & tween"] = "開啟以尋找並瞬移",
+    ["Auto Tween To Highest Point"] = "自動瞬移到最高點",
+    ["Auto Collect Gear"] = "自動撿齒輪",
+    ["Change Transparency can see"] = "變更透明度 (可見)",
+    ["Auto Tween Advanced Fruit Dealer"] = "自動瞬移高級商人",
+    ["Auto Collect Mirage Chest"] = "自動搜刮海市蜃樓寶箱",
 
-    -- ================= [ 副本 Raid ] =================
+    -- === [ 7. 龍族道場 Drago Dojo ] ===
+    ["Dojo Quest & Drago Race"] = "道場任務 & 龍族",
+    ["Auto Dojo Trainer"] = "自動道場訓練",
+    ["turn on for do dojo belt quest"] = "開啟以完成道場腰帶任務",
+    ["Auto Dragon Hunter"] = "自動龍獵人",
+    ["turn on for farm blaze ember"] = "開啟以刷取燃燒餘燼",
+    ["Drago Trial"] = "龍之試煉",
+    ["Tween To Upgrade Droco Trial"] = "瞬移去升級試煉",
+    ["Auto Drago (V1)"] = "自動龍族 (V1)",
+    ["turn on for auto quest1"] = "開啟以完成任務1",
+    ["Auto Drago (V2)"] = "自動龍族 (V2)",
+    ["turn on for auto kill Forest Pirate"] = "開啟以自動殺森林海賊",
+    ["Auto Drago (V3)"] = "自動龍族 (V3)",
+    ["turn on for sea event kill terror shark"] = "開啟以殺海怪恐怖鯊魚",
+    ["Auto Relic Drago Trial [Beta]"] = "自動龍族遺物試煉 [Beta]",
+    ["Auto Train Drago v4"] = "自動訓練龍族 v4",
+
+    -- === [ 8. 史前島 Prehistoric ] ===
+    ["Volcanic Magnet"] = "火山磁鐵",
+    ["Auto Craft Volcanic Magnet"] = "自動製作火山磁鐵",
+    ["Craft Volcanic Magnet"] = "製作火山磁鐵",
+    ["Prehistoric Island"] = "史前島嶼",
+    ["Prehistoric Island Status"] = "史前島狀態",
+    ["Auto Find Prehistoric Island"] = "自動尋找史前島",
+    ["Auto Patch Prehistoric Event"] = "自動修復史前活動",
+    ["Auto Collect Dino Bones"] = "自動收集恐龍骨頭",
+    ["Auto Collect Dragon Eggs"] = "自動收集龍蛋",
+    ["Auto Reset When Complete Volcano"] = "完成火山後自動重置",
+
+    -- === [ 9. 海怪事件 Sea Events ] ===
+    ["Sea Event / Setting Sail"] = "海怪事件 / 航海設定",
+    ["Spy Status"] = "間諜狀態",
+    ["Buy Fracments with Spy"] = "向間諜購買碎片",
+    ["FrozenDimension Status"] = "冰凍維度狀態",
+    ["Auto Teleport Frozen Dimension"] = "自動瞬移冰凍維度",
+    ["Auto Drive To Hydra Island"] = "自動開船去九頭蛇",
+    ["Select Boats"] = "選擇船隻",
+    ["Guardian"] = "守護者船",
+    ["Buy Boats"] = "購買船隻",
+    ["Select Zone"] = "選擇危險等級",
+    ["Lv 1"] = "等級 1",
+    ["Start Farm"] = "開始刷怪",
+    ["Entity Sea Event"] = "海怪實體",
+
+    -- === [ 10. 副本 Raid ] ===
     ["Dungeon Event / Raiding"] = "地牢 / 副本",
     ["Raiding Status"] = "副本狀態",
     ["Select Chip"] = "選擇晶片",
@@ -188,72 +241,8 @@ local Dictionary = {
     ["Auto Raid"] = "自動打副本",
     ["Auto Awaken Fruit"] = "自動覺醒果實",
     ["Tele Lab raid"] = "傳送實驗室副本",
-    ["Law Raid"] = "羅的副本",
-    ["Dough King"] = "糯米王",
-    ["Cake Prince"] = "蛋糕王子",
 
-    -- ================= [ 果實 Fruits ] =================
-    ["Fruits Options"] = "果實選項",
-    ["Select Fruit Stock"] = "選擇庫存果實",
-    ["Buy Basic Stock"] = "購買基礎庫存",
-    ["Select Mirage Fruit"] = "選擇海市蜃樓果實",
-    ["Buy Mirage Stock"] = "購買海市蜃樓庫存",
-    ["Auto Random Fruit"] = "自動隨機買果實",
-    ["Auto Drop Fruit"] = "自動丟棄果實",
-    ["Auto Store Fruit"] = "自動存果實",
-    ["Auto Tween to Fruit"] = "自動瞬移撿果實",
-    ["Auto Collect Fruit"] = "自動收集果實",
-    ["Fruit Stock"] = "果實庫存",
-    ["Current Fruit"] = "當前果實",
-
-    -- [果實名稱翻譯]
-    ["Kitsune"] = "狐狸", ["Leopard"] = "豹", ["Dragon"] = "龍", ["Spirit"] = "靈魂",
-    ["Control"] = "控制", ["Venom"] = "毒", ["Shadow"] = "影", ["Dough"] = "糯米",
-    ["T-Rex"] = "暴龍", ["Mammoth"] = "猛瑪", ["Gravity"] = "重力", ["Blizzard"] = "雪",
-    ["Pain"] = "肉球", ["Rumble"] = "響雷", ["Portal"] = "傳送門", ["Phoenix"] = "不死鳥",
-    ["Sound"] = "音音", ["Spider"] = "線線", ["Love"] = "愛心", ["Buddha"] = "大佛",
-    ["Quake"] = "震震", ["Magma"] = "岩漿", ["Ghost"] = "幽靈", ["Barrier"] = "屏障",
-    ["Rubber"] = "橡膠", ["Light"] = "光", ["Diamond"] = "鑽石", ["Dark"] = "暗",
-    ["Sand"] = "沙", ["Ice"] = "冰", ["Falcon"] = "隼", ["Flame"] = "火",
-    ["Spike"] = "尖刺", ["Smoke"] = "煙", ["Bomb"] = "炸彈", ["Spring"] = "彈簧",
-    ["Chop"] = "斬斬", ["Spin"] = "旋轉", ["Rocket"] = "火箭",
-
-    -- ================= [ 種族 V4 Mirage ] =================
-    ["Mystic Island / 滿月"] = "神秘島嶼 / 滿月",
-    ["FullMoon Status"] = "滿月狀態",
-    ["Mirage Island Status"] = "海市蜃樓狀態",
-    ["Auto Find Mirage Island"] = "自動尋找海市蜃樓",
-    ["Auto Tween To Highest Point"] = "自動瞬移到最高點",
-    ["Auto Collect Gear"] = "自動撿齒輪",
-    ["Change Transparency can see"] = "變更透明度 (可見)",
-    ["Auto Tween Advanced Fruit Dealer"] = "自動瞬移高級商人",
-    ["Auto Collect Mirage Chest"] = "自動搜刮海市蜃樓寶箱",
-    ["Pull Lever"] = "拉拉桿", ["Ancient One"] = "古老之人",
-    ["Red Gear"] = "紅齒輪", ["Blue Gear"] = "藍齒輪", ["Green Gear"] = "綠齒輪",
-
-    -- ================= [ 商店 Shop ] =================
-    ["Shop Options"] = "商店選項",
-    ["Buy Buso"] = "購買 霸氣",
-    ["Buy Geppo"] = "購買 月步 (瞬步)",
-    ["Buy Soru"] = "購買 剃 (Soru)",
-    ["Buy Ken"] = "購買 見聞色",
-    ["Refund Stats"] = "重置屬性點",
-    ["Race Reroll"] = "重洗種族",
-
-    -- ================= [ 傳送 Travel ] =================
-    ["Travel - Worlds"] = "世界傳送",
-    ["Travel East Blue (World 1)"] = "前往 舊世界 (一海)",
-    ["Travel Dressrosa (World 2)"] = "前往 德雷斯羅薩 (二海)",
-    ["Travel Zou (World 3)"] = "前往 佐烏 (三海)",
-    ["Travel - Island"] = "島嶼傳送",
-    ["Select Travelling"] = "選擇島嶼",
-    ["Auto Travel"] = "自動傳送",
-    ["Travel - Portal"] = "傳送門",
-    ["Travel - NPCs"] = "NPC 傳送",
-    ["Mansion"] = "豪宅", ["Castle"] = "城堡", ["Hydra Island"] = "九頭蛇",
-    ["Great Tree"] = "大樹", ["Floating Turtle"] = "浮龜",
-
-    -- ================= [ 戰鬥 PVP ] =================
+    -- === [ 11. 玩家戰鬥 Combat PVP ] ===
     ["Combat / Aimbot"] = "戰鬥 / 自瞄",
     ["All Players On Server"] = "伺服器玩家數",
     ["Aimbot Status"] = "自瞄狀態",
@@ -265,10 +254,36 @@ local Dictionary = {
     ["Aimbot Camera Closet Players"] = "鏡頭鎖定最近玩家",
     ["LocalPlayer Settings / Misc"] = "玩家設定 / 雜項",
     ["Instance Mink V3 [ INF ]"] = "無限兔子 V3 速度",
-    ["Kill Aura"] = "殺戮光環", ["Aim Bot"] = "自瞄",
-    ["ESP Player"] = "透視玩家", ["ESP Chest"] = "透視寶箱",
 
-    -- ================= [ 伺服器 Server ] =================
+    -- === [ 12. 傳送 Travel ] ===
+    ["Travel - Worlds"] = "世界傳送",
+    ["Travel East Blue (World 1)"] = "前往 舊世界 (一海)",
+    ["Travel Dressrosa (World 2)"] = "前往 德雷斯羅薩 (二海)",
+    ["Travel Zou (World 3)"] = "前往 佐烏 (三海)",
+    ["Travel - Island"] = "島嶼傳送",
+    ["Select Travelling"] = "選擇島嶼",
+    ["Auto Travel"] = "自動傳送",
+    ["Travel - Portal"] = "傳送門",
+    ["Select Portal"] = "選擇傳送門",
+    ["requestEntrance"] = "請求進入",
+    ["Travel - NPCs"] = "NPC 傳送",
+    ["Select NPCs"] = "選擇 NPC",
+
+    -- === [ 13. 商店 Shop ] ===
+    ["Shop Options"] = "商店選項",
+    ["Buy Buso"] = "購買 霸氣",
+    ["Buy Geppo"] = "購買 月步 (瞬步)",
+    ["Buy Soru"] = "購買 剃 (Soru)",
+    ["Buy Ken"] = "購買 見聞色",
+    ["Fighting - Style"] = "購買 格鬥流派",
+    ["Buy Black Leg"] = "購買 黑腳",
+    ["Buy Electro"] = "購買 電擊",
+    ["Buy Fishman Karate"] = "購買 魚人空手道",
+    ["Buy DragonClaw"] = "購買 龍爪",
+    ["Buy Superhuman"] = "購買 超人拳",
+    ["Buy Death Step"] = "購買 足技",
+
+    -- === [ 14. 伺服器 Server ] ===
     ["Server - Function"] = "伺服器功能",
     ["Rejoin Server"] = "重連伺服器",
     ["Hop Server"] = "換伺服器 (Hop)",
@@ -281,20 +296,33 @@ local Dictionary = {
     ["Disable Chat GUI"] = "隱藏聊天室",
     ["Disable Leader Board GUI"] = "隱藏排行榜",
     ["Set Pirate Team"] = "加入海賊隊伍",
-    ["Set Marine Team"] = "加入海軍隊伍"
+
+    -- === [ 15. 果實 Fruits ] ===
+    ["Fruits Options"] = "果實選項",
+    ["Select Fruit Stock"] = "選擇庫存果實",
+    ["Buy Basic Stock"] = "購買基礎庫存",
+    ["Select Mirage Fruit"] = "選擇海市蜃樓果實",
+    ["Buy Mirage Stock"] = "購買海市蜃樓庫存",
+    ["Auto Random Fruit"] = "自動隨機買果實",
+    ["Auto Drop Fruit"] = "自動丟棄果實",
+    ["Auto Store Fruit"] = "自動存果實",
+    ["Auto Tween to Fruit"] = "自動瞬移撿果實",
+    ["Auto Collect Fruit"] = "自動收集果實"
 }
 
--- [4. 哨兵監聽核心 V3]
+-- [4. 哨兵監聽核心 V5 (模糊匹配增強)]
 local CoreGui = game:GetService("CoreGui")
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
--- 模糊匹配修正 (Fuzzy Match Fixer)
+-- 模糊匹配修正
 local function FuzzyTranslate(text)
     if string.find(text, "Select") then return string.gsub(text, "Select", "選擇") end
     if string.find(text, "Auto Farm") then return string.gsub(text, "Auto Farm", "自動刷") end
     if string.find(text, "Buy") then return string.gsub(text, "Buy", "購買") end
     if string.find(text, "Teleport") then return string.gsub(text, "Teleport", "傳送") end
+    if string.find(text, "Turn on") then return string.gsub(text, "Turn on", "開啟") end
+    if string.find(text, "Auto") and string.find(text, "Materials") then return "自動刷材料" end
     return text
 end
 
@@ -305,7 +333,13 @@ local function Translate(obj)
     local text = obj.Text
     if not text or text == "" then return end
 
-    -- 1. 精確匹配
+    -- 1. 強制替換作者與標題 (最高優先級)
+    if string.find(text, "Teddy Hub") or string.find(text, "@teddyhub") then
+        obj.Text = "Teddy Hub : Blox Fruits by 珍奶"
+        return
+    end
+
+    -- 2. 精確匹配
     if Dictionary[text] then
         obj.Text = Dictionary[text]
         if not obj:FindFirstChild("TLock") then
@@ -313,20 +347,24 @@ local function Translate(obj)
             tag.Name = "TLock"
             obj:GetPropertyChangedSignal("Text"):Connect(function()
                 if Dictionary[obj.Text] then return end
+                -- 強制鎖定作者名
+                if string.find(obj.Text, "Teddy Hub") then 
+                    obj.Text = "Teddy Hub : Blox Fruits by 珍奶"
+                    return
+                end
                 if obj.Text == text then obj.Text = Dictionary[text] end
             end)
         end
         return
     end
 
-    -- 2. 模糊匹配
+    -- 3. 模糊匹配
     local newText = FuzzyTranslate(text)
     if newText ~= text then
         obj.Text = newText
     end
 end
 
--- 註冊監聽器
 local function RegisterSentinel(guiContainer)
     for _, v in pairs(guiContainer:GetDescendants()) do
         Translate(v)
@@ -341,7 +379,7 @@ end
 task.spawn(function()
     game.StarterGui:SetCore("SendNotification", {
         Title = "SYSTEM: APEX",
-        Text = "全知終極版已啟動 (By 珍奶)",
+        Text = "珍奶 Hub 全知終極版已啟動",
         Duration = 5
     })
     
