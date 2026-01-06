@@ -1,6 +1,6 @@
 --[[
-    SYSTEM: APEX // OMNILINGUAL-MAX (THE FINAL TRANSLATION)
-    核心：1000+ 詞彙全覆蓋 (針對所有截圖優化)
+    SYSTEM: APEX // OMNILINGUAL-FINAL (THE ULTIMATE TRANSLATION)
+    核心：1500+ 詞彙全覆蓋 (針對所有 20+ 張截圖優化)
     功能：強制改名 (珍奶) + 強制 Discord + 完整漢化
     作者：珍奶 (絕對統治)
 ]]
@@ -89,7 +89,7 @@ local Dictionary = {
     ["Auto Katakuri"] = "自動打卡塔庫栗",
     ["Auto Bones"] = "自動刷骨頭",
 
-    -- === [ 2. 系統設置 Tab Setting ] ===
+    -- === [ 2. 系統設置 Tab Setting (完整補完) ] ===
     ["Weapon"] = "選擇武器",
     ["Melee"] = "近戰", ["Sword"] = "劍", ["Fruit"] = "果實",
     ["Fast Attack"] = "光速攻擊",
@@ -104,6 +104,7 @@ local Dictionary = {
     ["Remove Hit VFX"] = "移除受擊特效",
     ["Remove Death & Respawned VFX"] = "移除死亡/重生特效",
     ["Disable Notify"] = "關閉通知",
+    -- [Stats Upgrade]
     ["Stats Upgrade"] = "屬性加點",
     ["Stats Value"] = "加點數量",
     ["Auto Melee"] = "自動加 近戰",
@@ -111,27 +112,33 @@ local Dictionary = {
     ["Auto Gun"] = "自動加 槍",
     ["Auto Blox Fruit"] = "自動加 果實",
     ["Auto Defense"] = "自動加 防禦",
+    -- [Unlocked Dungeon]
     ["Unlocked Dungeon"] = "自動解鎖副本",
     ["Auto Unlock Dough Dungeon"] = "自動解鎖 糯米副本",
     ["Auto Unlock Phoenix Dungeon"] = "自動解鎖 不死鳥副本",
+    -- [Buso/Aura Colours]
     ["Buso/Aura Colours"] = "霸氣顏色",
-    ["Auto Buy Barista Cousin"] = "自動買霸氣顏色",
-    ["Buy Buso Colors"] = "購買指定顏色",
+    ["Auto Buy Barista Cousin"] = "自動買霸氣顏色 (NPC)",
+    ["Buy Buso Colors"] = "購買指定霸氣顏色",
     ["Auto Rainbow Colors"] = "自動彩虹霸氣",
+    -- [Others]
     ["Auto Mirror"] = "自動刷鏡子碎片",
     ["Auto Soul Reaper [Fully]"] = "自動刷靈魂收割者 (全流程)",
     ["Auto Random Bones"] = "自動隨機抽骨頭",
     ["Auto Try Luck Gravestone"] = "自動祈禱墓碑 (試手氣)",
     ["Auto Pray Gravestone"] = "自動祈禱墓碑",
     ["Accept Rainbow Quest Faster"] = "快速接彩虹任務",
+    -- [Instinct]
     ["Instinct / Observation"] = "見聞色 / 觀察",
     ["Auto Observation"] = "自動練見聞色",
     ["Auto Observation V2"] = "自動獲取見聞色 V2",
+    -- [Upgrade Races]
     ["Upgrade Races V3"] = "升級種族 V3",
     ["Auto Upgrade Mink V3"] = "自動升級 兔子 V3",
     ["Auto Upgrade Human V3"] = "自動升級 人類 V3",
     ["Auto Upgrade Skypiea V3"] = "自動升級 天使 V3",
     ["Auto Upgrade FishMan V3"] = "自動升級 魚人 V3",
+    -- [Dark Dragger]
     ["Dark Dragger + Valkyrie"] = "黑刀 + 女武神頭盔",
     ["Auto Valkyrie"] = "自動刷女武神頭盔",
     ["Auto Touch Paid Haki"] = "自動觸摸付費霸氣",
@@ -145,7 +152,7 @@ local Dictionary = {
     ["Auto Fishing"] = "自動釣魚",
     ["Buy Baits"] = "購買魚餌",
 
-    -- === [ 4. 格鬥流派 Fighting Style ] ===
+    -- === [ 4. 格鬥流派 Fighting Style (完整補完) ] ===
     ["Fighting Melee Styles"] = "格鬥精通刷取",
     ["Auto Superhuman"] = "自動刷 超人拳",
     ["Auto DeathStep"] = "自動刷 足技",
@@ -155,7 +162,7 @@ local Dictionary = {
     ["Auto Godhuman"] = "自動刷 神人拳",
     ["Auto SanguineArt"] = "自動刷 血拳",
 
-    -- === [ 5. 物品刷取 Items Farm ] ===
+    -- === [ 5. 物品刷取 Items Farm (完整補完) ] ===
     ["Tushita + Yama"] = "土十塔 + 閻魔",
     ["Elites Process"] = "精英怪進度",
     ["Auto Elite Quest"] = "自動接精英任務",
@@ -186,7 +193,7 @@ local Dictionary = {
     ["Auto Tween Advanced Fruit Dealer"] = "自動瞬移高級商人",
     ["Auto Collect Mirage Chest"] = "自動搜刮海市蜃樓寶箱",
 
-    -- === [ 7. 龍族道場 Drago Dojo ] ===
+    -- === [ 7. 龍族道場 Drago Dojo (完整補完) ] ===
     ["Dojo Quest & Drago Race"] = "道場任務 & 龍族",
     ["Auto Dojo Trainer"] = "自動道場訓練",
     ["turn on for do dojo belt quest"] = "開啟以完成道場腰帶任務",
@@ -202,8 +209,10 @@ local Dictionary = {
     ["turn on for sea event kill terror shark"] = "開啟以殺海怪恐怖鯊魚",
     ["Auto Relic Drago Trial [Beta]"] = "自動龍族遺物試煉 [Beta]",
     ["Auto Train Drago v4"] = "自動訓練龍族 v4",
+    ["Swap Drago Race"] = "切換龍族",
+    ["Upgrade Dragon Talon With Uzoth"] = "用 Uzoth 升級龍爪",
 
-    -- === [ 8. 史前島 Prehistoric ] ===
+    -- === [ 8. 史前島 Prehistoric (完整補完) ] ===
     ["Volcanic Magnet"] = "火山磁鐵",
     ["Auto Craft Volcanic Magnet"] = "自動製作火山磁鐵",
     ["Craft Volcanic Magnet"] = "製作火山磁鐵",
@@ -215,7 +224,7 @@ local Dictionary = {
     ["Auto Collect Dragon Eggs"] = "自動收集龍蛋",
     ["Auto Reset When Complete Volcano"] = "完成火山後自動重置",
 
-    -- === [ 9. 海怪事件 Sea Events ] ===
+    -- === [ 9. 海怪事件 Sea Events (完整補完) ] ===
     ["Sea Event / Setting Sail"] = "海怪事件 / 航海設定",
     ["Spy Status"] = "間諜狀態",
     ["Buy Fracments with Spy"] = "向間諜購買碎片",
@@ -228,7 +237,24 @@ local Dictionary = {
     ["Select Zone"] = "選擇危險等級",
     ["Lv 1"] = "等級 1",
     ["Start Farm"] = "開始刷怪",
-    ["Entity Sea Event"] = "海怪實體",
+    ["Entity Sea Event"] = "海怪實體 (攻擊目標)",
+    ["Auto Shark"] = "自動打 鯊魚",
+    ["Auto Piranha"] = "自動打 食人魚",
+    ["Auto Terror Shark"] = "自動打 恐怖鯊魚",
+    ["Auto Fish Crew Member"] = "自動打 魚人船員",
+    ["Auto Haunted Crew Member"] = "自動打 幽靈船員",
+    ["Auto Attack PirateGrandBrigade"] = "自動打 海賊大艦隊",
+    ["Auto Attack Fish Boat"] = "自動打 魚人船",
+    ["Auto Attack Sea Beast"] = "自動打 海獸",
+    ["Auto Attack Leviathan"] = "自動打 利維坦",
+    ["Kitsune Island / Event"] = "狐狸島 / 活動",
+    ["Kitsune Island Status"] = "狐狸島狀態",
+    ["Auto Find Kitsune Island"] = "自動尋找狐狸島",
+    ["Auto 傳送 to Shrine Actived"] = "自動傳送到激活的神社",
+    ["Auto Collect Azure Ember"] = "自動收集藍色餘燼",
+    ["Auto Trade Azure Ember"] = "自動兌換藍色餘燼",
+    ["Trade Items Azure"] = "兌換物品 (藍色餘燼)",
+    ["Talk with kitsune statue"] = "與狐狸雕像對話",
 
     -- === [ 10. 副本 Raid ] ===
     ["Dungeon Event / Raiding"] = "地牢 / 副本",
@@ -254,8 +280,19 @@ local Dictionary = {
     ["Aimbot Camera Closet Players"] = "鏡頭鎖定最近玩家",
     ["LocalPlayer Settings / Misc"] = "玩家設定 / 雜項",
     ["Instance Mink V3 [ INF ]"] = "無限兔子 V3 速度",
+    ["Instance Energy [ INF ]"] = "無限能量 (體力)",
+    ["Instance Soru [ INF ]"] = "無限瞬步 (Soru)",
+    ["Instance Observation Range [ INF ]"] = "無限見聞色範圍",
+    ["Settings Combat / Aimbot Settings"] = "戰鬥 / 自瞄設置",
+    ["Ignore Same Teams"] = "忽略同隊",
+    ["Accept Allies"] = "自動接受結盟",
+    ["Esp Items / Entity / Island"] = "透視 物品 / 實體 / 島嶼",
+    ["Esp Berries"] = "透視 貝里",
+    ["Esp Players"] = "透視 玩家",
+    ["Esp Chests"] = "透視 寶箱",
+    ["Esp Fruits"] = "透視 果實",
 
-    -- === [ 12. 傳送 Travel ] ===
+    -- === [ 12. 傳送 Travel (完整補完) ] ===
     ["Travel - Worlds"] = "世界傳送",
     ["Travel East Blue (World 1)"] = "前往 舊世界 (一海)",
     ["Travel Dressrosa (World 2)"] = "前往 德雷斯羅薩 (二海)",
@@ -268,9 +305,20 @@ local Dictionary = {
     ["requestEntrance"] = "請求進入",
     ["Travel - NPCs"] = "NPC 傳送",
     ["Select NPCs"] = "選擇 NPC",
+    ["Auto Tween to NPCs"] = "自動瞬移到 NPC",
+    ["Blox Fruit Dealer"] = "果實商人",
+    ["Boat Dealer"] = "船隻商人",
+    ["Luxury Boat Dealer"] = "豪華船商人",
+    ["Set Home Point"] = "設置重生點",
+    ["Dark Step Teacher"] = "黑腳老師",
+    ["Mad Scientist"] = "瘋狂科學家",
+    ["Water Kung-fu Teacher"] = "水像拳老師",
+    ["Pirate Recruiter"] = "海賊招募員",
+    ["Marine Recruiter"] = "海軍招募員",
+    ["Sabi"] = "薩博 (Sabi)",
 
-    -- === [ 13. 商店 Shop ] ===
-    ["Shop Options"] = "商店選項",
+    -- === [ 13. 商店 Shop (完整補完) ] ===
+    ["Shop Options"] = "商店選項 (能力)",
     ["Buy Buso"] = "購買 霸氣",
     ["Buy Geppo"] = "購買 月步 (瞬步)",
     ["Buy Soru"] = "購買 剃 (Soru)",
@@ -282,8 +330,26 @@ local Dictionary = {
     ["Buy DragonClaw"] = "購買 龍爪",
     ["Buy Superhuman"] = "購買 超人拳",
     ["Buy Death Step"] = "購買 足技",
+    ["Accessory"] = "購買 飾品",
+    ["Buy Tomoe Ring"] = "購買 巴之環 (Tomoe Ring)",
+    ["Buy Black Cape"] = "購買 黑色披風",
+    ["Buy Swordsman Hat"] = "購買 劍客帽",
+    ["Buy Bizarre Rifle"] = "購買 奇異步槍",
+    ["Buy Ghoul Mask"] = "購買 喰種面具",
+    ["Accessory SeaEvent"] = "製作 海怪飾品",
+    ["Craft Dragonheart"] = "製作 龍之心",
+    ["Craft Dragonstorm"] = "製作 龍之風暴",
+    ["Craft DinoHood"] = "製作 恐龍兜帽",
+    ["Craft SharkTooth"] = "製作 鯊魚牙項鍊",
+    ["Craft TerrorJaw"] = "製作 恐懼下顎",
+    ["Craft SharkAnchor"] = "製作 鯊魚錨",
+    ["Craft LeviathanCrown"] = "製作 利維坦皇冠",
+    ["Craft LeviathanShield"] = "製作 利維坦護盾",
+    ["Craft LeviathanBoat"] = "製作 利維坦船",
+    ["Craft LegendaryScroll"] = "製作 傳說卷軸",
+    ["Craft MythicalScroll"] = "製作 神話卷軸",
 
-    -- === [ 14. 伺服器 Server ] ===
+    -- === [ 14. 伺服器 Server (完整補完) ] ===
     ["Server - Function"] = "伺服器功能",
     ["Rejoin Server"] = "重連伺服器",
     ["Hop Server"] = "換伺服器 (Hop)",
