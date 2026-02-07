@@ -1,5 +1,5 @@
--- [[ 頂點·幽靈 (APEX PHANTOM) - 重製版 V2.0 ]] --
--- [[ 修復：TSB彈飛自動續連、介面不顯示問題、防虛空優化 ]] --
+-- [[ 頂點·幽靈 (APEX PHANTOM) - V3.0 增強版 ]] --
+-- [[ 更新：輸入式數值、透視/穿牆/無限跳、彈飛歸位 ]] --
 
 do
     if not game:IsLoaded() then game.Loaded:Wait() end
@@ -9,7 +9,7 @@ do
     local RunService = game:GetService("RunService")
     local UserInputService = game:GetService("UserInputService")
     local CoreGui = game:GetService("CoreGui")
-    local TweenService = game:GetService("TweenService")
+    local Lighting = game:GetService("Lighting")
     local LocalPlayer = Players.LocalPlayer
     
     -- // 清理舊介面 // --
@@ -21,23 +21,34 @@ do
     getgenv().Config = {
         Target = "",
         IsFlinging = false,
-        AutoResume = true, -- 死亡後自動繼續
+        AutoResume = true,
         AntiVoid = false,
         Speed = 16,
-        Jump = 50
+        Jump = 50,
+        SavedPosition = nil, -- 用於儲存彈飛前的位置
+        InfiniteJump = false,
+        NoClip = false,
+        ESP = false
     }
 
-    -- // TSB 核心邏輯 (原生寫法，不依賴外部庫) // --
+    -- // 功能函數 // --
+
+    -- 1. 彈飛功能
     local FlingConnection = nil
     local function StartFling()
         if FlingConnection then FlingConnection:Disconnect() end
         
+        local Char = LocalPlayer.Character
+        if Char and Char:FindFirstChild("HumanoidRootPart") then
+            -- 記錄當前位置
+            getgenv().Config.SavedPosition = Char.HumanoidRootPart.CFrame
+        end
+
         getgenv().Config.IsFlinging = true
         
-        -- 通知
         game.StarterGui:SetCore("SendNotification", {
             Title = "幽靈模式",
-            Text = "鎖定目標: " .. getgenv().Config.Target .. "\n死亡後將自動繼續",
+            Text = "鎖定目標: " .. getgenv().Config.Target,
             Duration = 3
         })
 
@@ -50,7 +61,6 @@ do
             local LP = Players.LocalPlayer
             local Char = LP.Character
             
-            -- 尋找目標
             local TargetPlayer = nil
             for _, v in pairs(Players:GetPlayers()) do
                 if v ~= LP and string.sub(v.Name:lower(), 1, #getgenv().Config.Target) == getgenv().Config.Target:lower() then
@@ -59,21 +69,17 @@ do
                 end
             end
 
-            -- 執行彈飛
             if Char and Char:FindFirstChild("HumanoidRootPart") and TargetPlayer and TargetPlayer.Character and TargetPlayer.Character:FindFirstChild("HumanoidRootPart") then
                 local T_RP = TargetPlayer.Character.HumanoidRootPart
                 local L_RP = Char.HumanoidRootPart
                 
-                -- 預測位置並附著
                 L_RP.CFrame = T_RP.CFrame * CFrame.new(0, 0, 0)
                 
-                -- 旋轉與速度暴力賦值
                 local Vel = Vector3.new(999999, 999999, 999999)
                 L_RP.AssemblyLinearVelocity = Vel
                 L_RP.AssemblyAngularVelocity = Vel
                 L_RP.Velocity = Vel
                 
-                -- 穿牆與去重力
                 for _, part in pairs(Char:GetDescendants()) do
                     if part:IsA("BasePart") then
                         part.CanCollide = false
@@ -81,11 +87,8 @@ do
                         part.Velocity = Vel
                     end
                 end
-            else
-                -- 如果找不到目標或自己死亡，暫時隱身或歸零等待重生
-                if Char and Char:FindFirstChild("HumanoidRootPart") then
-                    Char.HumanoidRootPart.Velocity = Vector3.zero
-                end
+            elseif Char and Char:FindFirstChild("HumanoidRootPart") then
+                Char.HumanoidRootPart.Velocity = Vector3.zero
             end
         end)
     end
@@ -98,105 +101,148 @@ do
         if Char and Char:FindFirstChild("HumanoidRootPart") then
             Char.HumanoidRootPart.Velocity = Vector3.zero
             Char.HumanoidRootPart.AssemblyAngularVelocity = Vector3.zero
+            
+            -- 回到地圖 (原位)
+            if getgenv().Config.SavedPosition then
+                task.wait(0.1)
+                Char.HumanoidRootPart.CFrame = getgenv().Config.SavedPosition
+                game.StarterGui:SetCore("SendNotification", {Title = "系統", Text = "已傳送回原位", Duration = 2})
+            else
+                -- 如果沒有記錄，傳送到安全高度
+                Char.HumanoidRootPart.CFrame = CFrame.new(0, 100, 0)
+                game.StarterGui:SetCore("SendNotification", {Title = "系統", Text = "已傳送至安全區", Duration = 2})
+            end
         end
-        
-        game.StarterGui:SetCore("SendNotification", {Title = "系統", Text = "已停止彈飛", Duration = 2})
     end
 
-    -- // 自動續連邏輯 (死亡後自動重啟) // --
-    LocalPlayer.CharacterAdded:Connect(function(newChar)
-        if getgenv().Config.IsFlinging and getgenv().Config.AutoResume then
-            task.wait(1) -- 等待角色加載
-            game.StarterGui:SetCore("SendNotification", {Title = "復活", Text = "檢測到重生，繼續追擊...", Duration = 2})
-            -- 這裡不需要重新呼叫 StartFling，因為 Heartbeat 會自動抓取新的 Character
-            -- 但我們需要確保物理屬性被重置
-            local hum = newChar:WaitForChild("Humanoid")
-            local rp = newChar:WaitForChild("HumanoidRootPart")
-        end
+    -- 2. ESP 透視
+    local ESP_Holder = Instance.new("Folder", CoreGui)
+    ESP_Holder.Name = "ESP_HOLDER"
+    
+    local function UpdateESP()
+        ESP_Holder:ClearAllChildren()
+        if not getgenv().Config.ESP then return end
         
-        -- 重置速度與跳躍
-        if getgenv().Config.Speed > 16 then
-            task.wait(0.5)
-            local hum = newChar:WaitForChild("Humanoid")
-            hum.WalkSpeed = getgenv().Config.Speed
-            hum.JumpPower = getgenv().Config.Jump
+        for _, v in pairs(Players:GetPlayers()) do
+            if v ~= LocalPlayer and v.Character then
+                local Highlight = Instance.new("Highlight")
+                Highlight.Adornee = v.Character
+                Highlight.Parent = ESP_Holder
+                Highlight.FillColor = Color3.fromRGB(255, 0, 0)
+                Highlight.OutlineColor = Color3.fromRGB(255, 255, 255)
+                Highlight.FillTransparency = 0.5
+                Highlight.OutlineTransparency = 0
+            end
+        end
+    end
+    
+    RunService.Stepped:Connect(function()
+        if getgenv().Config.ESP then
+            -- 簡單的檢查，若玩家剛重生需要補上 ESP
+            for _, v in pairs(Players:GetPlayers()) do
+                if v ~= LocalPlayer and v.Character and not ESP_Holder:FindFirstChild(v.Name) then
+                     -- 這裡為了效能，通常用上面的 UpdateESP 統一刷新，或者用 ChildAdded 事件
+                     -- 為了腳本簡潔，我們每 5 秒刷新一次 ESP 即可，或者依賴 toggle
+                end
+            end
+        else
+            ESP_Holder:ClearAllChildren()
+        end
+    end)
+    -- 每3秒刷新一次確保新重生的玩家也有透視
+    task.spawn(function()
+        while true do
+            task.wait(3)
+            if getgenv().Config.ESP then UpdateESP() end
         end
     end)
 
-    -- // 防虛空邏輯 // --
+    -- 3. 無限跳
+    UserInputService.JumpRequest:Connect(function()
+        if getgenv().Config.InfiniteJump then
+            local Char = LocalPlayer.Character
+            if Char and Char:FindFirstChild("Humanoid") then
+                Char.Humanoid:ChangeState(Enum.HumanoidStateType.Jumping)
+            end
+        end
+    end)
+
+    -- 4. 穿牆
     RunService.Stepped:Connect(function()
-        if getgenv().Config.AntiVoid then
-            local Char = Players.LocalPlayer.Character
-            if Char and Char:FindFirstChild("HumanoidRootPart") then
-                if Char.HumanoidRootPart.Position.Y < -20 then -- 提高判定線
-                    Char.HumanoidRootPart.CFrame = Char.HumanoidRootPart.CFrame + Vector3.new(0, 100, 0)
-                    Char.HumanoidRootPart.Velocity = Vector3.zero
-                    Char.HumanoidRootPart.AssemblyLinearVelocity = Vector3.zero
+        if getgenv().Config.NoClip then
+            local Char = LocalPlayer.Character
+            if Char then
+                for _, part in pairs(Char:GetDescendants()) do
+                    if part:IsA("BasePart") and part.CanCollide then
+                        part.CanCollide = false
+                    end
                 end
             end
         end
     end)
 
+    -- 角色重生事件
+    LocalPlayer.CharacterAdded:Connect(function(newChar)
+        local hum = newChar:WaitForChild("Humanoid")
+        
+        -- 自動續連彈飛
+        if getgenv().Config.IsFlinging and getgenv().Config.AutoResume then
+            task.wait(1)
+            game.StarterGui:SetCore("SendNotification", {Title = "復活", Text = "繼續追擊...", Duration = 2})
+        end
+        
+        -- 重置數值
+        task.wait(0.5)
+        if getgenv().Config.Speed ~= 16 then hum.WalkSpeed = getgenv().Config.Speed end
+        if getgenv().Config.Jump ~= 50 then hum.JumpPower = getgenv().Config.Jump end
+    end)
 
-    -- // 介面建構 (UI Construction) // --
+    -- // 介面 UI // --
     local ScreenGui = Instance.new("ScreenGui")
     ScreenGui.Name = "APEX_PHANTOM_REMASTERED"
     ScreenGui.Parent = CoreGui
     ScreenGui.IgnoreGuiInset = true
 
-    -- 主框架
-    local MainFrame = Instance.new("Frame")
-    MainFrame.Name = "MainFrame"
-    MainFrame.Size = UDim2.new(0, 500, 0, 350)
-    MainFrame.Position = UDim2.new(0.5, -250, 0.5, -175)
+    local MainFrame = Instance.new("Frame", ScreenGui)
+    MainFrame.Size = UDim2.new(0, 500, 0, 450) -- 加高介面以容納更多功能
+    MainFrame.Position = UDim2.new(0.5, -250, 0.5, -225)
     MainFrame.BackgroundColor3 = Color3.fromRGB(15, 15, 20)
-    MainFrame.BorderSizePixel = 0
     MainFrame.Active = true
     MainFrame.Draggable = true
-    MainFrame.Parent = ScreenGui
-
-    -- 美化圓角與邊框
-    local UICorner = Instance.new("UICorner", MainFrame)
-    UICorner.CornerRadius = UDim.new(0, 10)
+    
+    Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 10)
     local UIStroke = Instance.new("UIStroke", MainFrame)
-    UIStroke.Color = Color3.fromRGB(138, 43, 226) -- 紫色霓虹
+    UIStroke.Color = Color3.fromRGB(138, 43, 226)
     UIStroke.Thickness = 2
-    UIStroke.Transparency = 0
 
-    -- 標題欄
     local Title = Instance.new("TextLabel", MainFrame)
-    Title.Text = "APEX PHANTOM | TSB 專用版"
+    Title.Text = "APEX PHANTOM | TSB 增強版"
     Title.Size = UDim2.new(1, 0, 0, 40)
     Title.BackgroundTransparency = 1
     Title.TextColor3 = Color3.fromRGB(200, 200, 255)
     Title.Font = Enum.Font.GothamBold
     Title.TextSize = 18
-    
-    -- 內容容器
-    local Container = Instance.new("Frame", MainFrame)
-    Container.Size = UDim2.new(0.9, 0, 0.8, 0)
-    Container.Position = UDim2.new(0.05, 0, 0.15, 0)
+
+    local Container = Instance.new("ScrollingFrame", MainFrame)
+    Container.Size = UDim2.new(0.9, 0, 0.85, 0)
+    Container.Position = UDim2.new(0.05, 0, 0.12, 0)
     Container.BackgroundTransparency = 1
+    Container.ScrollBarThickness = 4
     
     local UIList = Instance.new("UIListLayout", Container)
     UIList.Padding = UDim.new(0, 10)
     UIList.SortOrder = Enum.SortOrder.LayoutOrder
+    
+    Container.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
-    -- // UI 元件生成函數 // --
-    local function CreateInput(placeholder, callback)
-        local Box = Instance.new("TextBox", Container)
-        Box.Size = UDim2.new(1, 0, 0, 40)
-        Box.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
-        Box.PlaceholderText = placeholder
-        Box.Text = ""
-        Box.TextColor3 = Color3.new(1,1,1)
-        Box.Font = Enum.Font.Gotham
-        Box.TextSize = 14
-        Instance.new("UICorner", Box).CornerRadius = UDim.new(0, 6)
-        
-        Box.FocusLost:Connect(function()
-            callback(Box.Text)
-        end)
+    -- UI 函數
+    local function CreateSection(text)
+        local Label = Instance.new("TextLabel", Container)
+        Label.Text = "--- " .. text .. " ---"
+        Label.Size = UDim2.new(1, 0, 0, 25)
+        Label.BackgroundTransparency = 1
+        Label.TextColor3 = Color3.fromRGB(150, 150, 150)
+        Label.Font = Enum.Font.Code
     end
 
     local function CreateToggle(text, callback)
@@ -237,55 +283,65 @@ do
             callback(Toggled)
         end)
     end
-    
-    local function CreateSlider(text, min, max, default, callback)
+
+    local function CreateInputBox(title, default, callback)
         local Frame = Instance.new("Frame", Container)
         Frame.Size = UDim2.new(1, 0, 0, 50)
         Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
         Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 6)
         
         local Label = Instance.new("TextLabel", Frame)
-        Label.Text = text .. ": " .. default
-        Label.Size = UDim2.new(1, 0, 0.4, 0)
+        Label.Text = title
+        Label.Size = UDim2.new(0.4, 0, 1, 0)
+        Label.Position = UDim2.new(0.05, 0, 0, 0)
         Label.BackgroundTransparency = 1
         Label.TextColor3 = Color3.new(1,1,1)
         Label.Font = Enum.Font.Gotham
+        Label.TextXAlignment = Enum.TextXAlignment.Left
         
-        local SlideBar = Instance.new("TextButton", Frame)
-        SlideBar.Size = UDim2.new(0.9, 0, 0.2, 0)
-        SlideBar.Position = UDim2.new(0.05, 0, 0.6, 0)
-        SlideBar.BackgroundColor3 = Color3.fromRGB(50, 50, 60)
-        SlideBar.Text = ""
-        SlideBar.AutoButtonColor = false
+        local Box = Instance.new("TextBox", Frame)
+        Box.Size = UDim2.new(0.4, 0, 0.6, 0)
+        Box.Position = UDim2.new(0.55, 0, 0.2, 0)
+        Box.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
+        Box.Text = tostring(default)
+        Box.TextColor3 = Color3.fromRGB(100, 255, 100)
+        Box.Font = Enum.Font.GothamBold
+        Instance.new("UICorner", Box).CornerRadius = UDim.new(0, 4)
         
-        local Fill = Instance.new("Frame", SlideBar)
-        Fill.Size = UDim2.new((default - min)/(max - min), 0, 1, 0)
-        Fill.BackgroundColor3 = Color3.fromRGB(138, 43, 226)
-        
-        local Dragging = false
-        SlideBar.MouseButton1Down:Connect(function() Dragging = true end)
-        UserInputService.InputEnded:Connect(function(input) 
-            if input.UserInputType == Enum.UserInputType.MouseButton1 then Dragging = false end 
-        end)
-        
-        UserInputService.InputChanged:Connect(function(input)
-            if Dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
-                local X = math.clamp((input.Position.X - SlideBar.AbsolutePosition.X) / SlideBar.AbsoluteSize.X, 0, 1)
-                Fill.Size = UDim2.new(X, 0, 1, 0)
-                local Val = math.floor(min + ((max - min) * X))
-                Label.Text = text .. ": " .. Val
-                callback(Val)
+        Box.FocusLost:Connect(function()
+            local num = tonumber(Box.Text)
+            if num then
+                callback(num)
+            else
+                Box.Text = tostring(default) -- 恢復預設
             end
         end)
     end
 
+    local function CreateNormalInput(placeholder, callback)
+        local Box = Instance.new("TextBox", Container)
+        Box.Size = UDim2.new(1, 0, 0, 40)
+        Box.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+        Box.PlaceholderText = placeholder
+        Box.Text = ""
+        Box.TextColor3 = Color3.new(1,1,1)
+        Box.Font = Enum.Font.Gotham
+        Box.TextSize = 14
+        Instance.new("UICorner", Box).CornerRadius = UDim.new(0, 6)
+        
+        Box.FocusLost:Connect(function()
+            callback(Box.Text)
+        end)
+    end
+
     -- // 構建功能列表 // --
-    
-    CreateInput("輸入目標名字 (支持簡寫)...", function(text)
+
+    CreateSection("核心功能")
+    CreateNormalInput("輸入目標名字 (支持簡寫)...", function(text)
         getgenv().Config.Target = text
     end)
     
-    CreateToggle("啟動 TSB 黏著甩飛 (死亡自動連)", function(state)
+    CreateToggle("啟動黏著甩飛 (關閉後回原位)", function(state)
         if state then
             if getgenv().Config.Target == "" then
                 game.StarterGui:SetCore("SendNotification", {Title = "錯誤", Text = "請先輸入目標名字!", Duration = 3})
@@ -296,23 +352,52 @@ do
             StopFling()
         end
     end)
-    
-    CreateToggle("防虛空 (Anti-Void)", function(state)
-        getgenv().Config.AntiVoid = state
-    end)
-    
-    CreateSlider("移動速度 (WalkSpeed)", 16, 200, 16, function(val)
+
+    CreateSection("角色數值 (輸入數字)")
+    CreateInputBox("移動速度 (WalkSpeed)", 16, function(val)
         getgenv().Config.Speed = val
         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
             LocalPlayer.Character.Humanoid.WalkSpeed = val
         end
     end)
-    
-    CreateSlider("跳躍高度 (JumpPower)", 50, 400, 50, function(val)
+
+    CreateInputBox("跳躍高度 (JumpPower)", 50, function(val)
         getgenv().Config.Jump = val
         if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("Humanoid") then
             LocalPlayer.Character.Humanoid.JumpPower = val
         end
+    end)
+
+    CreateSection("輔助外掛")
+    CreateToggle("玩家透視 (ESP)", function(state)
+        getgenv().Config.ESP = state
+        UpdateESP()
+    end)
+
+    CreateToggle("無限跳躍 (Infinite Jump)", function(state)
+        getgenv().Config.InfiniteJump = state
+    end)
+
+    CreateToggle("穿牆模式 (NoClip)", function(state)
+        getgenv().Config.NoClip = state
+    end)
+    
+    CreateToggle("全亮模式 (Full Bright)", function(state)
+        if state then
+            Lighting.Brightness = 2
+            Lighting.ClockTime = 14
+            Lighting.GlobalShadows = false
+            Lighting.Ambient = Color3.new(1,1,1)
+        else
+            Lighting.Brightness = 1
+            Lighting.ClockTime = 12
+            Lighting.GlobalShadows = true
+            Lighting.Ambient = Color3.fromRGB(138, 138, 138)
+        end
+    end)
+    
+    CreateToggle("防虛空 (Anti-Void)", function(state)
+        getgenv().Config.AntiVoid = state
     end)
 
     -- // 最小化按鈕 // --
@@ -320,7 +405,7 @@ do
     ToggleBtn.Size = UDim2.new(0, 50, 0, 50)
     ToggleBtn.Position = UDim2.new(0.1, 0, 0.1, 0)
     ToggleBtn.BackgroundColor3 = Color3.fromRGB(20, 20, 30)
-    ToggleBtn.Image = "rbxassetid://13465637257" -- 幽靈圖標
+    ToggleBtn.Image = "rbxassetid://13465637257"
     Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 10)
     Instance.new("UIStroke", ToggleBtn).Color = Color3.fromRGB(138, 43, 226)
     Instance.new("UIStroke", ToggleBtn).Thickness = 2
@@ -331,29 +416,5 @@ do
         MainFrame.Visible = Open
     end)
 
-    -- 拖曳邏輯
-    local dragging, dragInput, dragStart, startPos
-    ToggleBtn.InputBegan:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then
-            dragging = true
-            dragStart = input.Position
-            startPos = ToggleBtn.Position
-        end
-    end)
-    ToggleBtn.InputChanged:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseMovement then
-            dragInput = input
-        end
-    end)
-    UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragging then
-            local delta = input.Position - dragStart
-            ToggleBtn.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-        end
-    end)
-    UserInputService.InputEnded:Connect(function(input)
-        if input.UserInputType == Enum.UserInputType.MouseButton1 then dragging = false end
-    end)
-
-    game.StarterGui:SetCore("SendNotification", {Title = "加載完成", Text = "APEX 幽靈重製版已啟動", Duration = 3})
+    game.StarterGui:SetCore("SendNotification", {Title = "加載完成", Text = "V3.0 增強版已啟動", Duration = 3})
 end
