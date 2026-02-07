@@ -47,7 +47,7 @@ do
         getgenv().Config.IsFlinging = true
         
         game.StarterGui:SetCore("SendNotification", {
-            Title = "幽靈模式",
+            Title = "追蹤模式",
             Text = "鎖定目標: " .. getgenv().Config.Target,
             Duration = 3
         })
