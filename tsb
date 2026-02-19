@@ -1,5 +1,5 @@
--- [[ 珍奶腳本 | TSB 輔助 ]] --
--- [[ 製作者   珍奶 ]] --
+-- [[ 珍奶腳本 | TSB 物理優化版 ]] --
+-- [[ 製作者 BY 珍奶 ]] --
 
 do
     if not game:IsLoaded() then game.Loaded:Wait() end
@@ -7,27 +7,23 @@ do
     local Players = game:GetService("Players")
     local RunService = game:GetService("RunService")
     local UserInputService = game:GetService("UserInputService")
-    local CoreGui = game:GetService("CoreGui")
     local Workspace = game:GetService("Workspace")
+    local CoreGui = game:GetService("CoreGui")
     local LocalPlayer = Players.LocalPlayer
     
-    -- 清理舊介面
     for _, g in pairs(CoreGui:GetChildren()) do
         if g.Name == "Jenna_Script_UI" then g:Destroy() end
     end
 
-    -- 參數設定
     getgenv().Config = {
         Target = "",
         IsFlinging = false,
         AntiFling = false,
-        AntiVoid = false,
         CustomSpeed = 16,
         CustomJump = 50,
-        ESP = false,
-        Invis = false,
-        AutoTrash = false,
-        SavedPosition = nil
+        AutoTrashClick = false,
+        SavedPosition = nil,
+        AntiVoidPart = nil
     }
 
     -- 建立主介面
@@ -37,70 +33,72 @@ do
     ScreenGui.IgnoreGuiInset = true
 
     local MainFrame = Instance.new("Frame", ScreenGui)
-    MainFrame.Size = UDim2.new(0, 500, 0, 500)
-    MainFrame.Position = UDim2.new(0.5, -250, 0.5, -250)
-    MainFrame.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+    MainFrame.Size = UDim2.new(0, 450, 0, 520)
+    MainFrame.Position = UDim2.new(0.5, -225, 0.5, -260)
+    MainFrame.BackgroundColor3 = Color3.fromRGB(20, 20, 25)
     MainFrame.Active = true
     MainFrame.Draggable = true
     
-    Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 8)
-    Instance.new("UIStroke", MainFrame).Color = Color3.fromRGB(255, 180, 200) -- 珍奶色系點綴
+    Instance.new("UICorner", MainFrame).CornerRadius = UDim.new(0, 6)
+    Instance.new("UIStroke", MainFrame).Color = Color3.fromRGB(255, 170, 200)
     Instance.new("UIStroke", MainFrame).Thickness = 2
 
     local Title = Instance.new("TextLabel", MainFrame)
-    Title.Text = "珍奶腳本 | TSB 輔助 (BY 珍奶)"
-    Title.Size = UDim2.new(1, 0, 0, 40)
-    Title.BackgroundTransparency = 1
+    Title.Text = "🧋 珍奶腳本 | TSB 專用版"
+    Title.Size = UDim2.new(1, 0, 0, 45)
+    Title.BackgroundColor3 = Color3.fromRGB(30, 30, 35)
     Title.TextColor3 = Color3.fromRGB(255, 200, 220)
     Title.Font = Enum.Font.GothamBold
-    Title.TextSize = 18
+    Title.TextSize = 16
+    Instance.new("UICorner", Title).CornerRadius = UDim.new(0, 6)
 
     local Container = Instance.new("ScrollingFrame", MainFrame)
-    Container.Size = UDim2.new(0.9, 0, 0.85, 0)
-    Container.Position = UDim2.new(0.05, 0, 0.12, 0)
+    Container.Size = UDim2.new(0.92, 0, 0.86, 0)
+    Container.Position = UDim2.new(0.04, 0, 0.11, 0)
     Container.BackgroundTransparency = 1
-    Container.ScrollBarThickness = 4
+    Container.ScrollBarThickness = 3
     local UIList = Instance.new("UIListLayout", Container)
-    UIList.Padding = UDim.new(0, 8)
+    UIList.Padding = UDim.new(0, 10)
     Container.AutomaticCanvasSize = Enum.AutomaticSize.Y
 
-    -- // UI 生成元件函數 // --
+    -- // UI 元件 //
     local function CreateSection(text)
         local Label = Instance.new("TextLabel", Container)
-        Label.Text = "— " .. text .. " —"
-        Label.Size = UDim2.new(1, 0, 0, 25)
+        Label.Text = text
+        Label.Size = UDim2.new(1, 0, 0, 20)
         Label.BackgroundTransparency = 1
-        Label.TextColor3 = Color3.fromRGB(150, 150, 150)
-        Label.Font = Enum.Font.GothamSemibold
+        Label.TextColor3 = Color3.fromRGB(180, 180, 180)
+        Label.Font = Enum.Font.GothamBold
+        Label.TextXAlignment = Enum.TextXAlignment.Left
     end
 
     local function CreateToggle(text, callback)
         local Frame = Instance.new("Frame", Container)
-        Frame.Size = UDim2.new(1, 0, 0, 35)
-        Frame.BackgroundColor3 = Color3.fromRGB(35, 35, 45)
+        Frame.Size = UDim2.new(1, 0, 0, 38)
+        Frame.BackgroundColor3 = Color3.fromRGB(30, 30, 38)
         Instance.new("UICorner", Frame).CornerRadius = UDim.new(0, 4)
         
         local Label = Instance.new("TextLabel", Frame)
-        Label.Text = text
+        Label.Text = " " .. text
         Label.Size = UDim2.new(0.7, 0, 1, 0)
-        Label.Position = UDim2.new(0.05, 0, 0, 0)
         Label.BackgroundTransparency = 1
         Label.TextColor3 = Color3.new(1, 1, 1)
         Label.Font = Enum.Font.Gotham
         Label.TextXAlignment = Enum.TextXAlignment.Left
         
         local Button = Instance.new("TextButton", Frame)
-        Button.Size = UDim2.new(0, 60, 0, 25)
-        Button.Position = UDim2.new(0.8, 0, 0.15, 0)
+        Button.Size = UDim2.new(0, 60, 0, 28)
+        Button.Position = UDim2.new(1, -65, 0.5, -14)
         Button.BackgroundColor3 = Color3.fromRGB(60, 60, 70)
-        Button.Text = "關閉"
+        Button.Text = "OFF"
         Button.TextColor3 = Color3.fromRGB(255, 100, 100)
+        Button.Font = Enum.Font.GothamBold
         Instance.new("UICorner", Button).CornerRadius = UDim.new(0, 4)
         
         local Toggled = false
         Button.MouseButton1Click:Connect(function()
             Toggled = not Toggled
-            Button.Text = Toggled and "開啟" or "關閉"
+            Button.Text = Toggled and "ON" or "OFF"
             Button.BackgroundColor3 = Toggled and Color3.fromRGB(100, 200, 100) or Color3.fromRGB(60, 60, 70)
             Button.TextColor3 = Toggled and Color3.fromRGB(20, 50, 20) or Color3.fromRGB(255, 100, 100)
             callback(Toggled)
@@ -109,35 +107,23 @@ do
 
     local function CreateInput(placeholder, callback)
         local Box = Instance.new("TextBox", Container)
-        Box.Size = UDim2.new(1, 0, 0, 35)
-        Box.BackgroundColor3 = Color3.fromRGB(30, 30, 40)
+        Box.Size = UDim2.new(1, 0, 0, 38)
+        Box.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
         Box.PlaceholderText = placeholder
         Box.Text = ""
         Box.TextColor3 = Color3.fromRGB(255, 255, 255)
         Box.Font = Enum.Font.Gotham
         Instance.new("UICorner", Box).CornerRadius = UDim.new(0, 4)
+        Instance.new("UIStroke", Box).Color = Color3.fromRGB(80, 80, 100)
         Box.FocusLost:Connect(function() callback(Box.Text) end)
     end
 
-    local function CreateButton(text, callback)
-        local Btn = Instance.new("TextButton", Container)
-        Btn.Size = UDim2.new(1, 0, 0, 35)
-        Btn.BackgroundColor3 = Color3.fromRGB(80, 60, 90)
-        Btn.Text = text
-        Btn.TextColor3 = Color3.new(1, 1, 1)
-        Btn.Font = Enum.Font.Gotham
-        Instance.new("UICorner", Btn).CornerRadius = UDim.new(0, 4)
-        Btn.MouseButton1Click:Connect(callback)
-    end
-
-    -- // 功能邏輯區 // --
-
-    -- 1. 玩家目標與甩飛
-    local FlingConn
-    CreateSection("目標設定與攻擊")
-    CreateInput("輸入目標名稱 (支援部分名稱)...", function(val) getgenv().Config.Target = val end)
+    -- // 核心邏輯 //
+    CreateSection("🎯 目標與攻擊")
+    CreateInput("輸入目標名稱 (例: Player123)", function(val) getgenv().Config.Target = val end)
     
-    CreateToggle("啟動黏著甩飛 (關閉自動歸位/預判追蹤)", function(state)
+    local FlingConn
+    CreateToggle("啟動黏著甩飛 (穩定版)", function(state)
         getgenv().Config.IsFlinging = state
         if state then
             local Char = LocalPlayer.Character
@@ -145,15 +131,14 @@ do
                 getgenv().Config.SavedPosition = Char.HumanoidRootPart.CFrame
             end
             
-            FlingConn = RunService.RenderStepped:Connect(function()
+            FlingConn = RunService.Heartbeat:Connect(function()
                 if not getgenv().Config.IsFlinging then return end
                 local LP = Players.LocalPlayer
                 local C = LP.Character
                 local TargetPlr
                 for _, v in pairs(Players:GetPlayers()) do
                     if v ~= LP and string.sub(v.Name:lower(), 1, #getgenv().Config.Target) == getgenv().Config.Target:lower() then 
-                        TargetPlr = v 
-                        break 
+                        TargetPlr = v break 
                     end
                 end
 
@@ -161,14 +146,10 @@ do
                     local TRP = TargetPlr.Character.HumanoidRootPart
                     local LRP = C.HumanoidRootPart
                     
-                    -- 預測高速目標位置
-                    local predict = TRP.Velocity * 0.1 
-                    LRP.CFrame = TRP.CFrame + predict
-                    
-                    local vel = Vector3.new(99999, 99999, 99999)
-                    LRP.Velocity = vel
-                    LRP.AssemblyLinearVelocity = vel
-                    LRP.AssemblyAngularVelocity = vel
+                    LRP.CFrame = TRP.CFrame
+                    -- 修復亂飛：線性速度歸零，只保留極高的旋轉角速度
+                    LRP.AssemblyLinearVelocity = Vector3.new(0, 0, 0)
+                    LRP.AssemblyAngularVelocity = Vector3.new(50000, 50000, 50000)
                     
                     for _, p in pairs(C:GetDescendants()) do
                         if p:IsA("BasePart") then p.CanCollide = false p.Massless = true end
@@ -189,15 +170,13 @@ do
         end
     end)
 
-    -- 2. TSB 數值修改 (破解限制)
-    CreateSection("角色數值修改")
-    CreateInput("設定移動速度 (預設 16)", function(val) getgenv().Config.CustomSpeed = tonumber(val) or 16 end)
-    CreateInput("設定跳躍高度/無限跳 (預設 50)", function(val) getgenv().Config.CustomJump = tonumber(val) or 50 end)
+    CreateSection("⚡ 角色修改")
+    CreateInput("修改移動速度 (預設 16)", function(val) getgenv().Config.CustomSpeed = tonumber(val) or 16 end)
+    CreateInput("修改跳躍高度 (預設 50)", function(val) getgenv().Config.CustomJump = tonumber(val) or 50 end)
     
     RunService.RenderStepped:Connect(function()
         local Char = LocalPlayer.Character
         if Char and Char:FindFirstChild("Humanoid") and Char:FindFirstChild("HumanoidRootPart") then
-            -- CFrame 速度強制覆寫
             if getgenv().Config.CustomSpeed > 16 then
                 local MoveDir = Char.Humanoid.MoveDirection
                 if MoveDir.Magnitude > 0 then
@@ -207,64 +186,45 @@ do
         end
     end)
 
+    local isJumping = false
     UserInputService.JumpRequest:Connect(function()
-        if getgenv().Config.CustomJump > 50 then
+        if getgenv().Config.CustomJump > 50 and not isJumping then
+            isJumping = true
             local Char = LocalPlayer.Character
             if Char and Char:FindFirstChild("HumanoidRootPart") then
                 Char.HumanoidRootPart.Velocity = Vector3.new(Char.HumanoidRootPart.Velocity.X, getgenv().Config.CustomJump, Char.HumanoidRootPart.Velocity.Z)
             end
+            task.wait(0.2) -- 防卡頓/連跳延遲
+            isJumping = false
         end
     end)
 
-    -- 3. 防護與實用功能
-    CreateSection("防護與實用功能")
-    CreateToggle("防彈飛 (防禦異常碰撞)", function(state) getgenv().Config.AntiFling = state end)
-    CreateToggle("免疫虛空 (防掉落判定)", function(state) getgenv().Config.AntiVoid = state end)
-    CreateToggle("本體隱身 (僅限部分視角)", function(state)
-        local Char = LocalPlayer.Character
-        if Char then
-            for _, v in pairs(Char:GetDescendants()) do
-                if v:IsA("BasePart") or v:IsA("Decal") then
-                    v.Transparency = state and 1 or 0
-                end
-            end
-        end
-    end)
-    CreateToggle("自動撿垃圾桶 (地圖物件)", function(state)
-        getgenv().Config.AutoTrash = state
+    CreateSection("🛡️ 物理防護與功能")
+    CreateToggle("物理免疫虛空 (生成實體隱形地板)", function(state)
         if state then
-            task.spawn(function()
-                while getgenv().Config.AutoTrash do
-                    task.wait(1.5)
-                    local Char = LocalPlayer.Character
-                    if Char and Char:FindFirstChild("HumanoidRootPart") then
-                        for _, obj in pairs(Workspace:GetDescendants()) do
-                            if obj:IsA("ProximityPrompt") and string.find(obj.Parent.Name:lower(), "trash") then
-                                Char.HumanoidRootPart.CFrame = obj.Parent.CFrame
-                                task.wait(0.2)
-                                fireproximityprompt(obj)
-                            end
-                        end
-                    end
-                end
-            end)
+            if not getgenv().Config.AntiVoidPart then
+                local Part = Instance.new("Part", Workspace)
+                Part.Size = Vector3.new(5000, 5, 5000)
+                Part.Position = Vector3.new(0, -25, 0) -- TSB 虛空判定線上方
+                Part.Anchored = true
+                Part.Transparency = 1 -- 隱形
+                Part.CanCollide = true
+                getgenv().Config.AntiVoidPart = Part
+            end
+        else
+            if getgenv().Config.AntiVoidPart then
+                getgenv().Config.AntiVoidPart:Destroy()
+                getgenv().Config.AntiVoidPart = nil
+            end
         end
     end)
 
+    CreateToggle("防彈飛 (防止被他人異常擊飛)", function(state) getgenv().Config.AntiFling = state end)
     RunService.Stepped:Connect(function()
-        local Char = LocalPlayer.Character
-        if Char and Char:FindFirstChild("HumanoidRootPart") then
-            if getgenv().Config.AntiVoid and Char.HumanoidRootPart.Position.Y < -30 then
-                Char.HumanoidRootPart.Velocity = Vector3.zero
-                Char.HumanoidRootPart.CFrame = Char.HumanoidRootPart.CFrame + Vector3.new(0, 150, 0)
-            end
-            if getgenv().Config.AntiFling and not getgenv().Config.IsFlinging then
-                for _, p in pairs(Players:GetPlayers()) do
-                    if p ~= LocalPlayer and p.Character and p.Character:FindFirstChild("HumanoidRootPart") then
-                        p.Character.HumanoidRootPart.CanCollide = false
-                    end
-                end
-                if Char.HumanoidRootPart.Velocity.Magnitude > 250 then
+        if getgenv().Config.AntiFling and not getgenv().Config.IsFlinging then
+            local Char = LocalPlayer.Character
+            if Char and Char:FindFirstChild("HumanoidRootPart") then
+                if Char.HumanoidRootPart.Velocity.Magnitude > 150 then
                     Char.HumanoidRootPart.Velocity = Vector3.zero
                     Char.HumanoidRootPart.AssemblyAngularVelocity = Vector3.zero
                 end
@@ -272,39 +232,50 @@ do
         end
     end)
 
-    -- 4. 傳送
-    CreateSection("地圖傳送")
-    CreateButton("傳送至: 虛空深淵", function()
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(0, -400, 0)
-        end
-    end)
-    CreateButton("傳送至: 高空安全區", function()
-        if LocalPlayer.Character and LocalPlayer.Character:FindFirstChild("HumanoidRootPart") then
-            LocalPlayer.Character.HumanoidRootPart.CFrame = CFrame.new(0, 500, 0)
-        end
+    CreateToggle("普攻撿垃圾 (左鍵自動來回傳送)", function(state)
+        getgenv().Config.AutoTrashClick = state
     end)
 
-    -- 5. 受限功能說明
-    CreateSection("受技術限制無法實現的功能 (僅供展示)")
-    CreateToggle("防官方 Ban (無法實現)", function() 
-        game.StarterGui:SetCore("SendNotification", {Title = "系統提示", Text = "伺服器端的防作弊無法透過此腳本阻擋", Duration = 3}) 
-    end)
-    CreateToggle("角色技能 Combo / 躲技能", function() 
-        game.StarterGui:SetCore("SendNotification", {Title = "系統提示", Text = "戰鬥邏輯高度客製化，需額外專用模組", Duration = 3}) 
-    end)
-    CreateToggle("隨處牆壁 Combo", function() 
-        game.StarterGui:SetCore("SendNotification", {Title = "系統提示", Text = "物理判定在伺服器端，無法隨處觸發", Duration = 3}) 
+    local isTrashing = false
+    UserInputService.InputBegan:Connect(function(input, gameProcessed)
+        if gameProcessed then return end
+        if input.UserInputType == Enum.UserInputType.MouseButton1 and getgenv().Config.AutoTrashClick and not isTrashing then
+            isTrashing = true
+            local Char = LocalPlayer.Character
+            if Char and Char:FindFirstChild("HumanoidRootPart") then
+                -- 尋找最近的垃圾桶
+                local targetTrash = nil
+                for _, obj in pairs(Workspace:GetDescendants()) do
+                    if obj:IsA("ProximityPrompt") and string.find(obj.Parent.Name:lower(), "trash") then
+                        targetTrash = obj
+                        break
+                    end
+                end
+
+                if targetTrash then
+                    local originalPos = Char.HumanoidRootPart.CFrame
+                    -- 傳送過去
+                    Char.HumanoidRootPart.CFrame = targetTrash.Parent.CFrame
+                    task.wait(0.15)
+                    fireproximityprompt(targetTrash)
+                    task.wait(0.1)
+                    -- 傳送回來
+                    Char.HumanoidRootPart.CFrame = originalPos
+                end
+            end
+            task.wait(0.5) -- 冷卻時間
+            isTrashing = false
+        end
     end)
 
     -- // 最小化按鈕 //
     local ToggleBtn = Instance.new("ImageButton", ScreenGui)
-    ToggleBtn.Size = UDim2.new(0, 50, 0, 50)
+    ToggleBtn.Size = UDim2.new(0, 45, 0, 45)
     ToggleBtn.Position = UDim2.new(0.05, 0, 0.05, 0)
     ToggleBtn.BackgroundColor3 = Color3.fromRGB(30, 25, 30)
     ToggleBtn.Image = "rbxassetid://13465637257"
-    Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 10)
-    Instance.new("UIStroke", ToggleBtn).Color = Color3.fromRGB(255, 180, 200)
+    Instance.new("UICorner", ToggleBtn).CornerRadius = UDim.new(0, 8)
+    Instance.new("UIStroke", ToggleBtn).Color = Color3.fromRGB(255, 170, 200)
     
     local Open = true
     ToggleBtn.MouseButton1Click:Connect(function()
@@ -312,5 +283,4 @@ do
         MainFrame.Visible = Open
     end)
 
-    game.StarterGui:SetCore("SendNotification", {Title = "珍奶腳本", Text = "載入成功！歡迎使用", Duration = 3})
 end
