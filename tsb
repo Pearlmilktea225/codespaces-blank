@@ -1,5 +1,5 @@
 -- [[ 珍奶腳本 | TSB 輔助 ]] --
--- [[ 製作者 BY 珍奶 ]] --
+-- [[ 製作者  珍奶 ]] --
 
 do
     if not game:IsLoaded() then game.Loaded:Wait() end
